@@ -1,0 +1,34 @@
+# Material de referência do professor (não versionar)
+cesar ideia.pdf
+
+# Credenciais e configuração local
+.env
+.env.*
+!.env.example
+profile.yaml
+**/profile.yaml
+.xano/
+
+# Configuração local do Claude Code
+.claude/settings.local.json
+
+# Python / Reflex
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.web/
+.states/
+*.db
+
+# Testes
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

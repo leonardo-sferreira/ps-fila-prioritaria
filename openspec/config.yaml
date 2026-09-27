@@ -1,0 +1,39 @@
+schema: spec-driven
+
+context: |
+  Project: Sistema de Fila Prioritária para Pronto-Socorro (projeto acadêmico).
+  Domain: Controle de entrada e chamada de pacientes em filas de um PS. Prioridade em
+    3 cores (Vermelha, Amarela, Azul) calculada por sintomas + fator de risco dos sinais
+    vitais, com direcionamento por especialidade e disponibilidade dos médicos.
+    Perfis: Recepção/Triagem, Médico, Administrador. Ver docs/project-overview.md e
+    docs/domain-model.md.
+  Tech stack: Frontend Reflex (Python). Backend e banco de dados no Xano (XanoScript).
+  Architecture: Regras de negócio, persistência e autorização no Xano; o Reflex consome
+    a API REST do Xano e não contém regra de negócio. Parâmetros clínicos (faixas,
+    limiares, ciclo de chamada, tentativas) são configuráveis, não fixos em código.
+  Security: Controle de acesso por perfil aplicado no backend. Painel público nunca exibe
+    CPF nem nome completo. Alterações relevantes geram registro de auditoria.
+  Development: Mudanças incrementais via OpenSpec, em fatias verticais (Xano + Reflex
+    juntos), cada uma verificável ao final da sprint.
+  Language: Escrever artefatos OpenSpec e documentação inteiramente em português
+    brasileiro, inclusive títulos, "DEVE"/"NÃO DEVE" nos requisitos e "QUANDO"/"ENTÃO"/"E"
+    nos cenários. Exceção obrigatória (o CLI do OpenSpec depende deles): manter em inglês
+    apenas os marcadores "## Purpose", "## ADDED/MODIFIED/REMOVED/RENAMED Requirements",
+    "### Requirement:" e "#### Scenario:".
+
+rules:
+  proposal:
+    - Descrever claramente problema, objetivo e escopo, citando RF/RN do documento formal quando aplicável.
+    - Listar explicitamente o que fica fora do escopo da change.
+  specs:
+    - Escrever requisitos verificáveis, com cenários para casos de erro e de permissão negada.
+  tasks:
+    - Dividir em tarefas pequenas e verificáveis, separando Xano (backend) e Reflex (frontend).
+
+operations:
+  apply:
+    guidance:
+      - Executar as verificações definidas nas tasks antes de marcá-las como concluídas.
+  archive:
+    guidance:
+      - Confirmar que a implementação corresponde à spec e que docs/domain-model.md está atualizado.
