@@ -22,7 +22,7 @@ Esta change parte da base criada por `add-autenticacao-perfis`: tabela `usuario`
 - `especialidade_alternativa`: `especialidade_id`, `alternativa_id`, `ordem`; único (`especialidade_id`, `alternativa_id`).
 - `sintoma`: `nome` (único), `descricao`, `grupo` (enum), `prioridade_padrao` (enum `VERMELHA|AMARELA|AZUL`), `ativo`.
 - `sintoma_especialidade`: `sintoma_id`, `especialidade_id`, `ordem`.
-- `medico`: `usuario_id` (único), `registro_profissional`, `ativo`; `medico_especialidade`: `medico_id`, `especialidade_id`.
+- `medico`: `usuario_id` (único), `registro_profissional`, `ativo`; `medico_especialidade`: `medico_id`, `especialidade_id`. A tabela N:N já publicada é mantida, mas o endpoint grava exatamente uma linha por médico (RF14, decisão do PO em 04/10/2026).
 - `disponibilidade_medico`: `medico_id`, `inicio` e `fim` (timestamps).
 - `parametro`: `chave` (única), `valor` (texto), `tipo` (`inteiro|especialidade`).
 - `historico_alteracao`: `tipo_evento`, `entidade`, `registro_id`, `valor_anterior` (JSON), `valor_novo` (JSON), `justificativa`, `usuario_id`, `criado_em`.

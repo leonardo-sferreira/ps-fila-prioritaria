@@ -1,10 +1,22 @@
-# Proposta
+# Proposta: Direcionamento por especialidade, senha e comprovante
 
-## Por quê
+| Campo | Valor |
+|---|---|
+| Change | `add-direcionamento-senha` |
+| Sprint e entrega | Sprint 3, segunda 19/10 |
+| Fatias no Trello | Fatia 6 — Direcionamento e senha |
+| Dupla | Luisa (API e dados) · Nicolas (tela) |
+| Depende de | `add-cadastros-administrador` (Fatia 5) e `add-triagem-classificacao` (Fatias 3 e 4) |
+| Situação | Em revisão |
+| RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF18 (fila por especialidade com médico disponível); RF47 (reimprimir senha); RF48 (redistribuir quando o médico fica indisponível) |
+
+> Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
+
+## Why
 
 Depois de classificada, a ficha precisa entrar na fila certa: a da especialidade mais adequada aos sintomas que tenha médico disponível, com fallback para alternativas configuradas. O paciente precisa sair da triagem com uma senha impressa que identifique cor e fila sem expor seus dados. Sem isso a fila do médico (próxima change) não tem o que chamar.
 
-## O que muda
+## What Changes
 
 - **Especialidade sugerida:** identificada automaticamente a partir dos sintomas mais graves da ficha e da ordem configurada em Sintoma_Especialidade; sem sintomas, vale a especialidade padrão (RF17, RN14).
 - **Especialidade atribuída:** a sugerida, se tiver médico disponível agora; senão, a primeira alternativa configurada com médico disponível (RF18, RF19, RN15, RN17, CA04, CA05). A ficha guarda as duas (RN18).
@@ -28,7 +40,9 @@ Depois de classificada, a ficha precisa entrar na fila certa: a da especialidade
 - `senha-comprovante`: geração da senha, comprovante e reimpressão.
 
 ### Capacidades modificadas
-_Nenhuma._
+Altera o comportamento de `ficha-atendimento` e `classificacao-prioridade` (`add-triagem-classificacao`: confirmação leva a AGUARDANDO e redireciona), de `medicos-disponibilidade` (`add-cadastros-administrador`) e de `gestao-usuarios` (`add-autenticacao-perfis`). Declarar esses pontos como deltas `MODIFIED`.
+
+Aviso: o `openspec/specs/` ainda está vazio. Os deltas `MODIFIED` só funcionam depois que a change anterior for arquivada (`/opsx:archive`); arquive as changes na ordem.
 
 ## Impacto
 
@@ -37,3 +51,9 @@ _Nenhuma._
 - **Testes:** `tests/api/test_direcionamento.py` e `tests/api/test_senha.py`.
 - **Depende de:** `add-cadastros-administrador` e `add-triagem-classificacao`.
 - **Divergência com o documento formal:** RF18 fala em "fila de um médico disponível"; este projeto adota fila por especialidade, atendida por qualquer médico disponível da especialidade (a senha já identifica a especialidade). Deve ser confirmado pelo PO.
+
+## Perguntas em aberto
+
+- [x] Fila por especialidade, atendida por médico disponível (RF18): decidido pelo PO em 04/10/2026. · DECIDIDO PO
+- [ ] O card da Fatia 6 fala em "especialidade/sala", mas o projeto não modela sala (o painel mostra a especialidade). · PENDENTE PO
+- [ ] Redirecionar sozinho quando acaba o horário de disponibilidade, ou só sob demanda (design, Questões em aberto)? · PENDENTE PO

@@ -40,7 +40,7 @@ Tela cheia em 16:9: à esquerda, a senha atual (fonte bem grande, fundo na cor d
 ## Riscos / Compromissos
 
 - [Endpoint público pode ser consultado em excesso] → Resposta pequena e só leitura; se necessário, ativar o rate limit do Xano.
-- [Previsão diferente da chamada para médicos com várias especialidades] → Limitação conhecida (change 6, D3); o painel indica "previsão sujeita a mudança".
+- [Previsão muda quando entra um paciente mais prioritário] → Esperado (RN26): o painel indica "previsão sujeita a mudança".
 
 ## Plano de migração
 

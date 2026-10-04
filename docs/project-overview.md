@@ -104,8 +104,8 @@ O frontend consome a API REST exposta pelo Xano. Regras de negócio, persistênc
 
 ## 11. Estratégia de desenvolvimento
 
-- **Equipe:** Leonardo dos Santos Ferreira (PO, documentação, regras de negócio, protótipo e banco no Xano); Leonardo Machado e Luisa (backend); Nicolas e Gustavo Garcia (frontend).
-- **Organização:** Trello (board "Projeto PS — Fila de Atendimento por Urgência"), 7 sprints com entregas semanais às segundas; cada sprint entrega e testa uma fatia vertical.
+- **Equipe:** Leonardo dos Santos Ferreira (PO, documentação, regras de negócio, protótipo e banco no Xano); Leonardo Machado e Luisa (backend); Nicolas Rissato e Gustavo Garcia (frontend).
+- **Organização:** Trello (board "Projeto PS — Fila de Atendimento por Urgência"), 5 sprints com entregas semanais às segundas (05/10 a 02/11); cada sprint entrega e testa fatias verticais. O proposal de cada change indica a sprint e as fatias do Trello.
 - **Sequência planejada de changes (OpenSpec):**
   1. `add-autenticacao-perfis`: login, perfis e gestão de usuários.
   2. `add-cadastros-administrador`: especialidades, sintomas, médicos, disponibilidade, parâmetros e auditoria.

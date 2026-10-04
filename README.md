@@ -126,7 +126,7 @@ O projeto segue o desenvolvimento **orientado a especificação** com [OpenSpec]
 | Leonardo dos Santos Ferreira | Product Owner · requisitos e regras de negócio · protótipo · banco de dados |
 | Leonardo Machado | Backend |
 | Luisa | Backend |
-| Nicolas | Frontend |
+| Nicolas Rissato | Frontend |
 | Gustavo Garcia | Frontend |
 
 ---
