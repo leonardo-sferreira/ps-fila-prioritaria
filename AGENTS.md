@@ -4,12 +4,13 @@
 - Antes de qualquer alteração significativa, ler `docs/project-overview.md`, `docs/domain-model.md` e `openspec/config.yaml`.
 - A fonte formal de requisitos (RF/RNF/RN) é o documento v1.0 no Confluence; em caso de conflito com os documentos locais, apontar a divergência em vez de escolher um lado.
 - Ao alterar regras de negócio ou entidades, atualizar `docs/domain-model.md` na mesma change.
-- Escrever documentação e artefatos OpenSpec em português brasileiro. Só ficam em inglês os marcadores que o CLI do OpenSpec exige (`## Purpose`, `## ADDED Requirements` e similares, `### Requirement:`, `#### Scenario:`).
+- Escrever documentação e artefatos OpenSpec em português brasileiro. Só ficam em inglês os marcadores que o CLI do OpenSpec exige (`## Why` e `## What Changes` no proposal, `## Purpose`, `## ADDED Requirements` e similares, `### Requirement:`, `#### Scenario:`).
 
 ## Desenvolvimento
 - Toda mudança funcional passa pelo OpenSpec: explore → propose → review → apply → archive.
 - Implementar apenas o que está no `tasks.md` da change ativa; decisões não previstas devem voltar para a change, não ser improvisadas.
 - Trabalhar em fatias verticais: backend (Xano) e frontend (Reflex) de uma mesma funcionalidade na mesma change.
+- Os fluxos do OpenSpec estão em `.claude/` (Claude Code), `.gemini/` (Gemini CLI) e `.agents/skills/` (Codex). Sem eles, usar o CLI: `openspec status --change <change>` e `openspec instructions apply --change <change> --json`.
 
 ## Arquitetura
 - Frontend em Reflex (Python); backend e banco no Xano (XanoScript). Não introduzir outras tecnologias sem justificativa registrada no `design.md`.
