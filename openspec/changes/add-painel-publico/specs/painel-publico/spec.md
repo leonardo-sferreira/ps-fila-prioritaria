@@ -46,7 +46,7 @@ Para cada especialidade exibida, o painel DEVE mostrar a previsão das próximas
 - **ENTÃO** o painel mostra exatamente 5 senhas previstas para Clínica Geral (CA10)
 
 #### Scenario: Coerência com a chamada
-- **QUANDO** a fila não muda entre a atualização do painel e o "Chamar próximo" de um médico que atende só essa especialidade
+- **QUANDO** a fila não muda entre a atualização do painel e o "Chamar próximo" de um médico dessa especialidade
 - **ENTÃO** a senha chamada é a primeira que estava prevista no painel (CA11)
 
 #### Scenario: Entrada de um Vermelho

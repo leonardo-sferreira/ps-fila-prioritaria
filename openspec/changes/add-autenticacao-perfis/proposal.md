@@ -1,10 +1,22 @@
-# Proposta
+# Proposta: Login, perfis e gestão de usuários
 
-## Por quê
+| Campo | Valor |
+|---|---|
+| Change | `add-autenticacao-perfis` |
+| Sprint e entrega | Sprint 1, segunda 05/10 (`autenticacao`). `gestao-usuarios` ainda sem sprint |
+| Fatias no Trello | [Setup] Base técnica · Fatia 1 — Login |
+| Dupla | Leonardo Machado (API e dados) · Nicolas (tela) |
+| Depende de | — (primeira change) |
+| Situação | Em revisão |
+| RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF39 (`gestao-usuarios`); RF01 e RF02 (`autenticacao`) |
+
+> Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
+
+## Why
 
 Todas as telas do sistema (triagem, fila do médico, administração) dependem de saber **quem** está usando o sistema e **com qual perfil**. Sem autenticação e controle de acesso no backend, nenhuma outra fatia vertical pode ser entregue com segurança. Por isso esta é a primeira change: ela funda o acesso ao sistema e cria os usuários que as próximas changes vão usar.
 
-## O que muda
+## What Changes
 
 - Login da equipe com e-mail e senha, validado no Xano, que devolve um token de acesso.
 - Três perfis fixos: **Recepção/Triagem**, **Médico** e **Administrador**. Após o login, cada perfil é levado para sua área inicial no Reflex (por enquanto, telas iniciais simples, que as próximas changes vão preencher).
@@ -41,3 +53,9 @@ _Nenhuma (não existem specs anteriores)._
 - **Configuração:** URL da API do Xano por variável de ambiente, sem credenciais no repositório.
 - **Documentação:** `docs/domain-model.md` (Usuário e Sessão) atualizado conforme o que for implementado.
 - **Rastreabilidade (documento formal v1.0):** RF01 (autenticar usuários), RF02 (controlar permissões por perfil), RNF05 (segurança) e a matriz de permissões da seção 3.1. O registro de sessões atende à visão "Pessoas logadas e status" do contexto do PO; ela não existe no documento formal.
+
+## Perguntas em aberto
+
+- [x] Login por e-mail: decidido pelo PO em 04/10/2026. A spec já está assim; o card da Fatia 1 no Trello fala em e-mail ou CPF e precisa ser ajustado. · DECIDIDO PO
+- [ ] A `gestao-usuarios` (tela e API do Administrador) entra em qual sprint? Hoje não há card. · PENDENTE PO
+- [ ] Ajustar as tasks 1.4, 2.1 e 2.2: o README e as tabelas `usuario` e `sessao` já existem. · dupla da fatia

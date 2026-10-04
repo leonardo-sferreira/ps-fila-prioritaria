@@ -18,25 +18,25 @@ Somente o perfil Médico DEVE poder chamar, repetir, confirmar comparecimento, r
 - **ENTÃO** o identificador é ignorado e a ficha é escolhida pela regra da fila
 
 ### Requirement: Visão das filas pelo médico
-O médico DEVE ver, para cada especialidade sua, as fichas AGUARDANDO na ordem prevista, com senha, cor, condição prioritária e tempo de espera, sem nome nem CPF, e a ficha que ele está chamando no momento.
+O médico DEVE ver a fila da sua especialidade (RF14, RF22), com as fichas AGUARDANDO na ordem prevista, com senha, cor, condição prioritária e tempo de espera, sem nome nem CPF, e a ficha que ele está chamando no momento.
 
-#### Scenario: Médico com duas especialidades
-- **QUANDO** um médico de Cardiologia e Clínica Geral abre sua tela
-- **ENTÃO** vê as duas filas na ordem prevista, sem dados pessoais
+#### Scenario: Médico de uma especialidade
+- **QUANDO** um médico de Cardiologia abre sua tela
+- **ENTÃO** vê a fila de Cardiologia na ordem prevista, sem dados pessoais, e não vê a fila de outras especialidades
 
 ### Requirement: Chamar próximo
-Um médico disponível no momento e sem ficha CHAMADO pendente DEVE poder acionar "Chamar próximo". O sistema DEVE escolher a próxima ficha de cada especialidade do médico pela regra da fila e, entre essas candidatas, a de cor mais grave; em empate, a com condição prioritária; depois, a de chegada mais antiga. A ficha escolhida passa a CHAMADO, vinculada ao médico, com a tentativa 1 registrada, e o ciclo da especialidade dela é atualizado. Somente nesse momento o médico vê o nome do paciente, para conferência.
+Um médico disponível no momento e sem ficha CHAMADO pendente DEVE poder acionar "Chamar próximo". O sistema DEVE escolher a próxima ficha da fila da especialidade do médico pela regra da fila (a especialidade é uma só por médico, RF14). A ficha escolhida passa a CHAMADO, vinculada ao médico, com a tentativa 1 registrada, e o ciclo da especialidade é atualizado. Somente nesse momento o médico vê o nome do paciente, para conferência.
 
 #### Scenario: Chamada bem-sucedida
 - **QUANDO** um médico disponível de Clínica Geral aciona "Chamar próximo" e a fila tem fichas
 - **ENTÃO** a primeira ficha pela regra passa a CHAMADO, com tentativa 1 registrada com médico e data/hora
 
-#### Scenario: Escolha entre especialidades
-- **QUANDO** o médico atende Cardiologia (próxima: Amarela) e Clínica Geral (próxima: Vermelha)
-- **ENTÃO** é chamada a Vermelha de Clínica Geral
+#### Scenario: Cada médico atende a fila da sua especialidade
+- **QUANDO** um médico de Cardiologia aciona "Chamar próximo" e há uma ficha Vermelha na fila de Clínica Geral
+- **ENTÃO** é chamada a primeira ficha da fila de Cardiologia, porque o direcionamento é feito pela Recepção/Triagem (RF14, RF18)
 
 #### Scenario: Fila vazia
-- **QUANDO** não há fichas AGUARDANDO em nenhuma especialidade do médico
+- **QUANDO** não há fichas AGUARDANDO na fila da especialidade do médico
 - **ENTÃO** o sistema informa "Não há pacientes aguardando nesta fila" e nada é registrado (CA15)
 
 #### Scenario: Médico indisponível
@@ -63,7 +63,7 @@ Duas chamadas simultâneas NÃO DEVEM receber a mesma ficha, e cliques repetidos
 - **ENTÃO** só uma ficha é chamada e só uma tentativa é registrada
 
 ### Requirement: Repetir chamada
-O médico DEVE poder repetir a chamada da ficha que ele está chamando enquanto o número de tentativas for menor que o máximo configurado (inicial 3). Cada repetição registra uma nova tentativa com data/hora (RF29, RN27).
+O médico DEVE poder repetir a chamada da ficha que ele está chamando enquanto o número de tentativas for menor que o máximo configurado (inicial 3). Cada repetição registra uma nova tentativa com data/hora (RF29, RN27). Entre uma chamada e a seguinte da mesma senha DEVE haver um intervalo mínimo configurado (inicial 10 segundos); repetir antes disso é recusado (RF35).
 
 #### Scenario: Segunda e terceira tentativas
 - **QUANDO** o médico repete a chamada de uma ficha na tentativa 1 e depois na tentativa 2
@@ -72,6 +72,14 @@ O médico DEVE poder repetir a chamada da ficha que ele está chamando enquanto 
 #### Scenario: Limite de tentativas
 - **QUANDO** o médico tenta repetir a chamada de uma ficha que já está na tentativa 3
 - **ENTÃO** o sistema recusa e oferece "Registrar desistência"
+
+#### Scenario: Repetição antes do intervalo mínimo
+- **QUANDO** o médico tenta repetir a chamada 4 segundos depois da tentativa anterior, com o intervalo mínimo em 10 segundos
+- **ENTÃO** o sistema recusa e informa quantos segundos faltam, sem registrar nova tentativa
+
+#### Scenario: Repetição depois do intervalo mínimo
+- **QUANDO** o médico repete a chamada 10 segundos ou mais depois da tentativa anterior
+- **ENTÃO** a nova tentativa é registrada
 
 #### Scenario: Ficha de outro médico
 - **QUANDO** um médico tenta repetir, confirmar ou registrar desistência de uma ficha chamada por outro médico

@@ -18,12 +18,14 @@ context: |
   Language: Escrever artefatos OpenSpec e documentação inteiramente em português
     brasileiro, inclusive títulos, "DEVE"/"NÃO DEVE" nos requisitos e "QUANDO"/"ENTÃO"/"E"
     nos cenários. Exceção obrigatória (o CLI do OpenSpec depende deles): manter em inglês
-    apenas os marcadores "## Purpose", "## ADDED/MODIFIED/REMOVED/RENAMED Requirements",
-    "### Requirement:" e "#### Scenario:".
+    apenas os marcadores "## Why", "## What Changes" (proposal.md), "## Purpose",
+    "## ADDED/MODIFIED/REMOVED/RENAMED Requirements", "### Requirement:" e "#### Scenario:".
 
 rules:
   proposal:
     - Descrever claramente problema, objetivo e escopo, citando RF/RN do documento formal quando aplicável.
+    - Começar com o cabeçalho (change, sprint, fatias no Trello, dupla, depende de, situação) e terminar com "Perguntas em aberto".
+    - Usar os títulos "## Why" e "## What Changes"; sem eles o comando openspec show não lê o proposal.
     - Listar explicitamente o que fica fora do escopo da change.
   specs:
     - Escrever requisitos verificáveis, com cenários para casos de erro e de permissão negada.

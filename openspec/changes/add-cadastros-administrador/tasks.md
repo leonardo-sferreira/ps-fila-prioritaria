@@ -19,14 +19,14 @@
 - [ ] 3.1 [Xano] Criar as tabelas `medico` e `medico_especialidade` e os endpoints de cadastro, edição e ativar/desativar (ADMINISTRADOR) com as validações da spec; verificar com os testes 3.4
 - [ ] 3.2 [Xano] Criar a tabela `disponibilidade_medico`, a variável `FUSO_HORARIO` e os endpoints de criar, alterar e remover período (ADMINISTRADOR, auditados) e `GET medicos/me/disponibilidade` (MEDICO, só leitura) (D3); verificar com os testes 3.4
 - [ ] 3.3 [Xano] Criar a função `medicos_disponiveis` e o endpoint `GET especialidades/disponiveis` (D4); verificar com os testes 3.4
-- [ ] 3.4 Escrever `tests/api/test_disponibilidade.py` cobrindo usuário sem perfil Médico, médico sem especialidade, usuário já vinculado, período inválido, sobreposição, médico inativo, valores-limite 06:59/07:00/18:59/19:00, usuário desativado durante o período, 403 do Médico ao alterar a própria disponibilidade e auditoria de remoção; verificar que passam
+- [ ] 3.4 Escrever `tests/api/test_disponibilidade.py` cobrindo usuário sem perfil Médico, médico sem especialidade, médico com mais de uma especialidade, usuário já vinculado, período inválido, sobreposição, médico inativo, valores-limite 06:59/07:00/18:59/19:00, usuário desativado durante o período, 403 do Médico ao alterar a própria disponibilidade e auditoria de remoção; verificar que passam
 - [ ] 3.5 Exportar o XanoScript das seções 1–3 para `backend/xano/` e verificar que os arquivos estão no repositório
 
 ## 4. Reflex — telas administrativas
 
 - [ ] 4.1 [Reflex] Criar o componente `tabela_cadastro` (D8) e a página `/admin/especialidades`, com a edição de alternativas em lista ordenável; verificar manualmente a criação, a sigla inválida e a definição de alternativas
 - [ ] 4.2 [Reflex] Criar a página `/admin/sintomas` com filtro por grupo, cor da prioridade padrão e edição das especialidades ordenadas; verificar manualmente a criação, a prioridade e a relação
-- [ ] 4.3 [Reflex] Criar a página `/admin/medicos` (seleção de usuário Médico, registro e especialidades); verificar manualmente o cadastro e as mensagens de erro
+- [ ] 4.3 [Reflex] Criar a página `/admin/medicos` (seleção de usuário Médico, registro e especialidade); verificar manualmente o cadastro e as mensagens de erro
 - [ ] 4.4 [Reflex] Criar a página `/admin/disponibilidade` (seletor de data, lista de períodos por médico, criar/editar/remover); verificar manualmente o registro, a sobreposição e a remoção
 - [ ] 4.5 [Reflex] Criar a página `/admin/parametros` e o link das novas telas no menu do `/admin`; verificar manualmente a alteração válida e a recusa fora do limite
 - [ ] 4.6 [Reflex] Criar a página somente leitura "Minha agenda" em `/medico`; verificar manualmente que o médico vê os próprios períodos e não tem ações de edição
@@ -34,5 +34,5 @@
 
 ## 5. Integração e documentação
 
-- [ ] 5.1 Verificação ponta a ponta: executar a carga inicial, cadastrar um médico com duas especialidades, registrar a disponibilidade para agora e conferir em `GET especialidades/disponiveis` que as duas especialidades aparecem e que a auditoria registrou as operações
+- [ ] 5.1 Verificação ponta a ponta: executar a carga inicial, cadastrar um médico de Cardiologia, registrar a disponibilidade para agora e conferir em `GET especialidades/disponiveis` que Cardiologia aparece e que a auditoria registrou as operações
 - [ ] 5.2 Conferir `docs/domain-model.md` (Especialidade, Sintoma, Médico, Disponibilidade, Parâmetros e Histórico) com as tabelas criadas e ajustar o que divergir

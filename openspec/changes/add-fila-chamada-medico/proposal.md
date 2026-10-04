@@ -1,16 +1,28 @@
-# Proposta
+# Proposta: Fila priorizada e chamada pelo médico
 
-## Por quê
+| Campo | Valor |
+|---|---|
+| Change | `add-fila-chamada-medico` |
+| Sprint e entrega | Sprint 4, segunda 26/10 |
+| Fatias no Trello | Fatia 7 — Médico chama o próximo · Fatia 8 — Atendimento |
+| Dupla | Fatia 7: Leonardo Machado · Nicolas. Fatia 8: Luisa · Nicolas |
+| Depende de | `add-direcionamento-senha` (Fatia 6) e `add-cadastros-administrador` (disponibilidade e parâmetros) |
+| Situação | Em revisão |
+| RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF14 e RF22 (fila da especialidade do médico); RF35 (intervalo mínimo de 10 s entre chamadas da mesma senha); RF46 (imprimir a ficha de atendimento) |
+
+> Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
+
+## Why
 
 O médico não escolhe quem atender (RN24): o sistema precisa escolher sozinho, e de forma justa, o próximo paciente, aplicando vermelhos primeiro, o ciclo 2 amarelas : 1 azul, a condição prioritária e a ordem de chegada. O algoritmo precisa ser o mesmo que alimenta a previsão do painel (RN25). Esta change fecha o ciclo operacional do PS: triagem → fila → chamada → comparecimento ou desistência.
 
-## O que muda
+## What Changes
 
 - **Função única de ordenação** da fila de cada especialidade, usada pela chamada e pela previsão (RF22–RF27, RN20–RN23, RN25, seção 10).
 - **Previsão das próximas N senhas** por especialidade (N configurável, inicial 5), sem reservar posição (RF34, RF35, RN26). Vai ser exibida no painel na change seguinte.
-- **Tela do médico:** as filas das suas especialidades, a ficha chamada no momento e as ações.
+- **Tela do médico:** a fila da sua especialidade (RF14, RF22), a ficha chamada no momento e as ações.
 - **Chamar próximo:** somente médico disponível; o sistema escolhe a ficha, faz a reserva de forma atômica e registra a tentativa 1 (RF23, RF28, RF38, RN34, UC07, CA14).
-- **Repetir chamada** até o máximo de tentativas configurado (RF29, RN27, UC08).
+- **Repetir chamada** até o máximo de tentativas configurado, com intervalo mínimo de 10 segundos entre chamadas da mesma senha (RF29, RF35, RN27, UC08).
 - **Confirmar comparecimento:** a ficha vira ATENDIDO e sai da fila (RF30, RN28, UC09).
 - **Registrar desistência** depois da última tentativa: a ficha vira DESISTÊNCIA e sai da fila (RF31, RN29, UC10, CA13).
 - **Fila vazia:** mensagem "Não há pacientes aguardando nesta fila" (RF36, RN33, CA15).
@@ -31,7 +43,9 @@ O médico não escolhe quem atender (RN24): o sistema precisa escolher sozinho, 
 - `chamada-paciente`: chamar próximo, repetir, comparecimento, desistência, concorrência e impressão da ficha pelo médico.
 
 ### Capacidades modificadas
-_Nenhuma._
+Acrescenta campos e transições de estado (CHAMADO, ATENDIDO, DESISTÊNCIA) à `ficha-atendimento` (`add-triagem-classificacao`). Declarar como delta `MODIFIED`.
+
+Aviso: o `openspec/specs/` ainda está vazio. Os deltas `MODIFIED` só funcionam depois que a change anterior for arquivada (`/opsx:archive`); arquive as changes na ordem.
 
 ## Impacto
 
@@ -40,3 +54,9 @@ _Nenhuma._
 - **Testes:** `tests/api/test_ordenacao.py` (tabela de casos do ciclo), `tests/api/test_chamada.py` (inclusive concorrência).
 - **Depende de:** `add-direcionamento-senha` (fichas AGUARDANDO com senha) e `add-cadastros-administrador` (disponibilidade, parâmetros).
 - **Divergências com o documento formal:** (1) a seção 18 prevê CHAMADO → AGUARDANDO ("nova tentativa"); aqui a nova tentativa mantém a ficha CHAMADO com o mesmo médico, e ela só sai por comparecimento ou desistência; (2) "imprimir ficha" pelo médico vem do contexto do PO e não está no documento v1.0.
+
+## Perguntas em aberto
+
+- [x] Médico com várias especialidades e CA11: decidido pelo PO em 04/10/2026. Cada médico tem a sua especialidade e o direcionamento é da Recepção/Triagem; CA11 mantido (design D3). · DECIDIDO PO
+- [ ] O que fazer com a ficha CHAMADO quando o médico sai do plantão (design, Questões em aberto)? · PENDENTE PO
+- [ ] A Sprint 4 é a mais pesada: o card da Fatia 7 prevê mover "repetir chamada" para a Fatia 8. Decidir na planning da sprint. · dupla

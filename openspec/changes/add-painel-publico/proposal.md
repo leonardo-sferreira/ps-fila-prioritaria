@@ -1,10 +1,22 @@
-# Proposta
+# Proposta: Painel público de chamadas
 
-## Por quê
+| Campo | Valor |
+|---|---|
+| Change | `add-painel-publico` |
+| Sprint e entrega | Sprint 5, segunda 02/11 |
+| Fatias no Trello | Fatia 9 — Painel público |
+| Dupla | Luisa (API) · Nicolas (tela) |
+| Depende de | `add-fila-chamada-medico` (chamadas e previsão); `add-pacientes-pre-triagem` só para o ticket chamado |
+| Situação | Em revisão |
+| RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF50 (complementos do painel); RF35 |
+
+> Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
+
+## Why
 
 Os pacientes que aguardam precisam saber quando e para onde ir, sem ter seus dados expostos. O painel público é a única interface do sistema voltada ao paciente e mostra, em tempo quase real, a senha chamada e a previsão das próximas, com o mesmo algoritmo da chamada real.
 
-## O que muda
+## What Changes
 
 - **Página pública do painel**, sem login, para TV na sala de espera (RF33, UC11).
 - **Senha atual em destaque**, com especialidade e local, e com aviso visual e sonoro a cada chamada nova ou repetida (seção 11.3).
@@ -34,3 +46,8 @@ _Nenhuma._
 - **Reflex:** página `/painel` em tela cheia, com polling, destaque e som.
 - **Testes:** `tests/api/test_painel.py` (conteúdo, privacidade e coerência com a chamada).
 - **Depende de:** `add-fila-chamada-medico` (chamadas e previsão) e `add-pacientes-pre-triagem` (tickets).
+
+## Perguntas em aberto
+
+- [ ] "Local" é a especialidade (design, D3), mas o card fala em "sala". Confirmar. · PENDENTE PO
+- [x] O texto "previsão sujeita a mudança" continua, porque a previsão muda quando entra um paciente mais prioritário (RN26); a questão do médico com várias especialidades foi decidida em 04/10/2026. · DECIDIDO PO

@@ -1,10 +1,22 @@
-# Proposta
+# Proposta: Ficha de atendimento e classificação de prioridade
 
-## Por quê
+| Campo | Valor |
+|---|---|
+| Change | `add-triagem-classificacao` |
+| Sprint e entrega | Sprint 2, segunda 12/10 |
+| Fatias no Trello | Fatia 3 — Ficha e sintomas · Fatia 4 — Prioridade |
+| Dupla | Fatia 3: Luisa · Nicolas. Fatia 4: Leonardo Machado · Nicolas |
+| Depende de | `add-pacientes-pre-triagem` (paciente) e `add-base-compartilhada` (`sintoma` com dados, `parametro` e `registrar_alteracao`, Sprint 1) |
+| Situação | Em revisão |
+| RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF08 e RF42 (sinais vitais e fator de risco); RF43 (cancelar ficha) |
+
+> Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
+
+## Why
 
 A triagem é o coração do sistema: é nela que a Recepção/Triagem registra sintomas e sinais vitais e que o sistema decide a cor de prioridade. O PO validou em 27/09/2026 um modelo de fator de risco (NEWS2/MEWS + glicemia) que complementa a prioridade por sintoma. Esta change entrega a ficha de atendimento e a classificação, que o direcionamento e a fila vão consumir.
 
-## O que muda
+## What Changes
 
 - **Ficha de atendimento:** aberta pela Recepção/Triagem para um paciente identificado, com horário de chegada, status inicial EM_TRIAGEM e no máximo uma ficha não finalizada por paciente (RF06, RN03, RN30, UC02).
 - **Sintomas e observações:** seleção de um ou mais sintomas ativos e observação livre; exige ao menos um sintoma ou uma observação de queixa (RF07, RN04). Sintomas podem ser alterados depois (RF11).
@@ -39,3 +51,8 @@ _Nenhuma._
 - **Testes:** `tests/api/test_classificacao.py`, com os valores-limite de cada faixa, e `tests/api/test_ficha.py`.
 - **Depende de:** `add-cadastros-administrador` (sintomas, parâmetros, auditoria) e `add-pacientes-pre-triagem` (paciente, ticket).
 - **Divergência com o documento formal:** o documento v1.0 calcula a prioridade só pelos sintomas (RF08). O fator de risco foi validado pelo PO em 27/09/2026 e ainda precisa ser formalizado no Confluence.
+
+## Perguntas em aberto
+
+- [x] Sintomas, parâmetros e auditoria na base da Sprint 1: decidido pelo PO em 04/10/2026 (`add-base-compartilhada`). · DECIDIDO PO
+- [ ] Confirmar a interpretação da glicemia sem sinais de gravidade (design, D4). · PENDENTE PO

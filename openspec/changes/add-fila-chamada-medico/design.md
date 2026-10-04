@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Já existem fichas AGUARDANDO com `prioridade_atual`, `condicao_prioritaria`, `chegada_em`, especialidade atribuída e senha (changes 4 e 5), a função `medicos_disponiveis` e os parâmetros `amarelas_por_ciclo`, `azuis_por_ciclo`, `max_tentativas` e `tamanho_previsao` (change 2). O padrão de reserva atômica foi estabelecido no ticket (change 3, D3).
+Já existem fichas AGUARDANDO com `prioridade_atual`, `condicao_prioritaria`, `chegada_em`, especialidade atribuída e senha (changes 4 e 5), a função `medicos_disponiveis` e os parâmetros `amarelas_por_ciclo`, `azuis_por_ciclo`, `max_tentativas`, `intervalo_chamada_seg` e `tamanho_previsao` (change 2). O padrão de reserva atômica foi estabelecido no ticket (change 3, D3).
 
 ## Objetivos / Fora dos objetivos
 
@@ -25,9 +25,10 @@ Tabela `ciclo_fila` (`especialidade_id` único, `posicao` 1..A+B). A posição p
 - `POST medico/chamar-proximo` usa `proxima_ficha` com os dados reais.
 - **Por quê:** a mesma função nos dois caminhos garante CA11 por construção.
 
-### D3. Escolha entre as especialidades do médico
-Para cada especialidade do médico com fila não vazia, obtém a candidata com `proxima_ficha`. Entre as candidatas vence a de cor mais grave; em empate, a com condição prioritária; depois `chegada_em`. Só o ciclo da especialidade da vencedora é atualizado.
-- **Consequência:** para um médico com várias especialidades, a previsão de uma fila pode não coincidir com a chamada dele, porque outra fila teve uma candidata mais grave. CA11 vale para médicos de uma única especialidade, que é o caso descrito no documento formal (seção 17: uma especialidade por médico).
+### D3. Fila da especialidade do médico
+Cada médico tem uma única especialidade (RF14, decisão do PO em 04/10/2026). `POST medico/chamar-proximo` obtém a candidata da fila dessa especialidade com `proxima_ficha` e atualiza o ciclo dela. Quem escolhe a fila de cada paciente é a Recepção/Triagem, no direcionamento (RF18), e não o médico.
+- **Consequência:** a previsão de uma fila coincide com a chamada de qualquer médico dela, então CA11 vale por construção. A tabela `medico_especialidade` é N:N no Xano, mas o cadastro grava uma linha por médico; a função usa essa linha.
+- **Alternativa:** o médico escolher entre várias filas por cor mais grave. Descartada pela decisão do PO.
 
 ### D4. Reserva atômica e idempotência
 Dentro de uma transação: verifica se o médico já tem ficha CHAMADO (se tiver, recusa, e isso também torna o duplo clique idempotente); escolhe a candidata; faz `UPDATE ficha SET status=CHAMADO, medico_chamada_id=?, tentativas_chamada=1 WHERE id=? AND status=AGUARDANDO`. Se 0 linhas forem afetadas (outro médico levou a ficha), recalcula a candidata e tenta de novo, até 5 vezes. Depois grava a `chamada` e atualiza o `ciclo_fila`. Um índice único parcial em `ficha(medico_chamada_id) WHERE status=CHAMADO` protege a regra de uma ficha pendente por médico; se o Xano não suportar índice parcial, a checagem em transação cobre.
@@ -36,7 +37,7 @@ Dentro de uma transação: verifica se o médico já tem ficha CHAMADO (se tiver
 `ficha_id`, `medico_id`, `tentativa`, `tipo` (`CHAMADA|COMPARECIMENTO|DESISTENCIA`), `criado_em`; índice único (`ficha_id`, `tentativa`, `tipo`) contra duplicidade (RNF03). O painel (próxima change) lê as últimas linhas `CHAMADA` desta tabela.
 
 ### D6. Tela `/medico`
-Topo: status de disponibilidade e botão "Chamar próximo" (desabilitado enquanto a requisição está em andamento). Cartão da ficha chamada: senha grande, nome do paciente, tentativa X de N, botões "Repetir chamada", "Compareceu", "Registrar desistência" (este só habilitado na última tentativa) e "Imprimir ficha". Abaixo, uma coluna por especialidade com a fila prevista (senha, cor, ícone de prioritário, espera em minutos), atualizada por polling a cada 5 s.
+Topo: status de disponibilidade e botão "Chamar próximo" (desabilitado enquanto a requisição está em andamento). Cartão da ficha chamada: senha grande, nome do paciente, tentativa X de N, botões "Repetir chamada", "Compareceu", "Registrar desistência" (este só habilitado na última tentativa) e "Imprimir ficha". Abaixo, a fila prevista da especialidade do médico (senha, cor, ícone de prioritário, espera em minutos), atualizada por polling a cada 5 s.
 
 ### D7. Impressão da ficha
 `GET fichas/{id}/impressao` (MEDICO que chamou) devolve os dados; `/medico/ficha/{id}/imprimir` renderiza em A4 e chama `window.print()`.
