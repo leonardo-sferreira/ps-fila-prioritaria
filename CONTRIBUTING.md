@@ -18,8 +18,6 @@ git clone https://github.com/leonardo-sferreira/ps-fila-prioritaria.git
 cd ps-fila-prioritaria
 ```
 
-Leia, nesta ordem: [docs/project-overview.md](docs/project-overview.md), [docs/domain-model.md](docs/domain-model.md), [AGENTS.md](AGENTS.md) e a change em que você vai trabalhar, em `openspec/changes/`.
-
 ## Acesso ao Xano
 
 1. Peça ao PO acesso ao workspace **ps-impacta Workspace**.
@@ -43,7 +41,8 @@ As tabelas já existem e são compartilhadas entre as branches. **Não altere ta
 | 1 | `add-autenticacao-perfis` | Login, perfis e gestão de usuários | 1 (login); gestão de usuários sem card |
 | 1b | `add-base-compartilhada` | Auditoria, fuso, parâmetros e carga de especialidades e sintomas (sem tela) | 1 ([Setup]) |
 | 2 | `add-cadastros-administrador` | Especialidades, sintomas, médicos, disponibilidade, parâmetros e auditoria | 3 (médicos, especialidades, disponibilidade); o resto sem card |
-| 3 | `add-pacientes-pre-triagem` | Simulador de totem, fila pré-triagem e pacientes por CPF | 1 (pacientes); pré-triagem sem card |
+| Futura | `add-totem` (nome provisório) | Totem: gerar e enviar ticket à fila de Recepção/Triagem | A definir |
+| 3 | `add-pacientes-pre-triagem` | Fila de Recepção/Triagem e cadastro de pacientes por CPF | 1 (pacientes); fila sem card |
 | 4 | `add-triagem-classificacao` | Ficha, sinais vitais, fator de risco, cor e ajuste manual | 2 |
 | 5 | `add-direcionamento-senha` | Especialidade sugerida e atribuída, senha e comprovante | 3 |
 | 6 | `add-fila-chamada-medico` | Ciclo 2:1, chamar próximo, tentativas e desistência | 4 |

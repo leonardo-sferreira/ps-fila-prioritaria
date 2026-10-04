@@ -1,9 +1,10 @@
 # AGENTS.md — Instruções para agentes de IA
 
 ## Documentação
-- Antes de qualquer alteração significativa, ler `docs/project-overview.md`, `docs/domain-model.md` e `openspec/config.yaml`.
-- A fonte formal de requisitos (RF/RNF/RN) é o documento v1.0 no Confluence; em caso de conflito com os documentos locais, apontar a divergência em vez de escolher um lado.
-- Ao alterar regras de negócio ou entidades, atualizar `docs/domain-model.md` na mesma change.
+- Ler o contexto nesta ordem: `docs/project-overview.md` (fluxo, escopo, perfis e regras globais), `docs/domain-model.md` (entidades, relações e estados), `openspec/config.yaml` (resumo global), as specs/changes da funcionalidade e, para consultar o texto formal de RF/RNF/RN, o Confluence.
+- Usar o Confluence como referência formal para identificação e texto de RF/RNF/RN. Se o documento formal ainda não estiver sincronizado com uma decisão consolidada do PO nos documentos-base, apontar a divergência sem reintroduzir uma regra antiga já substituída.
+- Tratar `docs/project-overview.md` e `docs/domain-model.md` como contexto consolidado do PO. Se uma change antiga conflitar com essa base, registrar o conflito e revisar a change antes de implementá-la; não aplicar silenciosamente a regra antiga.
+- Ao alterar regra de domínio ou entidade, atualizar `docs/project-overview.md`, `docs/domain-model.md` e as specs correspondentes antes do código, na mesma change.
 - Escrever documentação e artefatos OpenSpec em português brasileiro. Só ficam em inglês os marcadores que o CLI do OpenSpec exige (`## Why` e `## What Changes` no proposal, `## Purpose`, `## ADDED Requirements` e similares, `### Requirement:`, `#### Scenario:`).
 
 ## Desenvolvimento

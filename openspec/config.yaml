@@ -1,21 +1,21 @@
 schema: spec-driven
 
 context: |
-  Project: Sistema de Fila Prioritária para Pronto-Socorro (projeto acadêmico).
-  Domain: Controle de entrada e chamada de pacientes em filas de um PS. Prioridade em
-    3 cores (Vermelha, Amarela, Azul) calculada por sintomas + fator de risco dos sinais
-    vitais, com direcionamento por especialidade e disponibilidade dos médicos.
-    Perfis: Recepção/Triagem, Médico, Administrador. Ver docs/project-overview.md e
-    docs/domain-model.md.
-  Tech stack: Frontend Reflex (Python). Backend e banco de dados no Xano (XanoScript).
-  Architecture: Regras de negócio, persistência e autorização no Xano; o Reflex consome
-    a API REST do Xano e não contém regra de negócio. Parâmetros clínicos (faixas,
-    limiares, ciclo de chamada, tentativas) são configuráveis, não fixos em código.
-  Security: Controle de acesso por perfil aplicado no backend. Painel público nunca exibe
-    CPF nem nome completo. Alterações relevantes geram registro de auditoria.
-  Development: Mudanças incrementais via OpenSpec, em fatias verticais (Xano + Reflex
-    juntos), cada uma verificável ao final da sprint.
-  Language: Escrever artefatos OpenSpec e documentação inteiramente em português
+  - Project: Sistema acadêmico de Fila Prioritária para Pronto-Socorro. Perfis: Recepção/Triagem,
+    Médico e Administrador; Totem no escopo, com change funcional própria. Ver, nesta ordem,
+    docs/project-overview.md, docs/domain-model.md, este resumo e as specs/changes existentes.
+  - Tech stack: Frontend Reflex (Python); backend e banco Xano (XanoScript). Regras,
+    persistência e autorização ficam no Xano; Reflex apresenta e envia dados.
+  - Domain invariants: escore clínico = pontos de todos os sintomas + pontos dos sinais vitais;
+    a especialidade do Médico é cadastral e não restringe atendimento; chamadas da mesma
+    senha a cada 30 segundos, até 3 tentativas por oportunidade e uma única reentrada ao fim
+    da fila; fuso fixo America/Sao_Paulo.
+  - Security: Autorização por perfil é validada no backend. Painel público nunca exibe CPF nem
+    nome completo. Alterações relevantes geram auditoria.
+  - Development: Mudanças especificadas com OpenSpec e entregues em fatias verticais verificáveis.
+    Quando uma change existente conflitar com a base sanitizada, revisar a change antes de
+    implementá-la. Confluence é a referência formal de RF/RNF/RN e deve permanecer sincronizado.
+  - Language: Escrever artefatos OpenSpec e documentação inteiramente em português
     brasileiro, inclusive títulos, "DEVE"/"NÃO DEVE" nos requisitos e "QUANDO"/"ENTÃO"/"E"
     nos cenários. Exceção obrigatória (o CLI do OpenSpec depende deles): manter em inglês
     apenas os marcadores "## Why", "## What Changes" (proposal.md), "## Purpose",
