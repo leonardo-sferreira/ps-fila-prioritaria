@@ -8,7 +8,7 @@
 | Dupla | Fatia 7: Leonardo Machado · Nicolas. Fatia 8: Luisa · Nicolas |
 | Depende de | `add-direcionamento-senha` (Fatia 6) e `add-cadastros-administrador` (disponibilidade e parâmetros) |
 | Situação | Em revisão |
-| RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF14 e RF22 (fila da especialidade do médico); RF35 (intervalo mínimo de 10 s entre chamadas da mesma senha); RF46 (imprimir a ficha de atendimento) |
+| Rastreabilidade formal | RF14, RF22, RF29–RF38 e RF46 quando aplicáveis; a baseline local define 30 s, oportunidades de chamada e elegibilidade sem filtro por especialidade cadastral |
 
 > Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
 
@@ -20,11 +20,12 @@ O médico não escolhe quem atender (RN24): o sistema precisa escolher sozinho, 
 
 - **Função única de ordenação** da fila de cada especialidade, usada pela chamada e pela previsão (RF22–RF27, RN20–RN23, RN25, seção 10).
 - **Previsão das próximas N senhas** por especialidade (N configurável, inicial 5), sem reservar posição (RF34, RF35, RN26). Vai ser exibida no painel na change seguinte.
-- **Tela do médico:** a fila da sua especialidade (RF14, RF22), a ficha chamada no momento e as ações.
-- **Chamar próximo:** somente médico disponível; o sistema escolhe a ficha, faz a reserva de forma atômica e registra a tentativa 1 (RF23, RF28, RF38, RN34, UC07, CA14).
-- **Repetir chamada** até o máximo de tentativas configurado, com intervalo mínimo de 10 segundos entre chamadas da mesma senha (RF29, RF35, RN27, UC08).
+- **Tela do Médico:** atendimentos atribuídos pelo sistema, que podem vir de qualquer fila de especialidade para a qual seja elegível, a ficha chamada no momento e as ações.
+- **Chamar próximo:** somente Médico elegível; o sistema seleciona a ficha, faz reserva atômica e registra chamada, sem filtrar pela especialidade de referência.
+- **Repetir chamada:** até 3 chamadas por oportunidade, com intervalo mínimo de 30 segundos. Após a primeira oportunidade sem resposta, a ficha volta uma única vez ao fim da mesma fila.
 - **Confirmar comparecimento:** a ficha vira ATENDIDO e sai da fila (RF30, RN28, UC09).
-- **Registrar desistência** depois da última tentativa: a ficha vira DESISTÊNCIA e sai da fila (RF31, RN29, UC10, CA13).
+- **Registrar desistência** explicitamente: a ficha vira DESISTÊNCIA e sai definitivamente da fila. Sem resposta após a primeira oportunidade, retorna uma vez ao fim da fila; ausência após a segunda oportunidade encerra conforme o estado final da ficha.
+- **Pausar/encerrar plantão:** Médico em pausa não recebe novas atribuições; encerrar plantão exige fila atribuída zerada (`add-acompanhamento-administrador`).
 - **Fila vazia:** mensagem "Não há pacientes aguardando nesta fila" (RF36, RN33, CA15).
 - **Imprimir ficha de atendimento** pelo médico, com os dados da triagem (contexto do PO, 22/09/2026).
 - Registro de cada chamada no histórico (RF37, RNF03).
@@ -32,7 +33,7 @@ O médico não escolhe quem atender (RN24): o sistema precisa escolher sozinho, 
 ### Fora do escopo
 
 - Exibição no painel público: `add-painel-publico`.
-- Status operacional do médico (em atendimento, pausa): `add-acompanhamento-administrador`.
+- Consulta administrativa de status operacional: `add-acompanhamento-administrador`; esta change aplica elegibilidade operacional ao recebimento de atribuições.
 - Diagnóstico, encaminhamento, finalização de consulta e duração do atendimento (RN31, RN32).
 - Transferir uma ficha CHAMADO para outro médico.
 
@@ -53,10 +54,11 @@ Aviso: o `openspec/specs/` ainda está vazio. Os deltas `MODIFIED` só funcionam
 - **Reflex:** página `/medico` com filas, ficha chamada e ações; página de impressão da ficha.
 - **Testes:** `tests/api/test_ordenacao.py` (tabela de casos do ciclo), `tests/api/test_chamada.py` (inclusive concorrência).
 - **Depende de:** `add-direcionamento-senha` (fichas AGUARDANDO com senha) e `add-cadastros-administrador` (disponibilidade, parâmetros).
-- **Divergências com o documento formal:** (1) a seção 18 prevê CHAMADO → AGUARDANDO ("nova tentativa"); aqui a nova tentativa mantém a ficha CHAMADO com o mesmo médico, e ela só sai por comparecimento ou desistência; (2) "imprimir ficha" pelo médico vem do contexto do PO e não está no documento v1.0.
+- Referências RF/RN/CA são rastreabilidade, não autorização para inventar texto ausente. A seleção global entre filas de especialidades distintas permanece por definir antes da implementação.
 
 ## Perguntas em aberto
 
-- [x] Médico com várias especialidades e CA11: decidido pelo PO em 04/10/2026. Cada médico tem a sua especialidade e o direcionamento é da Recepção/Triagem; CA11 mantido (design D3). · DECIDIDO PO
-- [ ] O que fazer com a ficha CHAMADO quando o médico sai do plantão (design, Questões em aberto)? · PENDENTE PO
+- [x] A especialidade de referência do Médico não limita as filas que pode atender. · BASELINE
+- [x] Encerrar plantão só é permitido com fila atribuída zerada. · BASELINE
+- [ ] Definir como o sistema escolhe entre filas de especialidades diferentes quando mais de uma está elegível. · PENDENTE PO
 - [ ] A Sprint 4 é a mais pesada: o card da Fatia 7 prevê mover "repetir chamada" para a Fatia 8. Decidir na planning da sprint. · dupla

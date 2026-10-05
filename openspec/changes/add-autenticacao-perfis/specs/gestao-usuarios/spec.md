@@ -25,7 +25,7 @@ O sistema DEVE permitir que o Administrador visualize a lista de usuários com n
 - **ENTÃO** o sistema exibe apenas os usuários que atendem ao filtro
 
 ### Requirement: Criar usuário
-O sistema DEVE permitir que o Administrador crie usuários informando nome, e-mail, perfil e senha inicial. O e-mail DEVE ser único, e a senha DEVE ter no mínimo 8 caracteres. Todo usuário novo é criado como ativo.
+O sistema DEVE permitir que o Administrador crie usuários informando nome, e-mail, perfil e senha inicial. O e-mail DEVE ser único, e a senha DEVE ter no mínimo 8 caracteres. Todo usuário novo é criado como ativo. Usuário permanece entidade de autenticação; perfis Médico e Recepção/Triagem também DEVEM ter seus registros de domínio 1:1. A criação e edição desses cadastros vinculados é feita no fluxo administrativo de `add-cadastros-administrador`, sem deixar usuário funcional sem sua entidade correspondente.
 
 #### Scenario: Criação bem-sucedida
 - **QUANDO** o Administrador informa nome, e-mail único, perfil válido e senha com 8 ou mais caracteres
@@ -38,6 +38,10 @@ O sistema DEVE permitir que o Administrador crie usuários informando nome, e-ma
 #### Scenario: Dados inválidos
 - **QUANDO** falta nome, e-mail ou perfil, o e-mail tem formato inválido, o perfil não é um dos três perfis válidos ou a senha tem menos de 8 caracteres
 - **ENTÃO** o sistema recusa a criação e indica qual campo está inválido
+
+#### Scenario: Perfil funcional exige cadastro vinculado
+- **QUANDO** um usuário com perfil MEDICO ou RECEPCAO_TRIAGEM é ativado para acesso
+- **ENTÃO** o fluxo administrativo também mantém o respectivo registro de domínio vinculado 1:1; a aplicação recusa estado ativo incompleto
 
 ### Requirement: Editar usuário
 O sistema DEVE permitir que o Administrador edite nome, e-mail e perfil de um usuário existente, com as mesmas validações da criação.

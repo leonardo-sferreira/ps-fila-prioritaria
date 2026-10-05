@@ -38,22 +38,20 @@ A função lê `parametro` pela `chave` e converte o `valor` conforme o `tipo` (
 | `idade_maxima_crianca` | INTEIRO | 11 |
 | `amarelas_por_ciclo` | INTEIRO | 2 |
 | `azuis_por_ciclo` | INTEIRO | 1 |
-| `max_tentativas` | INTEIRO | 3 |
 | `tamanho_previsao` | INTEIRO | 5 |
-| `intervalo_chamada_seg` | INTEIRO | 10 |
 | `especialidade_padrao` | ESPECIALIDADE | CLI |
 
-Os nomes de chave das idades são definidos aqui; os demais seguem o que as changes 4 a 7 já usam. `limiar_risco_moderado` e `limiar_risco_alto` continuam na carga de `add-triagem-classificacao` (task 1.1 daquela change).
+Os nomes de chave das idades são definidos aqui; os demais seguem o que as changes 4 a 7 já usam. O intervalo de 30 segundos, até 3 chamadas por oportunidade e uma reentrada são invariantes operacionais da baseline, não parâmetros editáveis. `limiar_risco_moderado` e `limiar_risco_alto` continuam na carga de `add-triagem-classificacao` (task 1.1 daquela change).
 
 ### D5. Carga inicial idempotente que não sobrescreve
 A função `carga_inicial` é exposta por `POST admin/carga-inicial` (ADMINISTRADOR). Ela insere só o que falta: especialidades por `sigla`, sintomas por `nome`, parâmetros por `chave`. As relações (`especialidade_alternativa` e `sintoma_especialidade`) só são criadas para registros que a própria execução inseriu. Registros que já existem não são alterados. Cada inserção é auditada com tipo `CADASTRO`.
 - **Por quê:** a spec exige que dados alterados depois da carga sejam mantidos. Um upsert que sobrescreve violaria isso.
-- **Conteúdo:** a tabela de sintomas e as alternativas do D7 de `add-cadastros-administrador` (CAR, NEU, ORT e PED → [CLI]). A lista final continua pendente do PO.
+- **Conteúdo:** catálogo de sintomas de `docs/domain-model.md` e especialidades iniciais. A carga não cria fallback por disponibilidade médica nem altera a especialidade clínica escolhida pelo direcionamento. Sala e vínculo operacional ficam em `add-cadastros-administrador`.
 
 ### D6. Endpoints de leitura
 - `GET parametros`: autenticado, todos os perfis; devolve `chave`, `valor` e `tipo`.
 - `GET especialidades`: autenticado; só ativas; `id`, `nome` e `sigla`.
-- `GET sintomas`: autenticado; só ativos; `id`, `nome`, `grupo` e `prioridade_padrao`, ordenados por grupo e nome.
+- `GET sintomas`: autenticado; só ativos; `id`, `nome`, `grupo`, `pontuacao` (1–3) e destinos ordenados, conforme `docs/domain-model.md`, ordenados por grupo e nome.
 Todos chamam `verificar_acesso` com os três perfis. A `add-cadastros-administrador` depois amplia `GET especialidades` e `GET sintomas` para que o Administrador veja também os inativos, sem mudar o contrato dos outros perfis.
 
 ## Riscos / Compromissos

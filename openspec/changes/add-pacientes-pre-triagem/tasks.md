@@ -8,22 +8,21 @@
 
 ## 2. Xano — tickets e fila pré-triagem
 
-- [ ] 2.1 [Xano] Criar a tabela `ticket_pre_triagem`, a variável `TOTEM_CHAVE` e `POST totem/tickets` com numeração diária (D2, D4); verificar com os testes 2.4
-- [ ] 2.2 [Xano] Criar `GET pre-triagem/tickets` e `POST pre-triagem/chamar-proximo` com atualização condicional (D3); verificar com os testes 2.4
-- [ ] 2.3 [Xano] Criar `POST pre-triagem/tickets/{id}/rechamar`, `.../nao-compareceu` e `.../identificado` (com `paciente_id`), aceitos só para quem chamou o ticket; verificar com os testes 2.4
-- [ ] 2.4 Escrever `tests/api/test_pre_triagem.py` cobrindo o primeiro ticket do dia, a sequência, a virada do dia (com data simulada via parâmetro de teste ou dado inserido), 10 emissões paralelas sem número repetido, chave ausente ou errada, chamada em ordem, duas chamadas paralelas recebendo tickets diferentes, fila vazia, usuário com ticket pendente, conclusão por outro usuário e 403 para Médico; verificar que passam
+- [ ] 2.1 [Xano] Integrar à fila os tickets emitidos por `add-totem`, sem duplicar tabela/operação de criação; verificar que a lista retorna exatamente o número e a identidade persistidos pelo Totem
+- [ ] 2.2 [Xano] Criar `GET pre-triagem/tickets` e `POST pre-triagem/chamar-proximo` com atualização condicional; verificar ordem de emissão, concorrência e um ticket CHAMADO por operador
+- [ ] 2.3 [Xano] Criar chamadas/rechamadas, retorno único ao fim da fila após a primeira oportunidade, encerramento como NAO_COMPARECEU após a segunda, desistência explícita e identificação do paciente; verificar 30 s, 3 chamadas por oportunidade, mesma identidade do ticket e acesso só por Recepção/Triagem
+- [ ] 2.4 Escrever `tests/api/test_pre_triagem.py` cobrindo chamada em ordem, chamadas concorrentes, fila vazia, limite de 30 s, tentativas 1–3, única reentrada com o mesmo número, NAO_COMPARECEU após a segunda oportunidade, desistência explícita, conclusão por outro usuário e 403 para Médico; verificar que passam
 - [ ] 2.5 Exportar o XanoScript das seções 1 e 2 para `backend/xano/` e verificar que os arquivos estão no repositório
 
-## 3. Reflex — totem, recepção e pacientes
+## 3. Reflex — recepção e pacientes
 
-- [ ] 3.1 [Reflex] Criar a página `/totem` (D6) com a chamada feita pelo servidor usando `TOTEM_CHAVE`; verificar manualmente a emissão e, pelo DevTools do navegador, que a chave não aparece em nenhuma requisição do navegador
-- [ ] 3.2 [Reflex] Criar em `/recepcao` o painel "Fila pré-triagem" com atualização automática a cada 5 s e os botões Chamar próximo, Rechamar e Não compareceu; verificar manualmente com duas abas logadas como usuários diferentes
+- [ ] 3.1 [Reflex] Criar em `/recepcao` o painel "Fila de Recepção/Triagem" com atualização e botões Chamar próximo, Rechamar, Registrar desistência e Paciente identificado; verificar tentativas, reentrada e concorrência com duas sessões
 - [ ] 3.3 [Reflex] Criar a busca por CPF com máscara, o formulário de cadastro (com o CPF preenchido quando não encontrado) e a edição de dados; verificar manualmente os casos encontrado, não encontrado, inválido e duplicado
-- [ ] 3.4 [Reflex] Ligar a ação "Paciente identificado" ao ticket chamado; verificar manualmente que o ticket sai da lista
+- [ ] 3.4 [Reflex] Ligar a ação "Paciente identificado" ao ticket chamado; verificar manualmente que o ticket sai da lista e abre a ficha pela change seguinte
 - [ ] 3.5 [Reflex] Criar `/admin/pacientes` (consulta somente leitura por CPF); verificar manualmente que não há ações de edição
-- [ ] 3.6 Adicionar ao README o roteiro manual da seção 3 e a configuração de `TOTEM_CHAVE`; verificar executando-o
+- [ ] 3.6 Adicionar ao README o roteiro manual da seção 3 e a dependência do Totem; verificar executando-o
 
 ## 4. Integração e documentação
 
-- [ ] 4.1 Verificação ponta a ponta: emitir 3 tickets pelo `/totem`, chamar o primeiro na recepção, cadastrar um paciente novo, marcar "Paciente identificado", marcar o segundo como "Não compareceu" e conferir no Xano os status e a auditoria do cadastro
+- [ ] 4.1 Verificação ponta a ponta com `add-totem`: emitir tickets, chamar o primeiro, validar o ciclo 3 chamadas + reentrada, identificar paciente e registrar desistência explícita do segundo; conferir status e auditoria no Xano
 - [ ] 4.2 Conferir `docs/domain-model.md` (Paciente e Ticket_Pré-Triagem) com as tabelas criadas e ajustar o que divergir

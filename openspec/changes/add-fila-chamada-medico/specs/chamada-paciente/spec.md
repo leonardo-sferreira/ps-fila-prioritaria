@@ -18,26 +18,26 @@ Somente o perfil Médico DEVE poder chamar, repetir, confirmar comparecimento, r
 - **ENTÃO** o identificador é ignorado e a ficha é escolhida pela regra da fila
 
 ### Requirement: Visão das filas pelo médico
-O médico DEVE ver a fila da sua especialidade (RF14, RF22), com as fichas AGUARDANDO na ordem prevista, com senha, cor, condição prioritária e tempo de espera, sem nome nem CPF, e a ficha que ele está chamando no momento.
+O Médico DEVE ver os atendimentos atribuídos pelo sistema, que podem vir de qualquer especialidade para a qual seja elegível; antes da atribuição, dados pessoais não são exibidos. A ordem dentro de cada fila segue `fila-priorizada`; a política global de seleção entre filas distintas precisa de decisão do PO.
 
 #### Scenario: Médico de uma especialidade
 - **QUANDO** um médico de Cardiologia abre sua tela
-- **ENTÃO** vê a fila de Cardiologia na ordem prevista, sem dados pessoais, e não vê a fila de outras especialidades
+- **ENTÃO** vê fichas atribuídas pelo sistema sem restrição baseada na especialidade de referência e sem nome/CPF antes da atribuição
 
 ### Requirement: Chamar próximo
-Um médico disponível no momento e sem ficha CHAMADO pendente DEVE poder acionar "Chamar próximo". O sistema DEVE escolher a próxima ficha da fila da especialidade do médico pela regra da fila (a especialidade é uma só por médico, RF14). A ficha escolhida passa a CHAMADO, vinculada ao médico, com a tentativa 1 registrada, e o ciclo da especialidade é atualizado. Somente nesse momento o médico vê o nome do paciente, para conferência.
+Um Médico elegível (ativo, em disponibilidade vigente, plantão aberto e status operacional que permita novas atribuições) sem ficha CHAMADO pendente DEVE poder solicitar "Chamar próximo". O sistema DEVE escolher ficha sem filtrar pela especialidade de referência; a seleção entre múltiplas filas elegíveis depende de decisão do PO antes da implementação. A ficha passa a CHAMADO com oportunidade e tentativa registradas. Nome só é exibido após atribuição autorizada.
 
 #### Scenario: Chamada bem-sucedida
 - **QUANDO** um médico disponível de Clínica Geral aciona "Chamar próximo" e a fila tem fichas
 - **ENTÃO** a primeira ficha pela regra passa a CHAMADO, com tentativa 1 registrada com médico e data/hora
 
-#### Scenario: Cada médico atende a fila da sua especialidade
-- **QUANDO** um médico de Cardiologia aciona "Chamar próximo" e há uma ficha Vermelha na fila de Clínica Geral
-- **ENTÃO** é chamada a primeira ficha da fila de Cardiologia, porque o direcionamento é feito pela Recepção/Triagem (RF14, RF18)
+#### Scenario: Especialidade de referência não restringe
+- **QUANDO** um Médico cuja especialidade de referência é Cardiologia está elegível para atender uma ficha de Clínica Geral
+- **ENTÃO** a ficha permanece em Clínica Geral e pode ser atribuída a esse Médico
 
-#### Scenario: Fila vazia
-- **QUANDO** não há fichas AGUARDANDO na fila da especialidade do médico
-- **ENTÃO** o sistema informa "Não há pacientes aguardando nesta fila" e nada é registrado (CA15)
+#### Scenario: Nenhuma ficha disponível segundo a seleção global
+- **QUANDO** não há fichas AGUARDANDO selecionáveis pela política global de distribuição entre filas
+- **ENTÃO** o sistema informa que não há pacientes aguardando e nada é registrado (CA15); isso não implica filtro pela especialidade de referência do Médico
 
 #### Scenario: Médico indisponível
 - **QUANDO** um médico sem disponibilidade vigente aciona "Chamar próximo"
@@ -63,22 +63,33 @@ Duas chamadas simultâneas NÃO DEVEM receber a mesma ficha, e cliques repetidos
 - **ENTÃO** só uma ficha é chamada e só uma tentativa é registrada
 
 ### Requirement: Repetir chamada
-O médico DEVE poder repetir a chamada da ficha que ele está chamando enquanto o número de tentativas for menor que o máximo configurado (inicial 3). Cada repetição registra uma nova tentativa com data/hora (RF29, RN27). Entre uma chamada e a seguinte da mesma senha DEVE haver um intervalo mínimo configurado (inicial 10 segundos); repetir antes disso é recusado (RF35).
+O sistema DEVE permitir até 3 chamadas por oportunidade e exigir ao menos 30 segundos entre chamadas da mesma senha. Após a terceira chamada da primeira oportunidade sem comparecimento, a ficha DEVE retornar uma vez ao fim da mesma fila, mantendo senha/identidade. Sem resposta após a segunda oportunidade, encerra como DESISTÊNCIA conforme o estado final definido para a ficha. Desistência explicitamente registrada remove a ficha imediatamente.
 
 #### Scenario: Segunda e terceira tentativas
 - **QUANDO** o médico repete a chamada de uma ficha na tentativa 1 e depois na tentativa 2
 - **ENTÃO** ficam registradas as tentativas 2 e 3
 
-#### Scenario: Limite de tentativas
-- **QUANDO** o médico tenta repetir a chamada de uma ficha que já está na tentativa 3
-- **ENTÃO** o sistema recusa e oferece "Registrar desistência"
+#### Scenario: Primeira oportunidade esgotada
+- **QUANDO** a ficha completa 3 chamadas na primeira oportunidade sem comparecimento
+- **ENTÃO** retorna ao fim da mesma fila com a mesma senha e recebe sua única nova oportunidade
+
+#### Scenario: Segunda oportunidade sem resposta
+- **QUANDO** a ficha esgota até 3 chamadas na segunda oportunidade sem comparecimento
+- **ENTÃO** fica em DESISTÊNCIA e sai definitivamente da fila ativa
+
+### Requirement: Ciclo de estados da Ficha em chamada
+Para fins de chamada, a ficha percorre `AGUARDANDO → CHAMADO`; chamada repetida mantém `CHAMADO` e incrementa a tentativa da oportunidade atual; três chamadas sem resposta fazem `CHAMADO → AGUARDANDO`, incrementam a oportunidade e reposicionam a ficha ao fim da mesma fila. Comparecimento explícito faz `CHAMADO → ATENDIDO`; desistência explicitamente registrada faz `CHAMADO → DESISTÊNCIA`. `ATENDIDO` e `DESISTÊNCIA` são finais; não comparecimento isolado não é estado final.
+
+#### Scenario: Rechamada preserva estado e identidade
+- **QUANDO** o Médico rechama uma ficha em estado CHAMADO
+- **ENTÃO** a ficha continua CHAMADO, a tentativa atual é incrementada e não é criada nova ficha nem senha
 
 #### Scenario: Repetição antes do intervalo mínimo
-- **QUANDO** o médico tenta repetir a chamada 4 segundos depois da tentativa anterior, com o intervalo mínimo em 10 segundos
+- **QUANDO** o Médico tenta repetir a chamada 29 segundos depois da tentativa anterior
 - **ENTÃO** o sistema recusa e informa quantos segundos faltam, sem registrar nova tentativa
 
 #### Scenario: Repetição depois do intervalo mínimo
-- **QUANDO** o médico repete a chamada 10 segundos ou mais depois da tentativa anterior
+- **QUANDO** o Médico repete a chamada 30 segundos ou mais depois da tentativa anterior
 - **ENTÃO** a nova tentativa é registrada
 
 #### Scenario: Ficha de outro médico
@@ -93,15 +104,15 @@ O médico DEVE poder confirmar o comparecimento da ficha que está chamando, em 
 - **ENTÃO** a ficha passa a ATENDIDO e deixa de aparecer em filas e previsões
 
 ### Requirement: Registrar desistência
-O médico DEVE poder registrar desistência somente quando a ficha que está chamando tiver atingido o máximo de tentativas. A ficha passa a DESISTÊNCIA, sai da fila ativa e registra o horário de finalização (RF31, RN29, CA13).
+O Médico DEVE poder registrar desistência explicitamente para a ficha sob sua responsabilidade a qualquer momento. A ficha passa a DESISTÊNCIA, sai definitivamente da fila ativa e registra horário e responsável. Esgotar a segunda oportunidade sem comparecimento também encerra a ficha como DESISTÊNCIA.
 
-#### Scenario: Desistência após a terceira tentativa
-- **QUANDO** a ficha está na tentativa 3 sem comparecimento e o médico registra desistência
+#### Scenario: Desistência explícita
+- **QUANDO** o Médico registra desistência para a ficha chamada antes de esgotar as oportunidades
 - **ENTÃO** a ficha passa a DESISTÊNCIA e deixa de aparecer entre as próximas chamadas
 
-#### Scenario: Desistência antecipada
-- **QUANDO** o médico tenta registrar desistência na tentativa 2
-- **ENTÃO** o sistema recusa e informa quantas tentativas faltam
+#### Scenario: Segunda oportunidade sem resposta
+- **QUANDO** a ficha esgota até 3 chamadas na segunda oportunidade sem comparecimento
+- **ENTÃO** fica em DESISTÊNCIA e sai definitivamente da fila ativa
 
 ### Requirement: Histórico de chamadas
 Toda tentativa de chamada, confirmação de comparecimento e desistência DEVE ser registrada com ficha, médico, número da tentativa e data/hora, sem duplicidade (RF37, RNF03).

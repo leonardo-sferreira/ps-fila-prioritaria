@@ -7,11 +7,11 @@ Mantém configuráveis, sem alterar código, os parâmetros operacionais usados 
 ## ADDED Requirements
 
 ### Requirement: Parâmetros com valores iniciais
-O sistema DEVE manter os seguintes parâmetros, com os valores iniciais indicados: idade mínima de idoso (60), idade máxima de criança (11), quantidade de amarelas por ciclo (2), quantidade de azuis por ciclo (1), máximo de tentativas de chamada (3), tamanho da previsão do painel (5), intervalo mínimo entre chamadas da mesma senha (10 segundos) e especialidade padrão (Clínica Geral). As regras do sistema DEVEM ler os valores dos parâmetros em vez de usar valores fixos no código.
+O sistema DEVE manter os parâmetros clínicos e operacionais configuráveis previstos na baseline: idade mínima de idoso (60), idade máxima de criança (11), quantidades do ciclo amarelo/azul (2 e 1), tamanho da previsão do painel (5), escores e faixas clínicas aplicáveis e especialidade padrão apenas para casos sem destino sintomático conforme regra de direcionamento. As chamadas obedecem à regra fixa da baseline: intervalo de 30 segundos, até 3 chamadas por oportunidade e retorno ao fim da fila sem resposta, sem remoção automática. O fuso `America/Sao_Paulo` não é editável. Parâmetros não definidos na baseline NÃO DEVEM ser inventados nesta change.
 
 #### Scenario: Ambiente recém-preparado
 - **QUANDO** a carga inicial é executada em um ambiente sem parâmetros
-- **ENTÃO** todos os parâmetros acima existem com os valores iniciais indicados
+- **ENTÃO** existem os parâmetros configuráveis previstos na baseline com os valores iniciais nela definidos, sem parâmetro editável de fuso ou intervalo de chamadas
 
 #### Scenario: Carga não sobrescreve valor alterado
 - **QUANDO** um parâmetro já existe com valor diferente do inicial e a carga inicial é executada de novo

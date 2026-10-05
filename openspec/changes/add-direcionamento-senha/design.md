@@ -2,29 +2,24 @@
 
 ## Contexto
 
-Já existem: `medicos_disponiveis` (change 2), `especialidade_alternativa`, `sintoma_especialidade`, parâmetro `especialidade_padrao`, `ficha_atendimento` com classificação e `registrar_alteracao`. Esta change liga a ficha a uma fila e a uma senha. Também precisa acrescentar pontos de chamada em endpoints das changes 2 e 4 (disponibilidade e alteração de ficha).
+Já existem: consulta de Médico elegível (change 2), `sintoma_especialidade`, parâmetro `especialidade_padrao`, `ficha_atendimento` com classificação e `registrar_alteracao`. Esta change liga a ficha à fila da especialidade indicada pelos sintomas e gera senha. A especialidade do Médico não altera nem filtra o destino da ficha.
 
 ## Objetivos / Fora dos objetivos
 
 **Objetivos:**
-- Uma única função `direcionar_ficha`, usada na confirmação, no redirecionamento automático e no redirecionamento sob demanda.
+- Uma única função `direcionar_ficha`, usada na confirmação e quando sintomas/dados de triagem forem atualizados antes de a ficha ser chamada.
 - Numeração de senha sem repetição com confirmações simultâneas.
 
 **Fora dos objetivos:**
-- Balancear a carga entre médicos da mesma especialidade (o médico que chama é decidido em `add-fila-chamada-medico`).
+- Escolher ou balancear médicos elegíveis entre filas de especialidades distintas; essa política fica em `add-fila-chamada-medico` e não pode ser inventada aqui.
 
 ## Decisões
 
-### D1. Fila por especialidade
-A unidade de fila é a especialidade atribuída. Qualquer médico disponível dessa especialidade pode chamar a ficha.
-- **Por quê:** a senha já identifica a especialidade (formato do documento formal), a previsão do painel por fila fica bem definida e um médico que sai não "prende" pacientes.
-- **Alternativa:** fila por médico (leitura literal de RF18). Descartada porque obrigaria a escolher o médico na triagem e a redistribuir a cada troca de plantão. A divergência está registrada na proposta.
+### D1. Destino clínico estável
+A unidade de fila é a especialidade indicada pelo conjunto de sintomas. A ficha mantém esse destino mesmo se o Médico que a atender tiver outra especialidade de referência ou se nenhum Médico estiver elegível naquele instante. Disponibilidade afeta distribuição operacional, nunca redirecionamento clínico.
 
-### D2. `direcionar_ficha(ficha, instante)`
-1. Sugerida: entre os `ficha_sintoma` cujo sintoma tem a prioridade padrão mais grave, junta os `sintoma_especialidade` com especialidade ativa, ordena por (`ordem`, id do `ficha_sintoma`) e pega o primeiro; sem resultado, usa `obter_parametro('especialidade_padrao')`.
-2. Candidatas = [sugerida] + alternativas ativas por `ordem`.
-3. Atribuída = primeira candidata em que `medicos_disponiveis(instante, candidata)` não é vazio; se nenhuma tiver médico, devolve `sem_destino`.
-Não grava nada; quem chama decide.
+### D2. `direcionar_ficha(ficha)`
+Resolve o destino conforme o conjunto de sintomas e as relações do catálogo oficial, não por cor do sintoma nem disponibilidade/especialidade do Médico. A regra de empate quando sintomas apontam a diferentes especialidades permanece pendente de decisão funcional. Sem sintomas direcionáveis, aplica-se somente a regra-base de destino definida para esse caso, sem fallback por disponibilidade. Para criança dentro do limite configurado, o destino é Pediatria sem alterar o escore/classificação. A função não procura alternativas por falta de Médico e não grava; quem chama decide.
 
 ### D3. Contador de senha com linha por (data, especialidade)
 Tabela `contador_senha` (`data`, `especialidade_id`, `ultimo_numero`) com índice único. `gerar_senha` faz upsert da linha e incremento condicional (`UPDATE ... SET ultimo_numero = ultimo_numero + 1 WHERE ultimo_numero = lido`), repetindo em caso de conflito, dentro da transação da confirmação.
@@ -33,10 +28,8 @@ Tabela `contador_senha` (`data`, `especialidade_id`, `ultimo_numero`) com índic
 ### D4. Confirmação em uma transação
 `POST fichas/{id}/confirmar-triagem` com `{aceitar_sem_medico: bool}`: valida completude (reusa a validação da change 4), chama `direcionar_ficha`, decide (atribuída, recusa com aviso, ou sugerida marcada `sem_medico_no_direcionamento`), gera a senha, muda o status para AGUARDANDO e audita.
 
-### D5. Ganchos de redirecionamento
-- Em `PATCH fichas/{id}` e `ajustar-prioridade` (change 4): para ficha AGUARDANDO, depois de reclassificar, chama `direcionar_ficha`; se a atribuída ou a cor mudarem, gera nova senha e audita (tipo `REDIRECIONAMENTO` ou `SENHA_ALTERADA`).
-- Nos endpoints de disponibilidade e de ativação de médico ou usuário (changes 1 e 2): depois da alteração, para cada especialidade do médico afetado que ficar sem médico disponível, chama `redirecionar_especialidade(esp)`, que percorre as fichas AGUARDANDO em ordem de `chegada_em` e aplica D2.
-- `POST admin/redirecionar` (ADMINISTRADOR) chama `redirecionar_especialidade` sob demanda.
+### D5. Atualização do destino da ficha
+Em `PATCH fichas/{id}` e `ajustar-prioridade` da change de triagem, para ficha ainda não chamada, recalcular classificação e direcionamento conforme sintomas. Se o destino clínico ou a cor atual mudar, gera nova senha e auditoria, preservando `chegada_em`. Mudança de disponibilidade ou especialidade cadastral do Médico não redireciona fichas. Não criar `redirecionar_especialidade` por perda de Médico; distribuição/atribuição é responsabilidade da change de chamada.
 
 ### D6. Comprovante como página imprimível
 `GET fichas/{id}/comprovante` devolve só os campos permitidos (senha, cor, especialidade, chegada). O Reflex renderiza `/recepcao/comprovante/{id}` com CSS `@page { size: 80mm auto }` e chama `window.print()` ao abrir. A reimpressão reabre a mesma página.
@@ -45,8 +38,7 @@ Tabela `contador_senha` (`data`, `especialidade_id`, `ultimo_numero`) com índic
 ## Riscos / Compromissos
 
 - [Mudança de senha confunde o paciente com um comprovante antigo] → A tela de triagem mostra "Senha alterada: reimprima o comprovante" sempre que a senha muda.
-- [Redirecionar em massa causa muitas escritas] → Só roda para especialidades que perderam o último médico; o volume acadêmico é baixo.
-- [Disponibilidade que termina pelo horário não dispara redirecionamento] → Existe o redirecionamento sob demanda; ver Questões em aberto.
+- [Vários sintomas podem apontar a destinos diferentes] → Requer decisão explícita de desempate antes da implementação; preservar a lista e sua ordem conforme catálogo até isso ser definido.
 
 ## Plano de migração
 
@@ -54,4 +46,4 @@ Campos novos em `ficha_atendimento` (nulos em fichas EM_TRIAGEM) e uma tabela no
 
 ## Questões em aberto
 
-- Redirecionar automaticamente quando um período de disponibilidade termina (agendamento no Xano) pode ser acrescentado depois sem mudar a spec atual; por enquanto é sob demanda.
+- Desempate quando sintomas selecionados apontarem a diferentes destinos clínicos.

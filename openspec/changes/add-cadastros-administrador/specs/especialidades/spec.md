@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Permite ao Administrador manter as especialidades de atendimento, suas siglas usadas na senha e a lista ordenada de especialidades alternativas usada como fallback no direcionamento.
+Permite ao Administrador manter as especialidades de atendimento e suas siglas usadas na senha. Destinos clínicos vêm da relação entre sintomas e especialidades; a especialidade do Médico e a disponibilidade não causam fallback para outro destino.
 
 ## ADDED Requirements
 
@@ -39,19 +39,8 @@ Especialidades NÃO DEVEM ser excluídas. Uma especialidade inativa NÃO DEVE re
 - **QUANDO** o Administrador desativa uma especialidade
 - **ENTÃO** ela deixa de aparecer na consulta de especialidades ativas e o registro continua existindo
 
-### Requirement: Especialidades alternativas ordenadas
-O Administrador DEVE poder definir, para cada especialidade, uma lista ordenada de especialidades alternativas. A lista NÃO DEVE conter a própria especialidade nem repetições.
-
-#### Scenario: Definir alternativas
-- **QUANDO** o Administrador define para Cardiologia as alternativas [Clínica Geral, Neurologia], nessa ordem
-- **ENTÃO** o sistema grava as duas alternativas com ordens 1 e 2
-
-#### Scenario: Alternativa inválida
-- **QUANDO** o Administrador inclui a própria especialidade ou repete uma especialidade na lista de alternativas
-- **ENTÃO** o sistema recusa a lista inteira e informa o motivo
-
 ### Requirement: Alterações de especialidades são auditadas
-Toda criação, edição, ativação, desativação ou alteração de alternativas de uma especialidade DEVE gerar registro de auditoria.
+Toda criação, edição, ativação ou desativação de uma especialidade DEVE gerar registro de auditoria.
 
 #### Scenario: Edição auditada
 - **QUANDO** o Administrador altera o nome de uma especialidade

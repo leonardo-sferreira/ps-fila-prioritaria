@@ -14,16 +14,16 @@
 
 ## Why
 
-A triagem é o coração do sistema: é nela que a Recepção/Triagem registra sintomas e sinais vitais e que o sistema decide a cor de prioridade. O PO validou em 27/09/2026 um modelo de fator de risco (NEWS2/MEWS + glicemia) que complementa a prioridade por sintoma. Esta change entrega a ficha de atendimento e a classificação, que o direcionamento e a fila vão consumir.
+A triagem é o coração do sistema: a Recepção/Triagem registra sintomas e sinais vitais, e o sistema calcula o escore pela soma de todos os componentes clínicos para determinar a classificação. Esta change entrega a ficha de atendimento e a classificação que direcionamento e fila vão consumir.
 
 ## What Changes
 
 - **Ficha de atendimento:** aberta pela Recepção/Triagem para um paciente identificado, com horário de chegada, status inicial EM_TRIAGEM e no máximo uma ficha não finalizada por paciente (RF06, RN03, RN30, UC02).
 - **Sintomas e observações:** seleção de um ou mais sintomas ativos e observação livre; exige ao menos um sintoma ou uma observação de queixa (RF07, RN04). Sintomas podem ser alterados depois (RF11).
 - **Sinais vitais:** PA sistólica, FC, FR, temperatura, SpO2 e glicemia capilar (com indicador de sinais de gravidade), com validação de faixas plausíveis.
-- **Fator de risco:** escore de 0 a 18 pela tabela de pontuação configurável, regra do parâmetro isolado com 3 pontos e classificação baixo/moderado/alto (contexto do PO, seção 9).
-- **Prioridade calculada:** a pior entre a cor do sintoma mais grave (RN05, RN07, CA02) e a cor sugerida pelo risco; o risco só agrava.
-- **Condição prioritária:** idoso e criança pela idade (limites configurados), gestante registrada na ficha (RF09, RN10, RN11).
+- **Escore clínico:** soma dos pontos de todos os sintomas selecionados (1–3 cada) com os pontos de cada sinal vital, incluindo glicemia quando medida; sem máximo fixo de 18.
+- **Classificação calculada:** limiares iniciais moderado 3 e alto 6, configuráveis; qualquer item clínico isolado com 3 pontos eleva o risco a alto. Baixo/Moderado/Alto correspondem a Azul/Amarela/Vermelha.
+- **Condição prioritária:** idoso, criança e gestante reordenam dentro da classificação, sem somar pontos nem alterar sua cor. Criança conforme limite configurado é direcionada a Pediatria na change de direcionamento.
 - **Ajuste manual** da prioridade pela Recepção/Triagem, com justificativa obrigatória e auditoria (RF10, RN08, RN09).
 - **Recálculo** quando sintomas ou sinais vitais mudam (RF12), com auditoria.
 - **Cancelamento** de ficha com justificativa (estado CANCELADO da seção 18).
@@ -50,9 +50,9 @@ _Nenhuma._
 - **Reflex:** tela de triagem em `/recepcao/ficha/{id}`, com a classificação atualizada a cada alteração; `/admin/risco`.
 - **Testes:** `tests/api/test_classificacao.py`, com os valores-limite de cada faixa, e `tests/api/test_ficha.py`.
 - **Depende de:** `add-cadastros-administrador` (sintomas, parâmetros, auditoria) e `add-pacientes-pre-triagem` (paciente, ticket).
-- **Divergência com o documento formal:** o documento v1.0 calcula a prioridade só pelos sintomas (RF08). O fator de risco foi validado pelo PO em 27/09/2026 e ainda precisa ser formalizado no Confluence.
+- Referências RF/RN/CA identificam rastreabilidade, mas o texto formal pode não refletir as decisões consolidadas. Não inventar requisito ausente; seguir a baseline local e registrar divergência para sincronização do Confluence.
 
 ## Perguntas em aberto
 
 - [x] Sintomas, parâmetros e auditoria na base da Sprint 1: decidido pelo PO em 04/10/2026 (`add-base-compartilhada`). · DECIDIDO PO
-- [ ] Confirmar a interpretação da glicemia sem sinais de gravidade (design, D4). · PENDENTE PO
+- [x] Glicemia baixa com/sem sinais de gravidade segue exatamente os quatro casos de `docs/domain-model.md` (baseline sanitizada).

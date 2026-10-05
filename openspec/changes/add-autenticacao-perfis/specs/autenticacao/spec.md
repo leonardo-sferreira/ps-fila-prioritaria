@@ -86,7 +86,7 @@ O sistema DEVE permitir que o usuário encerre a sessão. Depois do logout, a in
 - **ENTÃO** o sistema redireciona para a tela de login
 
 ### Requirement: Registro de sessões
-O sistema DEVE registrar cada sessão da equipe com usuário, horário de login e horário de logout. Uma sessão sem logout DEVE ser considerada encerrada quando o token expirar.
+O sistema DEVE registrar cada sessão da equipe com usuário, horário de login, horário de logout e expiração. Sessão ativa significa `logout_em` nulo e `expira_em` futuro; sem logout, a sessão é considerada encerrada quando expira. O status operacional (DISPONIVEL, EM_ATENDIMENTO, PAUSA ou AUSENTE) é estado distinto durante a sessão e pertence a `add-acompanhamento-administrador`: PAUSA/AUSENTE não encerram sessão nem equivalem a logout. Encerramento do plantão é evento operacional separado.
 
 #### Scenario: Login registra sessão
 - **QUANDO** um usuário faz login com sucesso
@@ -99,3 +99,7 @@ O sistema DEVE registrar cada sessão da equipe com usuário, horário de login 
 #### Scenario: Login recusado não registra sessão
 - **QUANDO** uma tentativa de login é recusada
 - **ENTÃO** nenhuma sessão é registrada
+
+#### Scenario: Pausa não encerra a sessão
+- **QUANDO** uma pessoa autenticada altera seu status operacional para PAUSA ou AUSENTE
+- **ENTÃO** a sessão permanece ativa enquanto `logout_em` for nulo e `expira_em` estiver no futuro

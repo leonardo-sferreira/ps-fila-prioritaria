@@ -8,19 +8,19 @@
 | Dupla | Luisa (API e dados) · Nicolas (tela) |
 | Depende de | `add-cadastros-administrador` (Fatia 5) e `add-triagem-classificacao` (Fatias 3 e 4) |
 | Situação | Em revisão |
-| RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF18 (fila por especialidade com médico disponível); RF47 (reimprimir senha); RF48 (redistribuir quando o médico fica indisponível) |
+| Rastreabilidade formal | RF17–RF21 e RF47–RF48 quando aplicáveis; baseline local define que destino clínico não depende da especialidade cadastral do médico |
 
 > Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
 
 ## Why
 
-Depois de classificada, a ficha precisa entrar na fila certa: a da especialidade mais adequada aos sintomas que tenha médico disponível, com fallback para alternativas configuradas. O paciente precisa sair da triagem com uma senha impressa que identifique cor e fila sem expor seus dados. Sem isso a fila do médico (próxima change) não tem o que chamar.
+Depois de classificada, a ficha precisa entrar automaticamente na fila da especialidade mais adequada ao conjunto de sintomas. O destino não muda pela especialidade cadastral do Médico nem por indisponibilidade pontual; a distribuição para Médico elegível é regra operacional separada. O paciente sai da triagem com senha impressa sem dados pessoais.
 
 ## What Changes
 
-- **Especialidade sugerida:** identificada automaticamente a partir dos sintomas mais graves da ficha e da ordem configurada em Sintoma_Especialidade; sem sintomas, vale a especialidade padrão (RF17, RN14).
-- **Especialidade atribuída:** a sugerida, se tiver médico disponível agora; senão, a primeira alternativa configurada com médico disponível (RF18, RF19, RN15, RN17, CA04, CA05). A ficha guarda as duas (RN18).
-- **Sem nenhuma fila disponível:** a Recepção/Triagem é avisada e pode confirmar a entrada na fila da especialidade sugerida, que aguarda um médico (tratamento operacional da seção 20 do documento formal).
+- **Especialidade da ficha:** definida automaticamente pelo conjunto de sintomas e pela relação de direcionamento oficial; a regra de combinação/desempate de destinos diversos deve ser especificada nesta change antes da implementação. Para crianças dentro do limite configurado, o destino é Pediatria, sem substituir a classificação clínica.
+- **Distribuição:** não usar especialidade de referência do Médico como filtro. A distribuição para Médicos elegíveis pertence a `add-fila-chamada-medico`; falta especificar a política entre filas distintas quando houver mais de um destino elegível, sem inventar balanceamento nesta etapa.
+- **Ausência de Médico elegível:** não trocar o destino clínico para uma especialidade alternativa. A ficha permanece na fila correta até a regra operacional distribuir a um Médico elegível.
 - **Confirmação da triagem:** direciona, gera a senha e leva a ficha a AGUARDANDO (RN19, UC04, UC05).
 - **Senha** no formato `COR-ESP-NNN` (V = Vermelha, A = Amarela, B = Azul), com numeração diária por especialidade (RF20, seção 11.1).
 - **Comprovante** para impressora térmica com senha, prioridade, especialidade, data/hora de entrada e aviso das três chamadas, sem nome nem CPF; a reimpressão não cria nova entrada (RF21, seção 11.2, seção 20).
@@ -30,13 +30,13 @@ Depois de classificada, a ficha precisa entrar na fila certa: a da especialidade
 
 - Ordenação da fila e chamada: `add-fila-chamada-medico`.
 - Exibição da senha no painel: `add-painel-publico`.
-- Escolha de um médico específico: a fila é da especialidade (ver design.md, D1).
-- Redirecionamento automático só porque o horário de disponibilidade terminou, sem ação do Administrador (ver design.md, Questões em aberto).
+- Distribuição/atribuição a Médico elegível e ordenação entre filas distintas: `add-fila-chamada-medico`.
+- Sala e exibição da sala na chamada pública: `add-cadastros-administrador` e `add-painel-publico`.
 
 ## Capacidades
 
 ### Novas capacidades
-- `direcionamento`: escolha das especialidades sugerida e atribuída, fallback e redirecionamento.
+- `direcionamento`: escolha da especialidade clínica a partir dos sintomas, atribuição da senha e redirecionamento somente quando houver mudança clínica pertinente.
 - `senha-comprovante`: geração da senha, comprovante e reimpressão.
 
 ### Capacidades modificadas
@@ -50,10 +50,9 @@ Aviso: o `openspec/specs/` ainda está vazio. Os deltas `MODIFIED` só funcionam
 - **Reflex:** etapa "Confirmar e gerar senha" na tela de triagem, aviso de fila sem médico, página de impressão `/recepcao/comprovante/{id}` e botão "Reimprimir".
 - **Testes:** `tests/api/test_direcionamento.py` e `tests/api/test_senha.py`.
 - **Depende de:** `add-cadastros-administrador` e `add-triagem-classificacao`.
-- **Divergência com o documento formal:** RF18 fala em "fila de um médico disponível"; este projeto adota fila por especialidade, atendida por qualquer médico disponível da especialidade (a senha já identifica a especialidade). Deve ser confirmado pelo PO.
+- As referências RF/RN/CA são rótulos de rastreabilidade, não autorização para inventar texto formal ausente. A baseline local mantém a especialidade da ficha estável; disponibilidade médica não altera o destino.
 
 ## Perguntas em aberto
 
-- [x] Fila por especialidade, atendida por médico disponível (RF18): decidido pelo PO em 04/10/2026. · DECIDIDO PO
-- [ ] O card da Fatia 6 fala em "especialidade/sala", mas o projeto não modela sala (o painel mostra a especialidade). · PENDENTE PO
-- [ ] Redirecionar sozinho quando acaba o horário de disponibilidade, ou só sob demanda (design, Questões em aberto)? · PENDENTE PO
+- [x] Sala é entidade própria; nunca representar especialidade como local. · BASELINE
+- [ ] Definir o desempate quando vários sintomas selecionados indicarem destinos diferentes. · PENDENTE PO

@@ -23,7 +23,7 @@ A tabela `usuario` é marcada como tabela de autenticação do Xano, com campo `
 - **Alternativa considerada:** auth própria no Reflex, com banco separado. Descartada porque violaria "regras e persistência no Xano" e duplicaria a responsabilidade.
 
 ### D2. Perfil como enum na própria tabela `usuario`
-Campo `perfil` do tipo enum: `RECEPCAO_TRIAGEM`, `MEDICO`, `ADMINISTRADOR`; mais `ativo` (bool), `nome` e `email` (único, gravado em minúsculas).
+Campo `perfil` do tipo enum: `RECEPCAO_TRIAGEM`, `MEDICO`, `ADMINISTRADOR`; mais `ativo` (bool), `nome` e `email` (único, gravado em minúsculas). Recepção/Triagem é um único perfil. `usuario` mantém somente dados de autenticação/autorização; os perfis Médico e Recepção/Triagem têm entidades de domínio próprias 1:1, criadas/atualizadas em fluxo administrativo conjunto na change `add-cadastros-administrador`.
 - **Por quê:** cada usuário tem exatamente um perfil (domain-model), e os perfis são fixos.
 - **Alternativa:** tabela `perfil` com N:N. Descartada por ser complexidade sem requisito que a justifique.
 
@@ -37,7 +37,7 @@ O tempo de expiração vem de uma variável de ambiente do Xano (`TOKEN_TTL_SEGU
 - **Por quê:** cobre um plantão inteiro sem forçar novo login no meio do atendimento; é configurável, como pede o projeto.
 
 ### D5. Tabela `sessao` para login e logout
-Campos: `usuario_id`, `login_em`, `logout_em` (nulo enquanto aberta), `expira_em`. O `auth/login` cria o registro e o `auth/logout` preenche `logout_em` na sessão aberta mais recente do usuário. Uma sessão com `logout_em` nulo e `expira_em` no passado é tratada como encerrada.
+Campos: `usuario_id`, `login_em`, `logout_em` (nulo enquanto aberta), `expira_em`. O `auth/login` cria o registro e o `auth/logout` preenche `logout_em` na sessão aberta mais recente do usuário. Uma sessão está ativa quando `logout_em` é nulo e `expira_em` está no futuro. O status operacional PAUSA/AUSENTE e o encerramento do plantão não encerram a sessão; ficam distintos conforme `add-acompanhamento-administrador`.
 - **Por quê:** é a base da futura tela "Pessoas logadas e status" e evita migração depois. O status operacional (almoço etc.) será adicionado na change `add-acompanhamento-administrador`.
 
 ### D6. Token no Reflex guardado em `rx.LocalStorage`, com guarda de rota em `on_load`

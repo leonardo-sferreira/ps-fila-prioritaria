@@ -7,7 +7,7 @@ Identifica cada ficha na fila priorizada por uma senha que indica cor e especial
 ## ADDED Requirements
 
 ### Requirement: Formato da senha
-A senha DEVE seguir o formato `COR-ESP-NNN`: COR é V (Vermelha), A (Amarela) ou B (Azul); ESP é a sigla da especialidade atribuída; NNN é o número sequencial com no mínimo 3 dígitos, completado com zeros à esquerda. O número DEVE ser sequencial por especialidade, compartilhado entre as cores, e reiniciar em 1 a cada dia, no fuso do PS. Duas fichas NÃO DEVEM receber o mesmo número na mesma especialidade e no mesmo dia.
+A senha DEVE seguir o formato `COR-ESP-NNN`: COR é V (Vermelha), A (Amarela) ou B (Azul) conforme classificação da ficha; ESP é a sigla da especialidade de destino clínico; NNN é o número sequencial com no mínimo 3 dígitos. O número DEVE reiniciar diariamente em `America/Sao_Paulo`, e ser único por especialidade/dia, compartilhado entre cores.
 
 #### Scenario: Primeira senha do dia
 - **QUANDO** a primeira ficha do dia em Clínica Geral é confirmada com prioridade Vermelha
@@ -37,7 +37,7 @@ Enquanto a ficha estiver AGUARDANDO, se a prioridade atual ou a especialidade at
 - **ENTÃO** a senha passa a `A-CLI-008` e a auditoria registra `B-CLI-002` → `A-CLI-008`
 
 ### Requirement: Comprovante
-O sistema DEVE gerar um comprovante para impressão, em largura de impressora térmica de 80 mm, com senha em destaque, cor da prioridade por extenso, especialidade, data/hora de entrada e o aviso "Após 3 chamadas sem comparecimento, a senha será considerada desistência". O comprovante NÃO DEVE conter nome nem CPF. Somente a Recepção/Triagem DEVE poder emiti-lo.
+O sistema DEVE gerar comprovante para impressão, em largura de 80 mm, com senha em destaque, classificação por extenso, especialidade de destino e horário de entrada, sem nome nem CPF. Deve explicar a regra de 30 segundos, até 3 chamadas por oportunidade, retorno ao fim da fila para nova oportunidade quando não houver resposta e remoção definitiva somente se houver desistência explicitamente registrada. Somente Recepção/Triagem pode emitir ou reimprimir.
 
 #### Scenario: Comprovante emitido
 - **QUANDO** a triagem é confirmada

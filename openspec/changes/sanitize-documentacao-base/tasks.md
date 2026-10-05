@@ -65,18 +65,21 @@
 - [x] 6.6 `add-fila-chamada-medico`: 10 s, desistência após primeira sequência, fila restrita à especialidade e ausência de pausa/encerramento precisam ser revistos
 - [x] 6.7 `add-painel-publico`: chamada deve passar a considerar Sala e a nova regra de reentrada, sem expor dados pessoais
 
-## Impacto para revisão posterior
+## Impactos documentais tratados na segunda etapa
 
-Esta lista registra conflitos para revisão futura. As changes abaixo não foram editadas nesta sanitização.
+As changes funcionais abertas foram revisadas e alinhadas à baseline sanitizada. As tasks funcionais permanecem não executadas; esta etapa alterou somente planejamento e especificações OpenSpec.
 
-| Change | Revisão necessária |
+| Change | Alinhamento documental realizado |
 |---|---|
-| `add-base-compartilhada` | O catálogo ainda usa `prioridade_padrao` como cor, o intervalo está em 10 segundos e a carga/alternativas de especialidade ainda dependem da disponibilidade de médicos. |
-| `add-autenticacao-perfis` | Alinhar a gestão do usuário com os vínculos 1:1 de `Medico` e `Recepcao_Triagem`, garantindo que o cadastro administrativo crie o usuário e sua entidade de domínio correspondente. |
-| `add-cadastros-administrador` | Rever a relação médico/especialidade (inclusive teste de múltiplas especialidades), incluir cadastro de `Recepcao_Triagem` e `Sala`, e reconciliar pausa, retomada e encerramento de plantão com fila zerada. |
-| `add-pacientes-pre-triagem` | A change descreve o Totem como externo e inclui um simulador; delimitar sua responsabilidade com a futura change própria `add-totem` e atualizar chamadas da Recepção/Triagem para 30 segundos, até 3 tentativas por oportunidade e uma única reentrada. |
-| `add-triagem-classificacao` | Substituir a comparação entre cor do sintoma e risco, e o escore fisiológico máximo 18, pela soma dos pontos de todos os sintomas e sinais vitais, preservando o tratamento de item clínico isolado com 3 pontos. |
-| `add-direcionamento-senha` | Rever fallback para outra especialidade quando não houver médico da especialidade indicada; destino clínico deve permanecer estável e médico elegível pode atender qualquer fila. Rever também dependência de `prioridade_padrao`. |
-| `add-fila-chamada-medico` | Atualizar intervalo de 10 para 30 segundos, evitar desistência definitiva após a primeira oportunidade, permitir atendimento por médico elegível de outra especialidade cadastral e incluir pausa/retomada e encerramento de plantão com fila zerada. |
-| `add-painel-publico` | Incluir Sala na chamada pública e refletir a nova oportunidade/reentrada na previsão e no histórico de chamadas, mantendo o painel sem dados pessoais. |
-| `add-acompanhamento-administrador` | Alinhar os status operacionais à regra de que PAUSA/AUSENTE impedem novas atribuições sem remover itens existentes; separar status de sessão e encerramento de plantão, que exige fila atribuída zerada. Rever se a pausa manual também se aplica à Recepção/Triagem. |
+| `add-base-compartilhada` | Catálogo oficial com pontuação e direcionamento, sem cor/prioridade de sintoma; intervalo fixo de 30 s e fuso oficial não editável; sem fallback por disponibilidade/especialidade médica. |
+| `add-autenticacao-perfis` | `Usuario` como autenticação; perfil Recepção/Triagem único e entidades de domínio Médico/Recepção-Triagem vinculadas 1:1; sessão distinta de status operacional. |
+| `add-cadastros-administrador` | Cadastro de Médico, Recepção/Triagem e Sala; especialidade médica informativa; eligibility sem filtro pela especialidade de referência; sintomas e parâmetros coerentes com baseline. |
+| `add-pacientes-pre-triagem` | Totem em change própria, ticket emitido sem duplicação na fila, chamadas a 30 s e até 3 por oportunidade, rechamada preserva ticket e estados alinhados à baseline. |
+| `add-triagem-classificacao` | Soma dos pontos de todos os sintomas (1–3) e sinais vitais; glicemia exata; sem teto de 18; limiares configuráveis conforme valores iniciais da baseline; pediatria não substitui cálculo. |
+| `add-direcionamento-senha` | Destino pelos sintomas/critérios pediátricos; sem fallback por elegibilidade médica; Sala distinta de especialidade; comprovante alinhado à regra de chamadas. |
+| `add-fila-chamada-medico` | Elegibilidade sem filtro por especialidade cadastral; intervalos e oportunidades alinhados; Sala, pausa/plantão e transições da ficha documentados. Interleaving global entre especialidades permanece dependência de produto. |
+| `add-painel-publico` | Sala da chamada e ticket de triagem exibidos sem dados pessoais; previsões por especialidade sem presumir ordem global ainda indefinida. |
+| `add-acompanhamento-administrador` | Pausa/Ausência sem novas atribuições e sem remover fichas sob responsabilidade; sessão, status e plantão separados; encerramento condicionado à fila atribuída zerada. |
+| `add-totem` | Nova change OpenSpec especifica emissão do ticket impessoal e entrada na fila de Recepção/Triagem; sem implementação funcional nesta etapa. |
+
+Persistem como dependências antes da implementação funcional: regra de desempate quando sintomas apontam para destinos diferentes e política global de seleção entre filas de especialidades distintas. A abrangência de impressão física do Totem continua fora do escopo especificado nesta change e pode ser decidida se vier a ser necessária.
