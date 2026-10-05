@@ -9,15 +9,15 @@
 ## 2. Xano — chamada
 
 - [ ] 2.1 [Xano] Acrescentar à `ficha_atendimento` os campos `medico_chamada_id`, `tentativas_chamada`, `chamada_em` e `finalizada_em`, e criar a tabela `chamada` (D5); verificar no painel
-- [ ] 2.2 [Xano] Criar `GET medico/filas` e `POST medico/chamar-proximo` com a fila da especialidade do médico (D3) e a reserva atômica (D4); verificar com os testes 2.5
-- [ ] 2.3 [Xano] Criar `POST fichas/{id}/repetir-chamada`, `.../comparecimento` e `.../desistencia`, com as regras de tentativas, do intervalo mínimo entre chamadas (RF35) e do médico dono; verificar com os testes 2.5
+- [ ] 2.2 [Xano] Criar `GET medico/filas` e `POST medico/chamar-proximo` sem filtro por especialidade de referência e com reserva atômica; não implementar seleção multi-fila antes da decisão do PO; verificar após decisão
+- [ ] 2.3 [Xano] Criar chamadas/comparecimento/desistência com 30 s, 3 chamadas por oportunidade, uma reentrada e encerramento após a segunda oportunidade; verificar transições e responsabilidade pela ficha
 - [ ] 2.4 [Xano] Criar `GET fichas/{id}/impressao` (MEDICO que chamou); verificar com os testes 2.5
-- [ ] 2.5 Escrever `tests/api/test_chamada.py` cobrindo: 403 para Recepção, identificador de ficha ignorado, chamada bem-sucedida com tentativa 1, fila só da especialidade do médico, intervalo mínimo de 10 s entre chamadas da mesma senha (RF35), fila vazia, médico indisponível, ficha pendente, dois médicos em paralelo (2 fichas e 1 ficha), duplo clique, tentativas 2 e 3, limite de tentativas, ação sobre ficha de outro médico, comparecimento na tentativa 2, desistência antecipada e na tentativa 3, histórico sem duplicidade, impressão pelo médico dono e por outro médico, e CA11 (previsão consultada antes coincide com a chamada); verificar que passam
+- [ ] 2.5 Escrever `tests/api/test_chamada.py` cobrindo 403 para Recepção/Triagem e Administrador, elegibilidade sem filtro por especialidade, distribuição entre filas depois da decisão de produto, 30 s, tentativas 1–3 por oportunidade, uma reentrada sem novo número, encerramento após a segunda oportunidade, desistência explícita, concorrência, duplicidade, pausa/plantão encerrado, histórico e privacidade; verificar que passam
 - [ ] 2.6 Exportar o XanoScript das seções 1 e 2 para `backend/xano/` e verificar que os arquivos estão no repositório
 
 ## 3. Reflex — tela do médico
 
-- [ ] 3.1 [Reflex] Criar a página `/medico` (D6) com o botão "Chamar próximo", o cartão da ficha chamada e a fila da sua especialidade com polling; verificar manualmente com fila cheia e fila vazia
+- [ ] 3.1 [Reflex] Criar `/medico` com "Chamar próximo", ficha atribuída, Sala da chamada, tentativas por oportunidade e estado de pausa/plantão; não oferecer escolha manual de ficha nem filtrar por especialidade de referência
 - [ ] 3.2 [Reflex] Ligar as ações "Repetir chamada", "Compareceu" e "Registrar desistência", com confirmação na desistência; verificar manualmente as 3 tentativas e a desistência
 - [ ] 3.3 [Reflex] Criar `/medico/ficha/{id}/imprimir` (D7); verificar manualmente a visualização de impressão
 - [ ] 3.4 Adicionar ao README o roteiro manual da seção 3, com o teste de dois navegadores chamando ao mesmo tempo; verificar executando-o

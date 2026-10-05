@@ -36,7 +36,7 @@ O Administrador DEVE poder abrir o detalhe de uma ficha, somente leitura, com os
 - **ENTÃO** vê o ajuste com justificativa e as duas tentativas, sem nenhuma ação de edição
 
 ### Requirement: Pessoas logadas e status
-O sistema DEVE listar os usuários com sessão ativa (sem logout e não expirada), com nome, perfil, status operacional (quando aplicável) e horário de login, com filtro por perfil.
+O sistema DEVE listar os usuários com sessão ativa (`logout_em` nulo e `expira_em` futuro), com nome, perfil, status operacional (quando aplicável), situação do plantão médico em campo separado e horário de login, com filtro por perfil. PAUSA/AUSENTE e plantão encerrado não equivalem a logout nem removem sessão ativa.
 
 #### Scenario: Equipe logada
 - **QUANDO** dois médicos (um DISPONIVEL e um PAUSA) e um usuário Recepção/Triagem estão logados
@@ -45,6 +45,10 @@ O sistema DEVE listar os usuários com sessão ativa (sem logout e não expirada
 #### Scenario: Sessão expirada ou encerrada
 - **QUANDO** um usuário faz logout ou sua sessão expira
 - **ENTÃO** ele deixa de aparecer na lista de pessoas logadas
+
+#### Scenario: Pausa e encerramento não encerram a sessão
+- **QUANDO** um Médico autenticado está em PAUSA ou já encerrou o plantão sem fazer logout e sua sessão não expirou
+- **ENTÃO** permanece na lista de sessões ativas, com status operacional e situação do plantão apresentados separadamente
 
 ### Requirement: Consulta da auditoria
 O sistema DEVE mostrar os eventos de auditoria mais recentes primeiro, incluindo alterações de prioridade, sintomas, sinais vitais, disponibilidade, cadastros e parâmetros, chamadas (tentativas, comparecimentos e desistências), logins e logouts, cada um com tipo, registro afetado, valor anterior, valor novo, justificativa, responsável e data/hora. A consulta DEVE ser paginada (50 por página) e permitir filtro por tipo de evento, usuário responsável e período.

@@ -57,9 +57,9 @@ Dentro da cor escolhida, fichas com condição prioritária DEVEM vir antes das 
 ### Requirement: Previsão das próximas senhas
 O sistema DEVE fornecer, para cada especialidade, a previsão das próximas N senhas (N = tamanho da previsão, inicial 5), simulando chamadas sucessivas com a mesma regra e o estado atual do ciclo (RN25). A previsão DEVE conter só senha e cor, NÃO DEVE reservar posição (RN26) e DEVE refletir o estado da fila no momento da consulta (RF35). Com menos de N fichas elegíveis, DEVE listar só as existentes (CA10).
 
-#### Scenario: Previsão coincide com a chamada
-- **QUANDO** a fila não muda entre a consulta da previsão e o "Chamar próximo" de um médico que atende só essa especialidade
-- **ENTÃO** a senha chamada é a primeira da previsão (CA11)
+#### Scenario: Previsão coincide com a seleção da fila
+- **QUANDO** a fila não muda entre a consulta e a seleção da próxima ficha dessa mesma especialidade
+- **ENTÃO** a ficha selecionada é a primeira da previsão daquela fila (CA11); isso não define a ordem global de escolha entre especialidades
 
 #### Scenario: Nova Vermelha recalcula a previsão
 - **QUANDO** uma ficha Vermelha entra na fila depois de uma consulta da previsão

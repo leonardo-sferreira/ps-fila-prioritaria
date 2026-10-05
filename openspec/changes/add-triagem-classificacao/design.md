@@ -17,7 +17,7 @@ As tabelas `sintoma` e `parametro`, a função `registrar_alteracao`, o `pacient
 ## Decisões
 
 ### D1. Tabelas e campos
-- `ficha_atendimento`: `paciente_id`, `ticket_id`, `aberta_por`, `chegada_em`, `status` (enum com os seis estados do domain-model), `observacao`, `gestante`, `pa_sistolica`, `fc`, `fr`, `temperatura`, `spo2`, `glicemia`, `glicemia_sinais_gravidade`, `escore_risco`, `parametro_critico` (bool), `classificacao_risco`, `prioridade_calculada`, `prioridade_atual`, `justificativa_ajuste`, `condicao_prioritaria` (enum `NENHUMA|IDOSO|CRIANCA|GESTANTE`), mais os campos que as changes 5 e 6 vão acrescentar (especialidade, senha, tentativas).
+- `ficha_atendimento`: `paciente_id`, `ticket_id`, `aberta_por`, `chegada_em`, `status` (baseline), `observacao`, `gestante`, sinais vitais, `escore_sintomas`, `escore_fisiologico`, `escore_total`, `parametro_critico`, `classificacao_risco`, `prioridade_calculada`, `prioridade_atual`, `justificativa_ajuste`, `condicao_prioritaria`; especialidade, senha e chamadas pertencem às changes seguintes.
 - `ficha_sintoma`: `ficha_id`, `sintoma_id`, único por par.
 - `faixa_sinal_vital`: `parametro` (enum), `minimo`, `maximo` (inclusivos, decimais), `pontos`, `condicao_gravidade` (nulo, verdadeiro ou falso; usado só na glicemia).
 - Quando mais de um critério se aplica, `condicao_prioritaria` guarda um só, por precedência: GESTANTE > IDOSO > CRIANCA. Para a fila basta saber se há condição prioritária.
@@ -31,13 +31,13 @@ Ela lê as faixas e os parâmetros e devolve escore, parâmetro crítico, classi
 Cada faixa tem `minimo` e `maximo` inclusivos, com precisão de 1 casa (temperatura) ou inteira (demais). Ao salvar as faixas de um parâmetro, o backend ordena por `minimo` e verifica se não há sobreposição e se, para cada valor de `condicao_gravidade`, as faixas cobrem de ponta a ponta a faixa plausível, sem lacuna no passo de precisão (ex.: 36,0 → 36,1). As faixas de um parâmetro são salvas sempre como lista completa.
 
 ### D4. Interpretação da glicemia
-O contexto do PO (seção 9.2) só define "< 54 com alteração de consciência" e "54–59 sintomática". Para os casos sem sinais de gravidade, esta change adota uma pontuação um nível abaixo (< 54 sem sinais → 2; 54–59 sem sinais → 1). Isso fica em dados (`condicao_gravidade`) e pode ser ajustado pelo Administrador sem mudar código.
+Usar exatamente a baseline: `<54 mg/dL` com sinais de gravidade = 3 pontos; `<54` sem sinais = 2; `54–59` com sinais = 2; `54–59` sem sinais = 1. Os valores permanecem configurados como faixas clínicas; não há pendência de decisão para esses quatro casos.
 
 ### D5. Ciclo da ficha nesta change
 A ficha é aberta em EM_TRIAGEM e continua assim até o direcionamento (change 5), que a leva a AGUARDANDO. O endpoint `POST fichas/{id}/concluir-triagem` só valida a completude (queixa e sinais obrigatórios) e retorna a classificação. A transição para AGUARDANDO é acrescentada em `add-direcionamento-senha`.
 
 ### D6. Tela de triagem
-`/recepcao/ficha/{id}`: cabeçalho com o paciente (nome, idade, condição prioritária); seletor de sintomas por grupo; observação; sinais vitais; caixa "Classificação" com escore, risco, cor calculada e cor atual, atualizada a cada campo salvo (debounce de 500 ms); botão "Ajustar prioridade", com modal de justificativa; botão "Cancelar ficha". As cores seguem uma paleta única (RNF10) definida num módulo `cores.py`.
+`/recepcao/ficha/{id}`: cabeçalho com paciente e condição prioritária; seletor dos sintomas do catálogo em `docs/domain-model.md`, exibindo seus pontos; observação; sinais vitais; caixa "Classificação" com soma dos pontos dos sintomas e sinais vitais, risco, cor calculada e cor atual, atualizada a cada campo salvo; botão "Ajustar prioridade" com justificativa; botão "Cancelar ficha". Cor é resultado da classificação, nunca atributo do sintoma.
 
 ## Riscos / Compromissos
 
@@ -51,4 +51,4 @@ Tabelas novas, mais a carga das faixas iniciais (idempotente). Rollback: remover
 
 ## Questões em aberto
 
-- O PO deve confirmar a interpretação da glicemia sem sinais de gravidade (D4); mudar isso só altera dados.
+- Nenhuma decisão pendente quanto à glicemia. Alterações futuras de limiares clínicos são administrativas e não mudam a composição do escore.

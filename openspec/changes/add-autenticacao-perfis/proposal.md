@@ -19,10 +19,10 @@ Todas as telas do sistema (triagem, fila do médico, administração) dependem d
 ## What Changes
 
 - Login da equipe com e-mail e senha, validado no Xano, que devolve um token de acesso.
-- Três perfis fixos: **Recepção/Triagem**, **Médico** e **Administrador**. Após o login, cada perfil é levado para sua área inicial no Reflex (por enquanto, telas iniciais simples, que as próximas changes vão preencher).
+- Três perfis fixos: **Recepção/Triagem** (um perfil funcional único), **Médico** e **Administrador**. `Usuario` é a entidade de autenticação; Médico e Recepção/Triagem também possuem entidades próprias 1:1, geridas junto com o usuário na change administrativa. Após o login, cada perfil é levado para sua área inicial no Reflex.
 - Logout, que encerra a sessão do usuário.
 - Controle de acesso por perfil aplicado **no backend**: endpoints protegidos rejeitam requisições sem token, com token inválido ou expirado, de usuário inativo ou de perfil não autorizado.
-- Registro de sessão (horário de login e de logout), base para a futura visão "Pessoas logadas e status" do Administrador.
+- Registro de sessão (login, logout e expiração), distinto do status operacional e do encerramento do plantão, que são tratados em `add-acompanhamento-administrador`.
 - Gestão de usuários pelo Administrador: listar, criar, editar (nome, e-mail, perfil), redefinir senha e ativar/desativar.
 - Criação do primeiro Administrador por procedimento documentado, já que ainda não existe usuário para criá-lo pela tela.
 - Estrutura inicial do projeto: app Reflex, workspace Xano e testes de API.

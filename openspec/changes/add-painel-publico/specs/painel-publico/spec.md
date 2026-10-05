@@ -21,36 +21,36 @@ O painel e o endpoint que o alimenta NÃO DEVEM retornar nem exibir nome, CPF, d
 - **ENTÃO** a resposta não contém nenhum campo de nome, CPF, nascimento, telefone, sintoma ou sinal vital
 
 ### Requirement: Senha atual em destaque
-O painel DEVE exibir, com o maior destaque visual, a chamada mais recente (primeira chamada ou repetição), com senha, cor e especialidade. Toda chamada nova ou repetida DEVE provocar um destaque visual e um aviso sonoro curto.
+O painel DEVE exibir, com o maior destaque visual, a chamada mais recente (primeira chamada ou repetição), com senha, cor e especialidade; para chamada médica, DEVE exibir também a Sala operacional associada quando houver, sem tratar especialidade como Sala. Toda chamada nova ou repetida DEVE provocar um destaque visual e um aviso sonoro curto.
 
 #### Scenario: Nova chamada
 - **QUANDO** um médico chama `V-CLI-003`
-- **ENTÃO** em até 5 segundos o painel mostra `V-CLI-003 — Clínica Geral` em destaque e emite o aviso sonoro
+- **ENTÃO** em até 5 segundos o painel mostra `V-CLI-003 — Clínica Geral — Sala 2` em destaque, se a chamada estiver associada à Sala 2, e emite o aviso sonoro
 
 #### Scenario: Repetição de chamada
 - **QUANDO** o médico repete a chamada de `A-CAR-014`
 - **ENTÃO** a senha volta ao destaque e o aviso é emitido de novo, com a indicação "2ª chamada"
 
 ### Requirement: Últimas chamadas
-O painel DEVE listar as últimas chamadas (no mínimo as 4 anteriores à atual), com senha, especialidade e horário, da mais recente para a mais antiga.
+O painel DEVE listar as últimas chamadas (no mínimo as 4 anteriores à atual), com senha, especialidade, Sala quando aplicável e horário, da mais recente para a mais antiga.
 
 #### Scenario: Histórico curto
 - **QUANDO** ocorreram 6 chamadas
 - **ENTÃO** o painel mostra a atual em destaque e as 4 anteriores na lista de últimas chamadas
 
 ### Requirement: Previsão das próximas senhas
-Para cada especialidade exibida, o painel DEVE mostrar a previsão das próximas senhas calculada pela mesma regra da chamada real, com o tamanho configurado (inicial 5), e com a indicação de que é uma previsão sujeita a mudança. Com menos fichas elegíveis, DEVE mostrar só as existentes; sem nenhuma, DEVE indicar que a fila está vazia.
+Para cada especialidade exibida, o painel DEVE mostrar a previsão das próximas senhas calculada pela mesma regra de ordenação da fila daquela especialidade, com o tamanho configurado (inicial 5), e com a indicação de que é uma previsão sujeita a mudança. A ordem global entre especialidades depende da decisão registrada em `add-fila-chamada-medico`; até essa decisão, o painel NÃO DEVE sugerir uma ordem global de chamada médica. Com menos fichas elegíveis, DEVE mostrar só as existentes; sem nenhuma, DEVE indicar que a fila está vazia.
 
 #### Scenario: Cinco ou mais aguardando
 - **QUANDO** Clínica Geral tem 8 fichas AGUARDANDO
 - **ENTÃO** o painel mostra exatamente 5 senhas previstas para Clínica Geral (CA10)
 
 #### Scenario: Coerência com a chamada
-- **QUANDO** a fila não muda entre a atualização do painel e o "Chamar próximo" de um médico dessa especialidade
+- **QUANDO** a fila daquela especialidade não muda entre a atualização do painel e a próxima seleção de uma ficha dessa fila
 - **ENTÃO** a senha chamada é a primeira que estava prevista no painel (CA11)
 
-#### Scenario: Entrada de um Vermelho
-- **QUANDO** uma ficha Vermelha entra na fila de Clínica Geral
+#### Scenario: Entrada de prioridade alta
+- **QUANDO** uma ficha de prioridade alta entra na fila de Clínica Geral
 - **ENTÃO** na atualização seguinte ela aparece na primeira posição da previsão (CA12)
 
 #### Scenario: Desistência sai da previsão
@@ -58,7 +58,7 @@ Para cada especialidade exibida, o painel DEVE mostrar a previsão das próximas
 - **ENTÃO** ela não aparece mais na previsão (CA13)
 
 ### Requirement: Tickets da pré-triagem
-O painel DEVE exibir o número do ticket da pré-triagem chamado mais recentemente pela Recepção/Triagem (inclusive rechamadas), com a indicação "Triagem".
+O painel DEVE exibir o número do ticket da pré-triagem chamado mais recentemente pela Recepção/Triagem (inclusive rechamadas do mesmo ticket), com a indicação "Triagem".
 
 #### Scenario: Ticket chamado para a triagem
 - **QUANDO** a Recepção/Triagem chama o ticket 42

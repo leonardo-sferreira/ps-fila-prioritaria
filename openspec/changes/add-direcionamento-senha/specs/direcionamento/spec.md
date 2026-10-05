@@ -2,53 +2,41 @@
 
 ## Purpose
 
-Coloca cada ficha classificada na fila da especialidade mais adequada que tenha médico disponível, com fallback para alternativas configuradas, e mantém esse destino atualizado quando os dados mudam.
+Direciona automaticamente cada ficha para a especialidade mais adequada ao conjunto de sintomas, mantendo o destino clínico independente da especialidade de referência e disponibilidade do Médico.
 
 ## ADDED Requirements
 
 ### Requirement: Especialidade sugerida
-O sistema DEVE identificar a especialidade sugerida da ficha assim: entre os sintomas com a prioridade padrão mais grave, considerar suas especialidades ativas e escolher a de menor ordem configurada; em caso de empate, vale o sintoma registrado primeiro na ficha. Se a ficha não tiver sintomas com especialidade ativa, a sugerida DEVE ser a especialidade padrão dos parâmetros.
+O sistema DEVE determinar o destino automaticamente pelas relações entre os sintomas selecionados e suas especialidades de destino no catálogo oficial de `docs/domain-model.md`. A pontuação do sintoma participa do escore clínico, mas não é cor. Quando os sintomas selecionados apontarem para diferentes destinos, o algoritmo de desempate precisa de decisão de produto antes da implementação; não inferir cor nem disponibilidade de Médico como desempate. Sem sintoma direcionável, usar a especialidade padrão configurada. Para criança dentro do limite configurado, direcionar a Pediatria sem alterar escore/classificação.
 
-#### Scenario: Sintoma mais grave define a especialidade
-- **QUANDO** a ficha tem "Tosse" (Azul, Clínica Geral) e "Dor no peito" (Vermelha, Cardiologia ordem 1)
-- **ENTÃO** a especialidade sugerida é Cardiologia
+#### Scenario: Sintoma direciona a Cardiologia
+- **QUANDO** a ficha contém "Dor ou pressão no peito" do catálogo oficial
+- **ENTÃO** o destino inclui Cardiologia, sem tratar o sintoma como cor
 
 #### Scenario: Ficha só com observação
 - **QUANDO** a ficha não tem sintomas, apenas observação
 - **ENTÃO** a especialidade sugerida é a especialidade padrão (inicialmente Clínica Geral)
 
-### Requirement: Especialidade atribuída com fallback
-O sistema DEVE atribuir a especialidade sugerida se ela tiver ao menos um médico disponível no momento. Caso contrário, DEVE percorrer as alternativas da sugerida na ordem configurada e atribuir a primeira que esteja ativa e tenha médico disponível. A ficha DEVE registrar a especialidade sugerida e a atribuída (RN18). Especialidades sem médico disponível NÃO DEVEM receber a ficha por esse caminho (CA05).
+### Requirement: Destino independente de elegibilidade médica
+A especialidade de destino da ficha DEVE permanecer a indicada pelos sintomas, independentemente da especialidade de referência dos Médicos ou da disponibilidade momentânea. O sistema NÃO DEVE substituir o destino por alternativa apenas porque não há Médico elegível naquele instante. A elegibilidade e atribuição operacional a Médico pertencem a `add-fila-chamada-medico`.
 
-#### Scenario: Preferencial disponível
-- **QUANDO** a sugerida é Cardiologia e há cardiologista disponível
-- **ENTÃO** a atribuída é Cardiologia
+#### Scenario: Médico de outra especialidade atende
+- **QUANDO** a ficha está na fila de Cardiologia e há um Médico elegível cuja especialidade de referência é Clínica Geral
+- **ENTÃO** a ficha permanece na fila de Cardiologia e pode ser distribuída a esse Médico
 
-#### Scenario: Fallback para alternativa
-- **QUANDO** a sugerida é Cardiologia, não há cardiologista disponível e Clínica Geral é a primeira alternativa, com médico disponível
-- **ENTÃO** a atribuída é Clínica Geral e a ficha mantém Cardiologia como sugerida (CA04)
+### Requirement: Fila correta sem Médico elegível imediato
+Se nenhum Médico estiver elegível, a ficha DEVE continuar na fila de sua especialidade clínica, sem fallback para outra especialidade. A interface pode informar que aguarda distribuição, sem exigir confirmação para preservar o destino.
 
-#### Scenario: Primeira alternativa também indisponível
-- **QUANDO** as alternativas de Cardiologia são [Clínica Geral, Neurologia] e só Neurologia tem médico disponível
-- **ENTÃO** a atribuída é Neurologia
-
-### Requirement: Nenhuma fila disponível
-Se nem a sugerida nem as alternativas tiverem médico disponível, o sistema NÃO DEVE atribuir a especialidade automaticamente. Ele DEVE informar à Recepção/Triagem "Nenhum médico disponível para esta especialidade ou suas alternativas" e DEVE permitir que ela confirme a entrada na fila da especialidade sugerida. A ficha fica marcada como direcionada sem médico disponível.
-
-#### Scenario: Aviso sem confirmação
-- **QUANDO** não há médico disponível na sugerida nem nas alternativas e a Recepção/Triagem confirma a triagem sem aceitar o aviso
-- **ENTÃO** o sistema recusa, mostra o aviso e a ficha continua em EM_TRIAGEM
-
-#### Scenario: Entrada confirmada sem médico
-- **QUANDO** a Recepção/Triagem aceita o aviso
-- **ENTÃO** a ficha entra na fila da sugerida, marcada como direcionada sem médico disponível
+#### Scenario: Fila aguarda elegibilidade
+- **QUANDO** não há Médico elegível no momento da confirmação da triagem
+- **ENTÃO** a ficha entra na fila da especialidade indicada pelos sintomas e não é redirecionada para alternativa
 
 ### Requirement: Confirmação da triagem
 A Recepção/Triagem DEVE concluir a triagem com a ação "Confirmar e gerar senha", que valida a completude da ficha, executa o direcionamento, gera a senha e leva a ficha de EM_TRIAGEM para AGUARDANDO, tudo numa única operação. A confirmação DEVE ser auditada.
 
 #### Scenario: Confirmação bem-sucedida
-- **QUANDO** a Recepção/Triagem confirma uma ficha completa com médico disponível na sugerida
-- **ENTÃO** a ficha passa a AGUARDANDO com especialidade atribuída e senha
+- **QUANDO** a Recepção/Triagem confirma uma ficha completa
+- **ENTÃO** a ficha passa a AGUARDANDO com destino clínico determinado pelos sintomas e senha, independentemente da disponibilidade ou especialidade de referência dos Médicos
 
 #### Scenario: Ficha incompleta
 - **QUANDO** a Recepção/Triagem confirma uma ficha sem sinais vitais obrigatórios
@@ -59,27 +47,16 @@ A Recepção/Triagem DEVE concluir a triagem com a ação "Confirmar e gerar sen
 - **ENTÃO** o backend responde como acesso negado
 
 ### Requirement: Redirecionamento de fichas aguardando
-Para fichas AGUARDANDO, o sistema DEVE refazer o direcionamento quando: (a) sintomas ou prioridade mudarem e a especialidade sugerida mudar; ou (b) o Administrador alterar ou remover uma disponibilidade, ou desativar um médico, deixando a especialidade atribuída sem médico disponível. O horário de chegada DEVE ser preservado, e a auditoria DEVE registrar a especialidade de origem e a de destino. Se não houver destino com médico disponível, a ficha DEVE permanecer onde está. Fichas CHAMADO NÃO DEVEM ser redirecionadas.
+Para fichas EM_TRIAGEM ou AGUARDANDO ainda não chamadas, o sistema DEVE recalcular o destino quando sintomas mudarem; mudança de Médico, disponibilidade, status ou plantão NÃO DEVE alterar destino clínico. Mudanças de destino e de senha DEVEM ser auditadas, preservando o horário de chegada. Fichas CHAMADO NÃO DEVEM ser redirecionadas.
 
 #### Scenario: Sintomas mudam a especialidade
-- **QUANDO** uma ficha AGUARDANDO em Clínica Geral recebe o sintoma "Convulsão" (Vermelha, Neurologia) e há neurologista disponível
+- **QUANDO** uma ficha AGUARDANDO em Clínica Geral recebe o sintoma "Convulsão em atividade" (3 pontos, Neurologia)
 - **ENTÃO** a ficha passa para a fila de Neurologia, com o mesmo horário de chegada, e a auditoria registra Clínica Geral → Neurologia
 
-#### Scenario: Último médico da especialidade fica indisponível
-- **QUANDO** o Administrador remove a disponibilidade do único cardiologista e há fichas AGUARDANDO em Cardiologia
-- **ENTÃO** essas fichas vão para a primeira alternativa com médico disponível, preservando a ordem de chegada entre elas
-
-#### Scenario: Sem destino disponível
-- **QUANDO** a especialidade atribuída fica sem médico e nenhuma alternativa tem médico disponível
-- **ENTÃO** as fichas permanecem na fila atual
+#### Scenario: Médico fica indisponível sem mudar destino
+- **QUANDO** o Administrador encerra a disponibilidade do último médico cadastrado como Cardiologia e existem fichas aguardando em Cardiologia
+- **ENTÃO** as fichas permanecem em Cardiologia para distribuição a qualquer Médico elegível
 
 #### Scenario: Ficha já chamada
 - **QUANDO** a disponibilidade de um médico é removida enquanto uma ficha está CHAMADO por ele
 - **ENTÃO** a ficha chamada não é redirecionada
-
-### Requirement: Redirecionamento sob demanda
-O Administrador DEVE poder acionar "Reavaliar direcionamento" para uma especialidade, que aplica a regra de redirecionamento às fichas AGUARDANDO dela.
-
-#### Scenario: Reavaliação após o fim de um plantão
-- **QUANDO** o horário de disponibilidade do único médico da Ortopedia terminou e o Administrador aciona "Reavaliar direcionamento" em Ortopedia
-- **ENTÃO** as fichas AGUARDANDO em Ortopedia vão para a primeira alternativa com médico disponível

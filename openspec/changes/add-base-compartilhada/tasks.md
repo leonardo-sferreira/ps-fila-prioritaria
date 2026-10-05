@@ -20,7 +20,7 @@
 - [ ] 3.1 [Xano] Conferir os `.xs` de `especialidade`, `especialidade_alternativa`, `sintoma` e `sintoma_especialidade` com o D5 e criar a função `carga_inicial` (insere só o que falta, relações só para registros inseridos na execução, auditoria `CADASTRO` em cada inserção); verificar com Run & Debug em ambiente vazio
 - [ ] 3.2 [Xano] Criar `POST admin/carga-inicial` (ADMINISTRADOR) incluindo os parâmetros do D4; verificar com os testes 3.4
 - [ ] 3.3 [Xano] Criar `GET especialidades` e `GET sintomas` (autenticados, só ativos, campos do D6); verificar com os testes 3.4
-- [ ] 3.4 Escrever `tests/api/test_dados_referencia.py` cobrindo carga em ambiente vazio ("Dor no peito" Vermelha com preferencial CAR; CAR, NEU, ORT e PED com alternativa CLI), segunda execução sem duplicar, prioridade alterada mantida após nova carga, 403 para Recepção/Triagem e Médico na carga, sintoma inativo fora da consulta e 401 sem token nas consultas; verificar que passam
+- [ ] 3.4 Escrever `tests/api/test_dados_referencia.py` cobrindo carga em ambiente vazio com o catálogo oficial ("Dor ou pressão no peito", grupo Cardiovascular, 2 pontos, Cardiologia), segunda execução sem duplicar, pontuação/relação alterada mantida após nova carga, 403 para Recepção/Triagem e Médico na carga, sintoma inativo fora da consulta e 401 sem token nas consultas; verificar que passam
 
 ## 4. Integração e documentação
 

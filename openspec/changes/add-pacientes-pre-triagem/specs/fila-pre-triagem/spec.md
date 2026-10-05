@@ -2,39 +2,16 @@
 
 ## Purpose
 
-Organiza a chegada dos pacientes antes da triagem: emite tickets numerados em ordem de chegada e permite à Recepção/Triagem chamá-los um a um, sem prioridade clínica.
+Organiza a fila de tickets impessoais emitidos pelo Totem, permitindo à Recepção/Triagem chamá-los antes da triagem clínica, sem prioridade clínica.
 
 ## ADDED Requirements
 
-### Requirement: Emissão de ticket pelo totem
-O sistema DEVE emitir tickets com número sequencial que reinicia em 1 a cada dia, no fuso do PS, e registrar o horário de emissão. A emissão DEVE exigir a chave do totem e NÃO DEVE exigir nem guardar dados pessoais.
+### Requirement: Consumir tickets emitidos pelo Totem
+A fila DEVE receber os tickets impessoais criados pela change `add-totem`, mantendo número, horário e identidade únicos no dia operacional em `America/Sao_Paulo`.
 
-#### Scenario: Primeiro ticket do dia
-- **QUANDO** o totem solicita um ticket e ainda não houve emissão no dia
-- **ENTÃO** o sistema emite o ticket número 1, com status AGUARDANDO
-
-#### Scenario: Tickets seguintes
-- **QUANDO** o totem solicita um ticket depois de o ticket 41 ter sido emitido no dia
-- **ENTÃO** o sistema emite o ticket número 42
-
-#### Scenario: Virada do dia
-- **QUANDO** o último ticket de 29/09 foi o 80 e o totem solicita um ticket às 00:00 de 30/09
-- **ENTÃO** o sistema emite o ticket número 1
-
-#### Scenario: Emissões simultâneas
-- **QUANDO** duas solicitações de ticket chegam ao mesmo tempo
-- **ENTÃO** os dois tickets recebem números diferentes e consecutivos
-
-#### Scenario: Chave do totem ausente ou inválida
-- **QUANDO** a emissão é solicitada sem a chave do totem ou com chave errada
-- **ENTÃO** o sistema recusa como não autenticado e nenhum ticket é emitido
-
-### Requirement: Simulador de totem
-O sistema DEVE oferecer uma tela de simulador de totem com um botão "Retirar senha" que emite um ticket e mostra o número em destaque. A chave do totem NÃO DEVE ser enviada ao navegador.
-
-#### Scenario: Retirar senha no simulador
-- **QUANDO** alguém aciona "Retirar senha" no simulador
-- **ENTÃO** a tela mostra o número do ticket emitido
+#### Scenario: Ticket emitido entra na fila
+- **QUANDO** o Totem registra um novo ticket
+- **ENTÃO** o mesmo ticket aparece como AGUARDANDO, sem novo número gerado pela fila
 
 ### Requirement: Fila pré-triagem visível à Recepção/Triagem
 O sistema DEVE mostrar à Recepção/Triagem os tickets do dia com status AGUARDANDO, em ordem de emissão, e os tickets CHAMADO, com o horário de emissão. Somente os perfis Recepção/Triagem e Administrador DEVEM ter acesso a essa lista.
@@ -66,16 +43,42 @@ A Recepção/Triagem DEVE poder chamar o próximo ticket, que é sempre o AGUARD
 - **QUANDO** o usuário já tem um ticket CHAMADO e aciona "Chamar próximo"
 - **ENTÃO** o sistema recusa e pede que ele conclua o ticket atual
 
-### Requirement: Concluir o ticket chamado
-Para o ticket que chamou, a Recepção/Triagem DEVE poder rechamar (repetir o aviso), marcar "Não compareceu" (status NAO_COMPARECEU) ou marcar "Paciente identificado" informando o paciente (status ATENDIDO). Somente quem chamou o ticket DEVE poder concluí-lo.
+### Requirement: Repetir chamada dentro de uma oportunidade
+Para o ticket CHAMADO, a Recepção/Triagem DEVE poder repetir a chamada até 3 vezes na oportunidade atual, respeitando intervalo mínimo de 30 segundos entre chamadas da mesma senha. Repetir NÃO DEVE criar novo ticket. Somente quem chamou o ticket pode operá-lo.
+
+#### Scenario: Intervalo mínimo
+- **QUANDO** a Recepção/Triagem tenta rechamar antes de completar 30 segundos desde a chamada anterior
+- **ENTÃO** o backend recusa e informa quando poderá chamar novamente, sem registrar chamada
+
+#### Scenario: Três chamadas na primeira oportunidade
+- **QUANDO** o paciente não responde após a terceira chamada da primeira oportunidade
+- **ENTÃO** o mesmo ticket volta ao fim da fila com a mesma identidade e número, para uma única nova oportunidade
+
+#### Scenario: Segunda oportunidade esgotada
+- **QUANDO** o paciente não responde após até 3 chamadas da segunda oportunidade
+- **ENTÃO** o ticket passa a NAO_COMPARECEU e sai definitivamente da fila ativa
+
+#### Scenario: Rechamada não gera ticket
+- **QUANDO** a Recepção/Triagem rechama um ticket já chamado
+- **ENTÃO** registra outra chamada no ticket existente, sem alterar seu número ou identidade
+
+### Requirement: Ciclo de estados do Ticket Pré-Triagem
+O ciclo de estados DEVE ser `AGUARDANDO → CHAMADO`; após até 3 chamadas sem resposta na primeira oportunidade, `CHAMADO → AGUARDANDO` com oportunidade incrementada e posição no fim da fila; após até 3 chamadas sem resposta na segunda oportunidade, `CHAMADO → NAO_COMPARECEU`. Identificação faz `CHAMADO → ATENDIDO`; desistência explicitamente registrada faz `CHAMADO → DESISTENCIA`. Rechamada mantém o mesmo ticket em `CHAMADO` e não cria nova identidade. `ATENDIDO`, `NAO_COMPARECEU` e `DESISTENCIA` são estados finais.
+
+#### Scenario: Ciclo de retorno preserva o ticket
+- **QUANDO** um ticket completa três chamadas sem resposta na primeira oportunidade e é selecionado novamente
+- **ENTÃO** permanece o mesmo ticket e número, a oportunidade aumenta e sua posição segue os tickets já aguardando
+
+### Requirement: Concluir ou desistir do ticket chamado
+A Recepção/Triagem DEVE poder marcar "Paciente identificado" (status ATENDIDO) ou registrar desistência explícita (status DESISTENCIA). Esses estados são finais e saem da fila ativa.
 
 #### Scenario: Paciente identificado
 - **QUANDO** a Recepção/Triagem pesquisa o CPF do paciente do ticket 5 e aciona "Paciente identificado"
 - **ENTÃO** o ticket 5 passa a ATENDIDO, vinculado ao paciente, e sai da fila
 
-#### Scenario: Não compareceu
-- **QUANDO** a Recepção/Triagem marca o ticket chamado como "Não compareceu"
-- **ENTÃO** o ticket sai da fila com status NAO_COMPARECEU
+#### Scenario: Desistência explícita
+- **QUANDO** a Recepção/Triagem registra desistência explícita para o ticket chamado
+- **ENTÃO** o ticket passa a DESISTENCIA e sai definitivamente da fila ativa
 
 #### Scenario: Outro usuário tenta concluir
 - **QUANDO** um usuário tenta concluir um ticket chamado por outro usuário

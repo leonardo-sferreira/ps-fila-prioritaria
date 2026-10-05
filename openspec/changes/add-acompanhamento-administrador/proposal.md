@@ -18,9 +18,9 @@ Depois do feedback do professor, o Administrador ganhou uma tela de acompanhamen
 
 ## What Changes
 
-- **Status operacional da equipe:** Recepção/Triagem e Médico informam o próprio status (Disponível, Pausa, Ausente). O status "Em atendimento" é definido automaticamente para o médico quando ele confirma um comparecimento. Médico em Pausa ou Ausente não chama pacientes.
+- **Status operacional da equipe:** Recepção/Triagem e Médico informam o próprio status (Disponível, Pausa, Ausente). O status "Em atendimento" é definido automaticamente para o médico quando ele confirma um comparecimento. Médico em Pausa ou Ausente não recebe novas atribuições, mas mantém as fichas sob sua responsabilidade. O Médico pode solicitar encerramento do plantão, concluído somente com fila atribuída zerada.
 - **Fila geral:** visão interna de todas as fichas não finalizadas (EM_TRIAGEM, AGUARDANDO, CHAMADO) com senha, cor, condição prioritária, especialidade, tempo de espera e status, com filtros (RF22, visão geral da seção 3).
-- **Pessoas logadas e status:** usuários com sessão ativa, com perfil, status operacional e horário de login.
+- **Pessoas logadas e status:** usuários com sessão ativa, com perfil, status operacional e horário de login; o plantão do Médico é mostrado separadamente do status e da sessão.
 - **Auditoria:** consulta das últimas alterações (prioridade, sintomas, disponibilidade, cadastros, chamadas, logins) com responsável, data/hora, valores e justificativa, com filtros (RF37, RNF07).
 - **Detalhe da ficha para o Administrador**, somente leitura, com o histórico da ficha.
 

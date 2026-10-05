@@ -6,7 +6,7 @@
 | Sprint e entrega | Sprint 5, segunda 02/11 |
 | Fatias no Trello | Fatia 9 — Painel público |
 | Dupla | Luisa (API) · Nicolas (tela) |
-| Depende de | `add-fila-chamada-medico` (chamadas e previsão); `add-pacientes-pre-triagem` só para o ticket chamado |
+| Depende de | `add-fila-chamada-medico` (chamadas, Sala e previsão por fila); `add-pacientes-pre-triagem` para o ticket chamado; `add-cadastros-administrador` para Sala |
 | Situação | Em revisão |
 | RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF50 (complementos do painel); RF35 |
 
@@ -19,7 +19,7 @@ Os pacientes que aguardam precisam saber quando e para onde ir, sem ter seus dad
 ## What Changes
 
 - **Página pública do painel**, sem login, para TV na sala de espera (RF33, UC11).
-- **Senha atual em destaque**, com especialidade e local, e com aviso visual e sonoro a cada chamada nova ou repetida (seção 11.3).
+- **Senha atual em destaque**, com especialidade e Sala operacional associada quando houver, e aviso visual e sonoro a cada chamada nova ou repetida.
 - **Últimas chamadas** (histórico curto).
 - **Previsão das próximas N senhas por especialidade** (inicial 5), vinda da função de previsão da fila (RF34, RF35, RN25, RN26, CA10–CA12).
 - **Ticket da pré-triagem chamado pela Recepção/Triagem**, para o paciente saber que é a vez dele na triagem.
@@ -29,7 +29,7 @@ Os pacientes que aguardam precisam saber quando e para onde ir, sem ter seus dad
 ### Fora do escopo
 
 - Chamada por voz sintetizada (só um aviso sonoro curto).
-- Cadastro de salas ou consultórios: o "local" exibido é a especialidade (ver design.md, D3).
+- Cadastro/manutenção de salas, que pertence a `add-cadastros-administrador`.
 - Qualquer mudança nas regras da fila (a previsão vem de `add-fila-chamada-medico`).
 
 ## Capacidades
@@ -42,12 +42,12 @@ _Nenhuma._
 
 ## Impacto
 
-- **Xano:** endpoint público somente leitura `GET painel?especialidades=`, que agrega as últimas `chamada`, as previsões (`prever_fila`) e os tickets pré-triagem chamados, só com campos não pessoais.
+- **Xano:** endpoint público somente leitura `GET painel?especialidades=`, que agrega as últimas `chamada`, Sala quando aplicável, previsões por especialidade (`prever_fila`) e tickets pré-triagem chamados, só com campos não pessoais. Não estabelece interleaving global entre especialidades, ainda pendente em `add-fila-chamada-medico`.
 - **Reflex:** página `/painel` em tela cheia, com polling, destaque e som.
 - **Testes:** `tests/api/test_painel.py` (conteúdo, privacidade e coerência com a chamada).
 - **Depende de:** `add-fila-chamada-medico` (chamadas e previsão) e `add-pacientes-pre-triagem` (tickets).
 
 ## Perguntas em aberto
 
-- [ ] "Local" é a especialidade (design, D3), mas o card fala em "sala". Confirmar. · PENDENTE PO
-- [x] O texto "previsão sujeita a mudança" continua, porque a previsão muda quando entra um paciente mais prioritário (RN26); a questão do médico com várias especialidades foi decidida em 04/10/2026. · DECIDIDO PO
+- [x] Especialidade e Sala são conceitos distintos; chamadas médicas mostram a Sala associada quando houver. · BASELINE
+- [ ] A ordenação global entre filas de especialidades diferentes depende da decisão pendente registrada em `add-fila-chamada-medico`; este painel apresenta previsões separadas por especialidade até lá. · DEPENDÊNCIA FUNCIONAL

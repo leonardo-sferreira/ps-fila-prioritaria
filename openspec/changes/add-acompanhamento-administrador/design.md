@@ -15,9 +15,9 @@ Os dados já existem: `sessao` (change 1), `historico_alteracao` (change 2), `fi
 
 ## Decisões
 
-### D1. Status na `sessao`
-Campo `status_operacional` (enum, nulo para ADMINISTRADOR) na sessão aberta mais recente do usuário. `PATCH me/status` altera essa sessão. `comparecimento` define EM_ATENDIMENTO e `chamar-proximo` define DISPONIVEL, na mesma transação da operação. `chamar-proximo` passa a recusar PAUSA/AUSENTE.
-- **Por quê:** o status só faz sentido enquanto há sessão; ao sair, some da lista de logados sem precisar de limpeza.
+### D1. Status operacional e sessão
+Campo `status_operacional` (enum, nulo para ADMINISTRADOR) representa disponibilidade operacional e não autenticação; sessão ativa continua determinada por `logout_em` nulo e `expira_em` futuro conforme `add-autenticacao-perfis`. `PATCH me/status` altera o status. `comparecimento` define EM_ATENDIMENTO e chamada aceita define DISPONIVEL, na mesma transação da operação. PAUSA/AUSENTE impedem novas atribuições, não encerram a sessão nem retiram fichas já atribuídas. O plantão possui estado próprio, separado da sessão/status; seu encerramento só é concluído com fila atribuída zerada.
+- **Por quê:** autenticação, disponibilidade e ciclo do plantão são estados distintos; logout/expiração encerram a sessão, não uma pausa operacional.
 
 ### D2. Auditoria consolidada por consulta, não por cópia
 `GET admin/auditoria` junta três fontes num formato único: `historico_alteracao` (alterações), `chamada` (tipos CHAMADA/COMPARECIMENTO/DESISTENCIA) e `sessao` (LOGIN em `login_em`, LOGOUT em `logout_em`). Ordena por data/hora decrescente, filtra e pagina no Xano.
@@ -29,7 +29,7 @@ Campo `status_operacional` (enum, nulo para ADMINISTRADOR) na sessão aberta mai
 `GET admin/fila-geral` lista as fichas não finalizadas. Para as AGUARDANDO, a ordem de cada especialidade vem de `prever_fila(especialidade, total)` (change 6), a mesma regra da chamada. O tempo de espera é calculado no backend a partir de `chegada_em`.
 
 ### D4. Tela `/admin/acompanhamento`
-Três abas ou blocos: "Fila geral" (tabela com cores de `cores.py`, filtros e link para o detalhe), "Equipe" (cartões por pessoa com um selo de status) e "Auditoria" (tabela paginada com filtros e valores anterior e novo lado a lado). Polling de 10 s só na aba visível. Detalhe da ficha em `/admin/fichas/{id}` (somente leitura).
+Três abas ou blocos: "Fila geral" (tabela com cores calculadas da prioridade, filtros e link para o detalhe), "Equipe" (cartões por pessoa com sessão ativa, status operacional e, para Médico, estado do plantão em campos separados) e "Auditoria" (tabela paginada com filtros e valores anterior e novo lado a lado). Polling de 10 s só na aba visível. Detalhe da ficha em `/admin/fichas/{id}` (somente leitura).
 
 ### D5. Seletor de status para a equipe
 Um componente no cabeçalho de `/recepcao` e `/medico` mostra o status atual e permite trocar entre Disponível, Pausa e Ausente; EM_ATENDIMENTO aparece como texto, não como opção.

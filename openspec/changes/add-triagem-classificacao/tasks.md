@@ -5,7 +5,7 @@
 - [ ] 1.1 [Xano] Criar a tabela `faixa_sinal_vital` e ampliar a carga inicial com as faixas da spec e os parâmetros `limiar_risco_moderado` (3) e `limiar_risco_alto` (6); verificar que duas execuções da carga não duplicam registros
 - [ ] 1.2 [Xano] Criar a função `classificar_ficha` (D2) e o endpoint `POST triagem/simular-classificacao`; verificar com os testes 1.4
 - [ ] 1.3 [Xano] Criar `GET/PUT risco/faixas/{parametro}` e o PATCH dos limiares (ADMINISTRADOR, com verificação de cobertura D3 e auditoria); verificar com os testes 1.4
-- [ ] 1.4 Escrever `tests/api/test_classificacao.py` cobrindo todos os valores-limite da spec (PA, FC, FR, temperatura, SpO2, glicemia com e sem sinais de gravidade), escore 2/3/5/6, parâmetro isolado com 3 pontos, múltiplos sintomas, risco que agrava, risco que não suaviza, ficha só com observação, idades 11/12/59/60, faixas sobrepostas, lacuna, limiares incoerentes e 403 para quem não é ADMINISTRADOR; verificar que passam
+- [ ] 1.4 Escrever `tests/api/test_classificacao.py` cobrindo valores-limite dos sinais vitais e os quatro casos oficiais de glicemia, soma de sintomas e parâmetros, escores 2/3/5/6, sintoma ou parâmetro isolado com 3 pontos, ficha só com observação, destino pediátrico sem alterar classificação, idades 11/12/59/60, faixas sobrepostas, lacuna, limiares incoerentes e 403 para quem não é ADMINISTRADOR; verificar que passam
 
 ## 2. Xano — ficha de atendimento
 
