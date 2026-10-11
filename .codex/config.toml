@@ -1,0 +1,11 @@
+[mcp_servers.xano]
+command = "npx"
+args = ["-y", "@xano/developer-mcp"]
+
+[agents.ps-implementer]
+description = "PS Implementer: executa somente o escopo autorizado e devolve evidências ao Supervisor."
+config_file = "agents/ps-implementer.toml"
+
+[agents.ps-reviewer]
+description = "PS Reviewer: revisão independente e read-only de OpenSpec, diffs, testes, riscos e gates."
+config_file = "agents/ps-reviewer.toml"
