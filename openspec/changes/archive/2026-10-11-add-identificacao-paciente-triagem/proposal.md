@@ -7,7 +7,7 @@
 | Fatias no Trello | Fatia 2 — Cadastro de paciente |
 | Dupla | Luisa (API e dados) · Nicolas (tela) |
 | Depende de | `add-autenticacao-perfis` e `add-base-compartilhada` |
-| Situação | Em implementação |
+| Situação | Concluída com pendências deferidas |
 | Rastreabilidade | RF03, RF04, RF05, RN01, RN02 e CA01 |
 
 > Esquema físico: a tabela `paciente` já está publicada em `backend/xano/table/`. Não há mudança de esquema prevista nesta Sprint.
@@ -46,6 +46,10 @@ _Nenhuma._
 - **Reflex:** fluxo protegido de identificação, cadastro e atualização em Recepção/Triagem.
 - **Testes:** CPF, busca, cadastro, PATCH, autorização, auditoria e CA01.
 - **Dependências:** `add-autenticacao-perfis` fornece token, acesso e 401/403; `add-base-compartilhada` fornece `registrar_alteracao`.
+
+### Fechamento com integrações deferidas
+
+A capacidade principal de identificação, cadastro e atualização de pacientes foi entregue e validada. As integrações reais com autenticação por perfil (`add-autenticacao-perfis`) e auditoria compartilhada (`add-base-compartilhada`) ficaram fora da execução desta fatia porque essas capacidades ainda não foram implementadas no projeto. As integrações deverão ser revisitadas quando essas changes forem implementadas, e as tasks correspondentes permanecem propositalmente abertas no histórico desta change.
 
 ## Perguntas em aberto
 
