@@ -6,7 +6,7 @@
 | Sprint e entrega | Sprint 5, segunda 02/11 |
 | Fatias no Trello | Fatia 9 — Painel público |
 | Dupla | Luisa (API) · Nicolas (tela) |
-| Depende de | `add-fila-chamada-medico` (chamadas, Sala e previsão por fila); `add-pacientes-pre-triagem` para o ticket chamado; `add-cadastros-administrador` para Sala |
+| Depende de | `add-fila-chamada-medico` (chamadas, Sala e previsão por fila); futura operação da fila de Recepção/Triagem para o ticket chamado; `add-cadastros-administrador` para Sala |
 | Situação | Em revisão |
 | RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF50 (complementos do painel); RF35 |
 
@@ -45,7 +45,7 @@ _Nenhuma._
 - **Xano:** endpoint público somente leitura `GET painel?especialidades=`, que agrega as últimas `chamada`, Sala quando aplicável, previsões por especialidade (`prever_fila`) e tickets pré-triagem chamados, só com campos não pessoais. Não estabelece interleaving global entre especialidades, ainda pendente em `add-fila-chamada-medico`.
 - **Reflex:** página `/painel` em tela cheia, com polling, destaque e som.
 - **Testes:** `tests/api/test_painel.py` (conteúdo, privacidade e coerência com a chamada).
-- **Depende de:** `add-fila-chamada-medico` (chamadas e previsão) e `add-pacientes-pre-triagem` (tickets).
+- **Depende de:** `add-fila-chamada-medico` (chamadas e previsão) e futura operação da fila de Recepção/Triagem (tickets).
 
 ## Perguntas em aberto
 
