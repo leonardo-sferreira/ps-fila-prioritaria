@@ -11,7 +11,8 @@ table ficha_atendimento {
     int? ticket_id? {
       table = "ticket_pre_triagem"
     }
-    int aberta_por {
+    // Temporariamente anulável até a integração com add-autenticacao-perfis.
+    int? aberta_por? {
       table = "usuario"
     }
     timestamp chegada_em

@@ -4,7 +4,7 @@ from collections import deque
 import unittest
 from unittest.mock import patch
 
-from ps_fila_prioritaria.ps_fila_prioritaria import PacienteState
+from ps_fila_prioritaria.ps_fila_prioritaria import ARQUIVO_ENV, PacienteState, carregar_variaveis_ambiente
 
 
 class Resposta:
@@ -29,6 +29,7 @@ class EstadoFalso:
     cadastrar = PacienteState.cadastrar.fn
     atualizar = PacienteState.atualizar.fn
     set_telefone = PacienteState.set_telefone.fn
+    continuar_atendimento = PacienteState.continuar_atendimento.fn
 
     def __init__(self, cpf: str = "") -> None:
         self.cpf_busca = cpf
@@ -43,6 +44,7 @@ class EstadoFalso:
         self.erro = False
         self.alterado = None
         self.telefone_alterado = False
+        self.abrindo_ficha = False
 
     def _url(self, caminho: str) -> str:
         return f"https://xano.test{caminho}"
@@ -182,6 +184,45 @@ def test_atualizar_envia_telefone_vazio_so_quando_usuario_apaga() -> None:
         assert "telefone" not in patch_http.call_args_list[2].kwargs["json"]
 
 
+def test_continuar_cria_ficha_para_paciente_identificado() -> None:
+    estado = EstadoFalso()
+    estado.paciente_id = PACIENTE_A["id"]
+
+    with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}, clear=False), patch(
+        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.post",
+        return_value=Resposta(201, {"id": 10, "paciente_id": PACIENTE_A["id"]}),
+    ) as post:
+        redirecionamento = estado.continuar_atendimento()
+
+    assert post.call_args.args[0] == "https://triagem.test/fichas"
+    assert post.call_args.kwargs["json"] == {"paciente_id": PACIENTE_A["id"]}
+    assert redirecionamento is not None
+    assert not estado.erro
+    assert not estado.abrindo_ficha
+
+
+def test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes() -> None:
+    estado = EstadoFalso()
+    estado.paciente_id = PACIENTE_A["id"]
+
+    with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": ""}, clear=False), patch(
+        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.post"
+    ) as post:
+        estado.continuar_atendimento()
+
+    post.assert_not_called()
+    assert estado.erro
+    assert estado.mensagem == "Configure XANO_TRIAGEM_API_URL para conectar a ficha à API do PS."
+
+
+def test_carregamento_de_env_usa_o_arquivo_do_frontend() -> None:
+    assert ARQUIVO_ENV.name == ".env"
+    assert ARQUIVO_ENV.parent.name == "frontend"
+    with patch("ps_fila_prioritaria.ps_fila_prioritaria.load_dotenv") as carregar:
+        carregar_variaveis_ambiente()
+    carregar.assert_called_once_with(dotenv_path=ARQUIVO_ENV)
+
+
 class TestPacienteState(unittest.TestCase):
     """Compatível tanto com unittest quanto com a suíte pytest planejada do projeto."""
 
@@ -193,3 +234,12 @@ class TestPacienteState(unittest.TestCase):
 
     def test_telefone_vazio(self) -> None:
         test_atualizar_envia_telefone_vazio_so_quando_usuario_apaga()
+
+    def test_continuar(self) -> None:
+        test_continuar_cria_ficha_para_paciente_identificado()
+
+    def test_erro_configuracao_triagem(self) -> None:
+        test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes()
+
+    def test_arquivo_env(self) -> None:
+        test_carregamento_de_env_usa_o_arquivo_do_frontend()
