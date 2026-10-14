@@ -21,7 +21,7 @@ O Totem faz parte do escopo aprovado e deve emitir um ticket sem dados pessoais,
 - Exibir ao paciente o número emitido e confirmação de que deve aguardar chamada da Recepção/Triagem.
 - Proteger a operação de emissão contra chamadas não autorizadas, mantendo segredo no servidor e nunca no navegador.
 - Usar o fuso oficial `America/Sao_Paulo` para o dia operacional.
-- Deixar a operação da fila (chamar, rechamar, retorno ao fim, identificar ou desistência) para `add-pacientes-pre-triagem`.
+- Deixar a operação da fila (chamar, rechamar, retorno ao fim, identificar ou desistência) para futura change própria de operação da fila da Recepção/Triagem.
 
 ### Fora do escopo
 
@@ -36,14 +36,14 @@ O Totem faz parte do escopo aprovado e deve emitir um ticket sem dados pessoais,
 - `totem`: emissão de ticket impessoal e registro na fila de Recepção/Triagem.
 
 ### Capacidades modificadas
-- Nenhuma. `add-pacientes-pre-triagem` dependerá desta capacidade para receber tickets emitidos.
+- Nenhuma. A futura capacidade de operação da fila consumirá os tickets emitidos.
 
 ## Impact
 
 - **Xano:** contrato de emissão e registro de ticket, com numeração diária no fuso oficial e proteção da operação.
 - **Reflex:** experiência pública de Totem, sem autorização por perfil de equipe nem dados pessoais.
 - **Segurança:** segredo usado para emissão fica no servidor; autorização e persistência são responsabilidade do Xano.
-- **Dependências:** `add-pacientes-pre-triagem` passa a consumir os tickets emitidos; a operação da fila continua nessa change.
+- **Dependências:** a futura capacidade de operação da fila consumirá os tickets emitidos; esta change permanece limitada à emissão pública.
 
 ## Perguntas em aberto
 

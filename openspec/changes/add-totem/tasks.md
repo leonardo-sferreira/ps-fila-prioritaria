@@ -14,5 +14,5 @@
 
 ## 3. Integração e documentação
 
-- [ ] 3.1 Verificar ponta a ponta que o ticket emitido pelo Totem aparece na fila da change `add-pacientes-pre-triagem` com a mesma identidade e número
+- [ ] 3.1 Verificar ponta a ponta, quando a futura change de operação da fila existir, que o ticket emitido pelo Totem é consumido com a mesma identidade e número
 - [ ] 3.2 Documentar configuração segura da credencial e roteiro manual de emissão; verificar instruções sem incluir valor real de segredo

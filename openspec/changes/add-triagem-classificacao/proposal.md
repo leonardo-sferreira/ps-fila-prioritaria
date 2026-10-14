@@ -6,7 +6,7 @@
 | Sprint e entrega | Sprint 2, segunda 12/10 |
 | Fatias no Trello | Fatia 3 — Ficha e sintomas · Fatia 4 — Prioridade |
 | Dupla | Fatia 3: Luisa · Nicolas. Fatia 4: Leonardo Machado · Nicolas |
-| Depende de | `add-pacientes-pre-triagem` (paciente) e `add-base-compartilhada` (`sintoma` com dados, `parametro` e `registrar_alteracao`, Sprint 1) |
+| Depende de | `add-identificacao-paciente-triagem` (paciente) e `add-base-compartilhada` (`sintoma` com dados, `parametro` e `registrar_alteracao`, Sprint 1) |
 | Situação | Em revisão |
 | RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF08 e RF42 (sinais vitais e fator de risco); RF43 (cancelar ficha) |
 
@@ -49,7 +49,7 @@ _Nenhuma._
 - **Xano:** tabelas `ficha_atendimento`, `ficha_sintoma` e `faixa_sinal_vital`; novos parâmetros `limiar_risco_moderado` e `limiar_risco_alto`; função `classificar_ficha` (pura, testável); endpoints de ficha (RECEPCAO_TRIAGEM; leitura para ADMINISTRADOR) e de configuração do risco (ADMINISTRADOR).
 - **Reflex:** tela de triagem em `/recepcao/ficha/{id}`, com a classificação atualizada a cada alteração; `/admin/risco`.
 - **Testes:** `tests/api/test_classificacao.py`, com os valores-limite de cada faixa, e `tests/api/test_ficha.py`.
-- **Depende de:** `add-cadastros-administrador` (sintomas, parâmetros, auditoria) e `add-pacientes-pre-triagem` (paciente, ticket).
+- **Depende de:** `add-cadastros-administrador` (sintomas, parâmetros, auditoria) e `add-identificacao-paciente-triagem` (paciente). A operação de ticket/fila é dependência futura distinta quando a Ficha for aberta a partir dela.
 - Referências RF/RN/CA identificam rastreabilidade, mas o texto formal pode não refletir as decisões consolidadas. Não inventar requisito ausente; seguir a baseline local e registrar divergência para sincronização do Confluence.
 
 ## Perguntas em aberto

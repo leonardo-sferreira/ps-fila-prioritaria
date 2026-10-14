@@ -2,7 +2,7 @@
 
 ## Contexto
 
-Ver `proposal.md` e `specs/totem/spec.md`. A fila e as ações de Recepção/Triagem ficam em `add-pacientes-pre-triagem`; esta change é dona da emissão e da experiência pública.
+Ver `proposal.md` e `specs/totem/spec.md`. A fila e as ações de Recepção/Triagem pertencem a futura change própria; esta change é dona da emissão e da experiência pública.
 
 ## Objetivos / Fora dos objetivos
 
@@ -27,7 +27,7 @@ A chamada pública ao endpoint de emissão usa uma credencial de dispositivo con
 - **Alternativa:** colocar chave no JavaScript/URL do navegador. Descartada porque seria visível a qualquer pessoa no equipamento.
 
 ### D3. Ticket operacional sem dados pessoais
-O registro guarda somente número/data/horário/status e identificador operacional necessário à fila. Não recebe nome, CPF, paciente ou sintoma. `add-pacientes-pre-triagem` consome esse mesmo ticket e controla seus estados e chamadas; rechamada não emite outro ticket.
+O registro guarda somente número/data/horário/status e identificador operacional necessário à fila. Não recebe nome, CPF, paciente ou sintoma. A futura capacidade de operação da fila consome esse mesmo ticket e controla seus estados e chamadas; rechamada não emite outro ticket.
 - **Alternativa:** gerar outro ticket ao rechamar. Descartada porque quebraria identidade, ordem e histórico da fila.
 
 ### D4. Experiência pública
@@ -40,7 +40,7 @@ A tela apresenta um único comando de emissão, o número retornado pelo backend
 
 ## Plano de migração
 
-A criação/numeração do ticket passa a pertencer a esta change e a operação da fila a `add-pacientes-pre-triagem`. Compatibilidade ou migração de registros existentes deve ser verificada no workspace Xano durante a implementação, sem alterar schema físico nesta revisão documental.
+A criação/numeração do ticket passa a pertencer a esta change e a operação da fila a futura change própria. Compatibilidade ou migração de registros existentes deve ser verificada no workspace Xano durante a implementação, sem alterar schema físico nesta revisão documental.
 
 ## Questões em aberto
 
