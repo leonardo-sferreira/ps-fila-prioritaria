@@ -1,4 +1,4 @@
-// Queixa selecionável na triagem, com prioridade padrão.
+// Queixa selecionável na triagem, com pontuação acadêmica para composição futura do escore.
 table sintoma {
   auth = false
 
@@ -8,11 +8,9 @@ table sintoma {
     text nome filters=trim
     text descricao?
     enum grupo {
-      values = ["CARDIOVASCULAR", "RESPIRATORIO", "NEUROLOGICO", "GASTROINTESTINAL", "TRAUMATICO_ORTOPEDICO", "GERAL"]
+      values = ["CARDIOVASCULAR", "RESPIRATORIO", "NEUROLOGICO", "GASTROINTESTINAL", "TRAUMATICO_ORTOPEDICO", "TRAUMATICO_NEUROLOGICO", "GERAL"]
     }
-    enum prioridade_padrao {
-      values = ["VERMELHA", "AMARELA", "AZUL"]
-    }
+    int pontuacao filters=min:1|max:3
     bool ativo?=true
   }
 
