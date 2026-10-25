@@ -14,7 +14,12 @@ context: |
     nome completo. Alterações relevantes geram auditoria.
   - Development: Mudanças especificadas com OpenSpec e entregues em fatias verticais verificáveis.
     Quando uma change existente conflitar com a base sanitizada, revisar a change antes de
-    implementá-la. Confluence é a referência formal de RF/RNF/RN e deve permanecer sincronizado.
+    implementá-la. A referência formal de RF/RNF/RN é a Documentação de Requisitos do PO
+    (documento Word, Revisão 2.1 de 25/10/2026, mantido fora do Git); citar seções (§) e códigos.
+  - Princípio do projeto: não criar nada antecipadamente (YAGNI).
+    Código, componentes, campos ou tabelas que JÁ EXISTEM devem ser refatorados/melhorados
+    quando a mudança tocar neles. NÃO criar nada novo "para deixar pronto" ou "para uso
+    futuro"; só criar algo quando for usado de fato nesta mudança.
   - Language: Escrever artefatos OpenSpec e documentação inteiramente em português
     brasileiro, inclusive títulos, "DEVE"/"NÃO DEVE" nos requisitos e "QUANDO"/"ENTÃO"/"E"
     nos cenários. Exceção obrigatória (o CLI do OpenSpec depende deles): manter em inglês
@@ -24,13 +29,19 @@ context: |
 rules:
   proposal:
     - Descrever claramente problema, objetivo e escopo, citando RF/RN do documento formal quando aplicável.
-    - Começar com o cabeçalho (change, sprint, fatias no Trello, dupla, depende de, situação) e terminar com "Perguntas em aberto".
+    - Começar com o cabeçalho (change, sprint, card no Trello, depende de, situação) e terminar com "Perguntas em aberto".
     - Usar os títulos "## Why" e "## What Changes"; sem eles o comando openspec show não lê o proposal.
     - Listar explicitamente o que fica fora do escopo da change.
+    - Descrever apenas o que esta mudança realmente vai usar; nada de itens para o futuro.
   specs:
     - Escrever requisitos verificáveis, com cenários para casos de erro e de permissão negada.
+  design:
+    - Preferir reaproveitar e refatorar o que já existe a criar estruturas novas.
+    - Não projetar abstrações, campos ou componentes sem uso imediato.
   tasks:
     - Dividir em tarefas pequenas e verificáveis, separando Xano (backend) e Reflex (frontend).
+    - Toda tarefa que cria algo novo precisa apontar onde aquilo é usado nesta mudança.
+    - Incluir tarefas de refatoração quando o código existente for afetado.
 
 operations:
   apply:
