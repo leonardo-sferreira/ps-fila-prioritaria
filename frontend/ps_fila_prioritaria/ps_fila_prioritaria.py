@@ -31,7 +31,7 @@ def _mensagem_erro(resposta: httpx.Response) -> str:
     if isinstance(corpo, dict):
         mensagem = corpo.get("message") or corpo.get("error") or corpo.get("code")
         if mensagem == "CPF_DUPLICADO":
-            return "CPF_DUPLICADO: já existe um Paciente cadastrado com este CPF."
+            return "Já existe paciente com este CPF (CPF_DUPLICADO). Pesquise novamente para carregar o cadastro."
         if mensagem == "FICHA_SEM_SINTOMA_OU_OBSERVACAO":
             return "Informe ao menos um sintoma ou uma observação."
         if isinstance(mensagem, str):
@@ -142,11 +142,16 @@ class PacienteState(rx.State):
         if not paciente:
             self.cpf = cpf_consultado
             self.exibir_cadastro = True
-            self.mensagem = "Paciente não encontrado. Complete o cadastro para continuar."
+            self.mensagem = "Paciente não encontrado — preencha o cadastro (o CPF já vem preenchido)."
             return
 
         self._carregar_paciente(paciente)
-        self.mensagem = "Paciente encontrado."
+        self.mensagem = "Paciente encontrado — confira e atualize os dados se necessário. O CPF não pode ser alterado."
+
+    def cancelar(self) -> None:
+        """Limpa a pesquisa e o formulário, sem chamar a API."""
+        self._resetar_paciente_atual()
+        self.cpf_busca = ""
 
     def cadastrar(self) -> None:
         url = self._url("/pacientes")
@@ -450,71 +455,190 @@ def sintomas_disponiveis(
     )
 
 
-def formulario_paciente() -> rx.Component:
-    return rx.vstack(
-        rx.input(value=PacienteState.nome, on_change=PacienteState.set_nome, placeholder="Nome completo", width="100%"),
-        rx.input(type="date", value=PacienteState.data_nascimento, on_change=PacienteState.set_data_nascimento, width="100%"),
-        rx.input(value=PacienteState.telefone, on_change=PacienteState.set_telefone, placeholder="Telefone (opcional)", width="100%"),
-        spacing="3",
+# Cores do protótipo no Figma (telas 3 e 3a–3e).
+COR_MARINHO = "#123C6B"
+COR_AZUL = "#1565C0"
+COR_FUNDO = "#F3F5F7"
+COR_BORDA = "#DDE3E8"
+COR_TEXTO = "#1A2027"
+COR_SECUNDARIA = "#66707A"
+COR_SUCESSO = "#2E7D32"
+COR_ERRO = "#C62828"
+
+
+def cabecalho_recepcao(titulo: str, subtitulo: str, sigla: str) -> rx.Component:
+    return rx.hstack(
+        rx.center(
+            rx.text(sigla, weight="bold", size="4", color="white"),
+            width="48px",
+            height="48px",
+            border_radius="50%",
+            background="rgba(255, 255, 255, 0.15)",
+            flex_shrink="0",
+        ),
+        rx.vstack(
+            rx.text(titulo, weight="bold", size="5", color="white"),
+            rx.text(subtitulo, size="2", color="#CCDEF0"),
+            spacing="1",
+        ),
+        rx.spacer(),
+        rx.vstack(
+            rx.moment(format="DD/MM/YYYY", interval=60000, tz="America/Sao_Paulo", color="#CCDEF0", font_size="14px", font_weight="500"),
+            rx.moment(format="HH:mm", interval=10000, tz="America/Sao_Paulo", color="white", font_size="26px", font_weight="700"),
+            spacing="0",
+            align="end",
+        ),
+        align="center",
+        spacing="4",
+        background=COR_MARINHO,
+        padding="0 48px",
+        height="96px",
         width="100%",
     )
 
 
-def recepcao_pacientes() -> rx.Component:
-    return rx.center(
-        rx.card(
-            rx.vstack(
-                rx.heading("Identificação de Paciente", size="7"),
-                rx.text("Recepção/Triagem — pesquise pelo CPF antes de cadastrar."),
-                rx.hstack(
-                    rx.input(value=PacienteState.cpf_busca, on_change=PacienteState.set_cpf_busca, placeholder="CPF com ou sem pontuação", width="100%"),
-                    rx.button("Buscar", on_click=PacienteState.buscar),
-                    width="100%",
-                ),
-                rx.cond(
-                    PacienteState.mensagem != "",
-                    rx.callout(PacienteState.mensagem, color_scheme=rx.cond(PacienteState.erro, "red", "blue")),
-                ),
-                rx.cond(
-                    PacienteState.exibir_cadastro,
-                    rx.vstack(
-                        rx.heading("Cadastrar Paciente", size="5"),
-                        rx.text("CPF informado: ", PacienteState.cpf),
-                        formulario_paciente(),
-                        rx.button("Cadastrar", on_click=PacienteState.cadastrar),
-                        align="stretch",
-                        width="100%",
-                    ),
-                ),
-                rx.cond(
-                    PacienteState.paciente_encontrado,
-                    rx.vstack(
-                        rx.heading("Paciente encontrado", size="5"),
-                        rx.text("CPF: ", PacienteState.cpf),
-                        formulario_paciente(),
-                        rx.hstack(
-                            rx.button("Salvar alterações", on_click=PacienteState.atualizar),
-                            rx.button(
-                                "Continuar",
-                                variant="soft",
-                                on_click=PacienteState.continuar_atendimento,
-                                loading=PacienteState.abrindo_ficha,
-                            ),
-                        ),
-                        rx.cond(
-                            PacienteState.alterado == False,
-                            rx.text("Nenhuma alteração foi enviada ao cadastro.", color_scheme="gray"),
-                        ),
-                        align="stretch",
-                        width="100%",
-                    ),
-                ),
-                spacing="4",
-                width="min(100%, 42rem)",
+def campo_rotulado(rotulo: str, campo: rx.Component) -> rx.Component:
+    return rx.vstack(
+        rx.text(rotulo, size="1", weight="medium", color=COR_SECUNDARIA),
+        campo,
+        spacing="1",
+        width="100%",
+    )
+
+
+def formulario_paciente() -> rx.Component:
+    return rx.vstack(
+        campo_rotulado(
+            "NOME COMPLETO",
+            rx.input(value=PacienteState.nome, on_change=PacienteState.set_nome, placeholder="Digite o nome completo", size="3", width="100%"),
+        ),
+        rx.hstack(
+            campo_rotulado(
+                "DATA DE NASCIMENTO",
+                rx.input(type="date", value=PacienteState.data_nascimento, on_change=PacienteState.set_data_nascimento, size="3", width="100%"),
             ),
+            campo_rotulado(
+                "TELEFONE (OPCIONAL)",
+                rx.input(value=PacienteState.telefone, on_change=PacienteState.set_telefone, placeholder="(00) 00000-0000", size="3", width="100%"),
+            ),
+            spacing="5",
             width="100%",
         ),
-        padding="2rem",
+        spacing="4",
+        width="100%",
+    )
+
+
+def mensagem_identificacao() -> rx.Component:
+    cor = rx.cond(PacienteState.erro, COR_ERRO, rx.cond(PacienteState.paciente_encontrado, COR_SUCESSO, COR_SECUNDARIA))
+    return rx.cond(
+        PacienteState.mensagem != "",
+        rx.text(
+            rx.cond(PacienteState.paciente_encontrado & ~PacienteState.erro, "✓ ", ""),
+            PacienteState.mensagem,
+            size="2",
+            color=cor,
+        ),
+    )
+
+
+def botao_secundario(texto: str, **props: Any) -> rx.Component:
+    return rx.button(texto, variant="outline", color_scheme="gray", size="3", color=COR_TEXTO, **props)
+
+
+def rodape_identificacao() -> rx.Component:
+    return rx.cond(
+        PacienteState.paciente_encontrado | PacienteState.exibir_cadastro,
+        rx.vstack(
+            rx.divider(color=COR_BORDA),
+            rx.hstack(
+                rx.cond(
+                    PacienteState.alterado == False,
+                    rx.text("Nenhuma alteração foi enviada ao cadastro.", size="2", color=COR_SECUNDARIA),
+                ),
+                rx.spacer(),
+                botao_secundario("Cancelar", on_click=PacienteState.cancelar),
+                rx.cond(
+                    PacienteState.paciente_encontrado,
+                    rx.hstack(
+                        botao_secundario("Salvar alterações", on_click=PacienteState.atualizar),
+                        rx.button(
+                            "Continuar",
+                            on_click=PacienteState.continuar_atendimento,
+                            loading=PacienteState.abrindo_ficha,
+                            size="3",
+                            background=COR_AZUL,
+                            min_width="240px",
+                        ),
+                        spacing="3",
+                    ),
+                    rx.button("Salvar cadastro", on_click=PacienteState.cadastrar, size="3", background=COR_AZUL, min_width="240px"),
+                ),
+                align="center",
+                spacing="3",
+                width="100%",
+                padding="16px 32px",
+            ),
+            spacing="0",
+            width="100%",
+        ),
+    )
+
+
+def recepcao_pacientes() -> rx.Component:
+    return rx.box(
+        cabecalho_recepcao(
+            "RECEPÇÃO/TRIAGEM — IDENTIFICAÇÃO DO PACIENTE",
+            "Identifique o paciente pelo CPF antes de abrir a ficha",
+            "R",
+        ),
+        rx.center(
+            rx.vstack(
+                rx.vstack(
+                    rx.text("Identificação do paciente", weight="bold", size="5", color=COR_TEXTO),
+                    rx.text("Pesquise pelo CPF; se não houver cadastro, preencha os dados abaixo", size="2", color=COR_SECUNDARIA),
+                    rx.box(height="12px"),
+                    campo_rotulado(
+                        "CPF",
+                        rx.hstack(
+                            rx.input(
+                                value=PacienteState.cpf_busca,
+                                on_change=PacienteState.set_cpf_busca,
+                                placeholder="000.000.000-00",
+                                size="3",
+                                width="100%",
+                                max_width="342px",
+                                color_scheme=rx.cond(PacienteState.erro, "red", "gray"),
+                            ),
+                            rx.button("Pesquisar", on_click=PacienteState.buscar, size="3", background=COR_AZUL, min_width="160px"),
+                            spacing="4",
+                            width="100%",
+                        ),
+                    ),
+                    mensagem_identificacao(),
+                    rx.cond(
+                        PacienteState.paciente_encontrado | PacienteState.exibir_cadastro,
+                        rx.box(formulario_paciente(), padding_top="12px", width="100%"),
+                    ),
+                    spacing="3",
+                    padding="28px 32px",
+                    width="100%",
+                ),
+                rodape_identificacao(),
+                spacing="0",
+                background="white",
+                border=f"1px solid {COR_BORDA}",
+                border_radius="12px",
+                box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
+                width="min(100%, 772px)",
+            ),
+            padding="40px 16px",
+            width="100%",
+        ),
+        background=COR_FUNDO,
+        font_family="Inter, sans-serif",
+        min_height="100vh",
+        width="100%",
     )
 
 
@@ -683,7 +807,7 @@ def recepcao_ficha() -> rx.Component:
     )
 
 
-app = rx.App()
+app = rx.App(stylesheets=["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"])
 app.add_page(index, route="/")
 app.add_page(recepcao_pacientes, route="/recepcao/pacientes", title="Identificação de Paciente")
 app.add_page(recepcao_ficha, route="/recepcao/ficha/[id]", title="Ficha de atendimento", on_load=FichaState.carregar_da_rota)
