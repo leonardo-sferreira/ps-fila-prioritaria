@@ -1,6 +1,10 @@
 # Material de referência do professor (não versionar)
 cesar ideia.pdf
 
+# Documento de requisitos do PO (não versionar; vale para todas as revisões)
+Documentacao_Requisitos_Fila_Prioritaria_Medica*.docx
+~$*.docx
+
 # Credenciais e configuração local
 .env
 .env.*
