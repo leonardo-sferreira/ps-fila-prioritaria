@@ -142,7 +142,7 @@ class PacienteState(rx.State):
         if not paciente:
             self.cpf = cpf_consultado
             self.exibir_cadastro = True
-            self.mensagem = "Paciente não encontrado — preencha o cadastro (o CPF já vem preenchido)."
+            self.mensagem = "Paciente não encontrado — preencha o cadastro."
             return
 
         self._carregar_paciente(paciente)
@@ -483,8 +483,9 @@ def cabecalho_recepcao(titulo: str, subtitulo: str, sigla: str) -> rx.Component:
         ),
         rx.spacer(),
         rx.vstack(
-            rx.moment(format="DD/MM/YYYY", interval=60000, tz="America/Sao_Paulo", color="#CCDEF0", font_size="14px", font_weight="500"),
-            rx.moment(format="HH:mm", interval=10000, tz="America/Sao_Paulo", color="white", font_size="26px", font_weight="700"),
+            # Relógio do navegador, atualizado a cada segundo no fuso do PS.
+            rx.moment(format="DD/MM/YYYY", interval=1000, tz="America/Sao_Paulo", color="#CCDEF0", font_size="14px", font_weight="500"),
+            rx.moment(format="HH:mm:ss", interval=1000, tz="America/Sao_Paulo", color="white", font_size="26px", font_weight="700", font_variant_numeric="tabular-nums"),
             spacing="0",
             align="end",
         ),
@@ -552,10 +553,6 @@ def rodape_identificacao() -> rx.Component:
         rx.vstack(
             rx.divider(color=COR_BORDA),
             rx.hstack(
-                rx.cond(
-                    PacienteState.alterado == False,
-                    rx.text("Nenhuma alteração foi enviada ao cadastro.", size="2", color=COR_SECUNDARIA),
-                ),
                 rx.spacer(),
                 botao_secundario("Cancelar", on_click=PacienteState.cancelar),
                 rx.cond(
@@ -596,8 +593,7 @@ def recepcao_pacientes() -> rx.Component:
             rx.vstack(
                 rx.vstack(
                     rx.text("Identificação do paciente", weight="bold", size="5", color=COR_TEXTO),
-                    rx.text("Pesquise pelo CPF; se não houver cadastro, preencha os dados abaixo", size="2", color=COR_SECUNDARIA),
-                    rx.box(height="12px"),
+                    rx.box(height="8px"),
                     campo_rotulado(
                         "CPF",
                         rx.hstack(
