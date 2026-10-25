@@ -30,6 +30,7 @@ class EstadoFalso:
     atualizar = PacienteState.atualizar.fn
     set_telefone = PacienteState.set_telefone.fn
     continuar_atendimento = PacienteState.continuar_atendimento.fn
+    cancelar = PacienteState.cancelar.fn
 
     def __init__(self, cpf: str = "") -> None:
         self.cpf_busca = cpf
@@ -215,6 +216,32 @@ def test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes() -> None:
     assert estado.mensagem == "Configure XANO_TRIAGEM_API_URL para conectar a ficha à API do PS."
 
 
+def test_cancelar_limpa_pesquisa_e_formulario_sem_chamar_api() -> None:
+    estado = EstadoFalso(PACIENTE_A["cpf"])
+
+    with patch(
+        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.get",
+        return_value=Resposta(200, PACIENTE_A),
+    ):
+        estado.buscar()
+    assert estado.paciente_encontrado
+
+    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx") as http:
+        estado.cancelar()
+
+    http.get.assert_not_called()
+    http.post.assert_not_called()
+    http.patch.assert_not_called()
+    assert estado.cpf_busca == ""
+    assert estado.cpf == ""
+    assert estado.nome == ""
+    assert estado.paciente_id == 0
+    assert not estado.paciente_encontrado
+    assert not estado.exibir_cadastro
+    assert estado.mensagem == ""
+    assert not estado.erro
+
+
 def test_carregamento_de_env_usa_o_arquivo_do_frontend() -> None:
     assert ARQUIVO_ENV.name == ".env"
     assert ARQUIVO_ENV.parent.name == "frontend"
@@ -240,6 +267,9 @@ class TestPacienteState(unittest.TestCase):
 
     def test_erro_configuracao_triagem(self) -> None:
         test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes()
+
+    def test_cancelar(self) -> None:
+        test_cancelar_limpa_pesquisa_e_formulario_sem_chamar_api()
 
     def test_arquivo_env(self) -> None:
         test_carregamento_de_env_usa_o_arquivo_do_frontend()
