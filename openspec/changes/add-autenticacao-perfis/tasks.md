@@ -47,6 +47,16 @@
 - [ ] 6.3 [Reflex] Adicionar as ações "Redefinir senha" e "Ativar/Desativar", com confirmação e mensagens de erro (autodesativação, último administrador); verificar manualmente cada caso
 - [ ] 6.4 Adicionar ao README o roteiro de verificação manual das seções 5 e 6 e verificar executando-o do início ao fim
 
+## 6A. Redefinição de senha pelo próprio usuário (D12)
+
+- [ ] 6A.1 [PO] Escolher o provedor de e-mail transacional, criar a conta com remetente verificado e cadastrar `EMAIL_API_KEY` e `EMAIL_REMETENTE` como variáveis de ambiente do Xano; verificar um envio de teste pelo painel do provedor
+- [ ] 6A.2 [PO] Publicar a tabela `codigo_redefinicao_senha` (D12) e as variáveis `CODIGO_SENHA_TTL_SEGUNDOS=600`, `CODIGO_SENHA_REENVIO_SEGUNDOS=60` e `CODIGO_SENHA_TENTATIVAS=5`; verificar o `.xs` exportado em `backend/xano/table/`
+- [ ] 6A.3 [Xano] Implementar `POST auth/senha/solicitar`, com resposta idêntica para qualquer e-mail, envio só para usuário ativo, bloqueio de reenvio antes de 60 s e invalidação do código anterior; verificar com os testes 6A.6
+- [ ] 6A.4 [Xano] Implementar `POST auth/senha/verificar` (código com hash, validade, limite de 5 tentativas, token de redefinição de uso único) e `POST auth/senha/redefinir` (senha de 8 ou mais caracteres, código marcado como usado, sessões abertas encerradas, recusa para usuário desativado); verificar com os testes 6A.6
+- [ ] 6A.5 [Reflex] Criar as telas do fluxo "Esqueci minha senha" conforme o Figma (A1 a A4: e-mail, código, código inválido, nova senha e sucesso) com o link na tela de login e o contador de reenvio; verificar manualmente o fluxo completo com um e-mail real de teste
+- [ ] 6A.6 Escrever `tests/api/test_redefinicao_senha.py` cobrindo todos os cenários do requisito "Redefinição de senha pelo próprio usuário", com os valores-limite de 59/60 s no reenvio, 9 min 59 s/10 min na validade, 5ª/6ª tentativa e senha de 7/8 caracteres, simulando o envio de e-mail no ambiente de teste; verificar que passam
+- [ ] 6A.7 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
+
 ## 7. Integração e documentação
 
 - [ ] 7.1 Verificação ponta a ponta: o Administrador cria um usuário Médico, o Médico faz login e vê a própria área, o Administrador o desativa e a próxima ação do Médico o leva a `/login`; verificar executando o fluxo com a app rodando e confirmando as sessões no Xano

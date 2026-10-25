@@ -13,7 +13,7 @@
 
 - [ ] 2.1 [Xano] Conferir `backend/xano/table/parametro.xs` com o D4 e criar a função `obter_parametro`; verificar com Run & Debug a conversão de um INTEIRO, de uma ESPECIALIDADE e o erro explícito para chave inexistente
 - [ ] 2.2 [Xano] Criar `GET parametros` (autenticado, três perfis, `verificar_acesso`) (D6); verificar com os testes 2.3
-- [ ] 2.3 Escrever `tests/api/test_parametros.py` cobrindo os oito valores iniciais do D4 depois da carga, consulta pelos três perfis, 401 sem token e 401 para usuário desativado com token válido; verificar que passam
+- [ ] 2.3 Escrever `tests/api/test_parametros.py` cobrindo todos os valores iniciais do D4 depois da carga (incluindo o ciclo da fila pré-triagem, 2 : 1), consulta pelos três perfis, 401 sem token e 401 para usuário desativado com token válido; verificar que passam
 
 ## 3. Xano — dados de referência (necessário para a Fatia 3)
 

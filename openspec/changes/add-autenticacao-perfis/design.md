@@ -66,7 +66,19 @@ O primeiro Administrador é inserido direto na tabela `usuario`, pelo painel do 
 ### D11. Testes de API com pytest + httpx
 Os testes rodam contra o workspace de desenvolvimento do Xano (URL e credenciais vindas de `.env`) e cobrem os cenários das specs: login, perfis, 401/403, desativação e regras de último administrador. A parte do Reflex é verificada por um roteiro manual nas tasks.
 
+### D12. Redefinição de senha com código por e-mail (decisão do PO em 25/10/2026)
+- **Dados:** nova tabela `codigo_redefinicao_senha` (`usuario_id`, `codigo_hash`, `criado_em`, `expira_em`, `tentativas`, `usado_em` nulo). Só existe um código válido por usuário: solicitar outro marca o anterior como usado. O código é gravado com hash, como a senha. Mudança de esquema passa pelo PO.
+- **Endpoints públicos (sem token):** `POST auth/senha/solicitar` (e-mail) responde sempre igual; `POST auth/senha/verificar` (e-mail e código) devolve um token de redefinição de curta duração (10 min, uso único) quando o código confere; `POST auth/senha/redefinir` (token de redefinição e nova senha) troca a senha, marca o código como usado e preenche `logout_em` nas sessões abertas do usuário.
+- **Envio do e-mail:** o Xano chama a API HTTP de um provedor de e-mail transacional (por exemplo Resend ou SendGrid, que têm plano gratuito). A chave fica na variável de ambiente `EMAIL_API_KEY` e o remetente em `EMAIL_REMETENTE`, nunca no repositório. É uma tecnologia nova no projeto, justificada porque o Xano não envia e-mail sozinho e a decisão do PO exige o código por e-mail.
+- **Valores (configuráveis por variável de ambiente, não por tela):** validade do código `CODIGO_SENHA_TTL_SEGUNDOS=600`, intervalo de reenvio `CODIGO_SENHA_REENVIO_SEGUNDOS=60`, tentativas `CODIGO_SENHA_TENTATIVAS=5`.
+- **Alternativa:** link com token na URL em vez de código. Descartada porque o PO pediu código e porque links em e-mail tendem a ser abertos em outro dispositivo, fora do computador da recepção.
+- **Alternativa:** guardar o código em `usuario`. Descartada para não misturar autenticação com um fluxo temporário e para manter histórico de tentativas.
+
 ## Riscos / Compromissos
+
+- [E-mail do provedor cair em spam ou atrasar] → Remetente verificado no provedor; a tela permite reenviar após 60 s; o Administrador continua podendo redefinir a senha.
+- [Enumeração de e-mails pela tela de redefinição] → Resposta idêntica para qualquer e-mail (spec) e mesmo tempo de resposta aproximado, sem enviar e-mail quando o usuário não existe.
+- [Força bruta no código de 6 dígitos] → No máximo 5 tentativas por código e validade de 10 minutos.
 
 - [O token fica em LocalStorage, exposto a XSS] → O Reflex escapa o conteúdo por padrão; não renderizar HTML vindo do usuário; expiração de 12 h limita a janela de uso.
 - [Testes de API alteram dados do workspace] → Usar a fonte de dados de teste/dev do Xano e usuários com prefixo `teste_`, removidos ou desativados no teardown.

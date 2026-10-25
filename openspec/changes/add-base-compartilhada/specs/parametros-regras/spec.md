@@ -7,7 +7,7 @@ Mantém configuráveis, sem alterar código, os parâmetros operacionais usados 
 ## ADDED Requirements
 
 ### Requirement: Parâmetros com valores iniciais
-O sistema DEVE manter os parâmetros clínicos e operacionais configuráveis previstos na baseline: idade mínima de idoso (60), idade máxima de criança (11), quantidades do ciclo amarelo/azul (2 e 1), tamanho da previsão do painel (5), escores e faixas clínicas aplicáveis e especialidade padrão apenas para casos sem destino sintomático conforme regra de direcionamento. As chamadas obedecem à regra fixa da baseline: intervalo de 30 segundos, até 3 chamadas por oportunidade e retorno ao fim da fila sem resposta, sem remoção automática. O fuso `America/Sao_Paulo` não é editável. Parâmetros não definidos na baseline NÃO DEVEM ser inventados nesta change.
+O sistema DEVE manter os parâmetros clínicos e operacionais configuráveis previstos na baseline: idade mínima de idoso (60), idade máxima de criança (11), quantidades do ciclo amarelo/azul (2 e 1), quantidades do ciclo da fila pré-triagem entre tickets prioritários e normais (2 e 1), tamanho da previsão do painel (5), escores e faixas clínicas aplicáveis e especialidade padrão apenas para casos sem destino sintomático conforme regra de direcionamento. As chamadas obedecem à regra fixa da baseline: intervalo de 30 segundos, até 3 chamadas por oportunidade e retorno ao fim da fila sem resposta, sem remoção automática. O fuso `America/Sao_Paulo` não é editável. Parâmetros não definidos na baseline NÃO DEVEM ser inventados nesta change.
 
 #### Scenario: Ambiente recém-preparado
 - **QUANDO** a carga inicial é executada em um ambiente sem parâmetros

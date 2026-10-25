@@ -103,3 +103,46 @@ O sistema DEVE registrar cada sessão da equipe com usuário, horário de login,
 #### Scenario: Pausa não encerra a sessão
 - **QUANDO** uma pessoa autenticada altera seu status operacional para PAUSA ou AUSENTE
 - **ENTÃO** a sessão permanece ativa enquanto `logout_em` for nulo e `expira_em` estiver no futuro
+
+### Requirement: Redefinição de senha pelo próprio usuário
+O sistema DEVE permitir que um usuário da equipe redefina a própria senha sem estar logado ("Esqueci minha senha"), em três etapas: solicitar o código informando o e-mail, verificar o código e definir a nova senha. O código DEVE ter 6 dígitos numéricos, DEVE ser enviado ao e-mail cadastrado, DEVE valer por 10 minutos e DEVE ser de uso único; solicitar um novo código DEVE invalidar o anterior, e um novo envio só DEVE ser aceito 60 segundos após o último. Cada código DEVE aceitar no máximo 5 tentativas de verificação; ao atingir o limite, ele DEVE ser invalidado. A resposta da solicitação DEVE ser a mesma para e-mail cadastrado, não cadastrado ou de usuário inativo, e só usuário ativo DEVE receber o código. A nova senha DEVE ter no mínimo 8 caracteres e DEVE encerrar as sessões abertas do usuário. O código NÃO DEVE ser gravado em texto aberto nem aparecer em respostas da API ou em logs.
+
+#### Scenario: Solicitação com e-mail de usuário ativo
+- **QUANDO** alguém solicita a redefinição informando o e-mail de um usuário ativo
+- **ENTÃO** o sistema envia um código de 6 dígitos para esse e-mail e responde "Se o e-mail estiver cadastrado, enviamos um código"
+
+#### Scenario: Solicitação com e-mail inexistente ou de usuário inativo
+- **QUANDO** alguém solicita a redefinição com e-mail não cadastrado ou de usuário desativado
+- **ENTÃO** o sistema dá a mesma resposta da solicitação válida, sem enviar e-mail e sem revelar se o e-mail existe
+
+#### Scenario: Reenvio antes de 60 segundos
+- **QUANDO** um novo código é solicitado para o mesmo e-mail 59 segundos depois do anterior
+- **ENTÃO** o sistema não envia outro código e informa quanto tempo falta para reenviar
+
+#### Scenario: Reenvio após 60 segundos invalida o código anterior
+- **QUANDO** um novo código é solicitado 60 segundos ou mais depois do anterior
+- **ENTÃO** o sistema envia um novo código e o anterior deixa de ser aceito
+
+#### Scenario: Código correto dentro da validade
+- **QUANDO** o usuário informa o código correto 9 minutos e 59 segundos após o envio
+- **ENTÃO** o sistema aceita o código e libera a definição da nova senha
+
+#### Scenario: Código expirado
+- **QUANDO** o usuário informa o código correto 10 minutos ou mais após o envio
+- **ENTÃO** o sistema recusa com a mensagem "Código inválido ou expirado"
+
+#### Scenario: Código incorreto e limite de tentativas
+- **QUANDO** o usuário erra o código 5 vezes
+- **ENTÃO** as 5 tentativas são recusadas com "Código inválido ou expirado", e na 6ª o código, mesmo correto, também é recusado até que um novo seja solicitado
+
+#### Scenario: Nova senha válida
+- **QUANDO** o usuário, com código verificado, define nova senha de 8 ou mais caracteres
+- **ENTÃO** a senha anterior deixa de funcionar, o código não pode ser usado de novo, as sessões abertas do usuário são encerradas e o login com a nova senha funciona
+
+#### Scenario: Nova senha curta
+- **QUANDO** o usuário define nova senha com 7 caracteres
+- **ENTÃO** o sistema recusa a alteração e a senha anterior continua valendo
+
+#### Scenario: Usuário desativado depois de pedir o código
+- **QUANDO** o usuário é desativado pelo Administrador depois de receber o código e tenta defini-lo
+- **ENTÃO** o sistema recusa a redefinição e o usuário continua sem conseguir fazer login
