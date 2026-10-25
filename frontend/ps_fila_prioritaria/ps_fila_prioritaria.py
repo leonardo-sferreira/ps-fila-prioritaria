@@ -9,6 +9,8 @@ import httpx
 import reflex as rx
 from dotenv import load_dotenv
 
+from ps_fila_prioritaria import api
+
 
 ARQUIVO_ENV = Path(__file__).resolve().parents[1] / ".env"
 
@@ -37,6 +39,107 @@ def _mensagem_erro(resposta: httpx.Response) -> str:
         if isinstance(mensagem, str):
             return mensagem
     return "Não foi possível concluir a solicitação."
+
+
+# Área inicial de cada perfil (design D7).
+AREA_POR_PERFIL = {
+    "RECEPCAO_TRIAGEM": "/recepcao",
+    "MEDICO": "/medico",
+    "ADMINISTRADOR": "/admin",
+}
+
+
+class AuthState(rx.State):
+    """Sessão da equipe no navegador. A autorização real é feita no Xano (design D3)."""
+
+    token: str = rx.LocalStorage("", name="ps_token")
+    nome: str = ""
+    perfil: str = ""
+    entrando: bool = False
+    mensagem: str = ""
+
+    def _encerrar_sessao_local(self, mensagem: str = "") -> None:
+        self.token = ""
+        self.nome = ""
+        self.perfil = ""
+        self.mensagem = mensagem
+
+    def _validar_sessao(self, perfil_exigido: str) -> rx.event.EventSpec | None:
+        """Confere o token com auth/me; devolve o redirecionamento necessário ou None se pode seguir."""
+        if not self.token:
+            return rx.redirect("/login")
+        try:
+            resposta = api.requisitar("GET", "XANO_AUTH_API_URL", "/auth/me", token=self.token)
+        except api.ConfiguracaoAusente:
+            self.mensagem = "Configure XANO_AUTH_API_URL para conectar o login à API do PS."
+            return rx.redirect("/login")
+        except httpx.RequestError:
+            self.mensagem = "Não foi possível conectar à API de autenticação."
+            return rx.redirect("/login")
+
+        if resposta.status_code == 401:
+            self._encerrar_sessao_local("Sua sessão expirou. Faça login novamente.")
+            return rx.redirect("/login")
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            return rx.redirect("/login")
+
+        usuario = resposta.json()
+        self.nome = str(usuario.get("nome", ""))
+        self.perfil = str(usuario.get("perfil", ""))
+        if perfil_exigido and self.perfil != perfil_exigido:
+            return rx.redirect(AREA_POR_PERFIL.get(self.perfil, "/login"))
+        return None
+
+    def entrar(self, dados: dict[str, Any]):
+        self.mensagem = ""
+        self.entrando = True
+        yield
+        try:
+            resposta = api.requisitar(
+                "POST",
+                "XANO_AUTH_API_URL",
+                "/auth/login",
+                json={"email": dados.get("email", ""), "senha": dados.get("senha", "")},
+            )
+        except api.ConfiguracaoAusente:
+            self.mensagem = "Configure XANO_AUTH_API_URL para conectar o login à API do PS."
+            self.entrando = False
+            return
+        except httpx.RequestError:
+            self.mensagem = "Não foi possível conectar à API de autenticação."
+            self.entrando = False
+            return
+
+        self.entrando = False
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            return
+
+        sessao = resposta.json()
+        self.token = str(sessao["token"])
+        self.nome = str(sessao.get("nome", ""))
+        self.perfil = str(sessao.get("perfil", ""))
+        yield rx.redirect(AREA_POR_PERFIL.get(self.perfil, "/login"))
+
+    def verificar_sessao(self, perfil_exigido: str = "") -> rx.event.EventSpec | None:
+        """Guarda de rota usada no on_load das páginas internas."""
+        return self._validar_sessao(perfil_exigido)
+
+    def ir_para_inicio(self) -> rx.event.EventSpec:
+        redirecionamento = self._validar_sessao("")
+        if redirecionamento is not None:
+            return redirecionamento
+        return rx.redirect(AREA_POR_PERFIL.get(self.perfil, "/login"))
+
+    def sair(self) -> rx.event.EventSpec:
+        if self.token:
+            try:
+                api.requisitar("POST", "XANO_AUTH_API_URL", "/auth/logout", token=self.token)
+            except (api.ConfiguracaoAusente, httpx.RequestError):
+                pass  # O token é descartado mesmo se a API não responder.
+        self._encerrar_sessao_local()
+        return rx.redirect("/login")
 
 
 class PacienteState(rx.State):
@@ -466,7 +569,17 @@ COR_SUCESSO = "#2E7D32"
 COR_ERRO = "#C62828"
 
 
-def cabecalho_recepcao(titulo: str, subtitulo: str, sigla: str) -> rx.Component:
+def sessao_no_cabecalho() -> rx.Component:
+    return rx.hstack(
+        rx.text(AuthState.nome, size="2", color="#CCDEF0"),
+        rx.button("Sair", on_click=AuthState.sair, variant="outline", size="2", color="white", border_color="rgba(255, 255, 255, 0.4)"),
+        align="center",
+        spacing="3",
+        padding_right="24px",
+    )
+
+
+def cabecalho(titulo: str, subtitulo: str, sigla: str) -> rx.Component:
     return rx.hstack(
         rx.center(
             rx.text(sigla, weight="bold", size="4", color="white"),
@@ -482,6 +595,7 @@ def cabecalho_recepcao(titulo: str, subtitulo: str, sigla: str) -> rx.Component:
             spacing="1",
         ),
         rx.spacer(),
+        sessao_no_cabecalho(),
         rx.vstack(
             # Relógio do navegador, atualizado a cada segundo no fuso do PS.
             rx.moment(format="DD/MM/YYYY", interval=1000, tz="America/Sao_Paulo", color="#CCDEF0", font_size="14px", font_weight="500"),
@@ -584,7 +698,7 @@ def rodape_identificacao() -> rx.Component:
 
 def recepcao_pacientes() -> rx.Component:
     return rx.box(
-        cabecalho_recepcao(
+        cabecalho(
             "RECEPÇÃO/TRIAGEM — IDENTIFICAÇÃO DO PACIENTE",
             "Identifique o paciente pelo CPF antes de abrir a ficha",
             "R",
@@ -638,14 +752,112 @@ def recepcao_pacientes() -> rx.Component:
     )
 
 
+def carregando() -> rx.Component:
+    return rx.center(rx.spinner(size="3"), height="100vh", width="100%", background=COR_FUNDO)
+
+
+def protegido(perfil: str, conteudo: rx.Component) -> rx.Component:
+    """Só mostra a página ao perfil certo; enquanto a sessão é conferida, mostra o carregamento."""
+    return rx.cond(AuthState.perfil == perfil, conteudo, carregando())
+
+
 def index() -> rx.Component:
+    # A raiz só encaminha: para o login ou para a área do perfil logado.
+    return carregando()
+
+
+def login() -> rx.Component:
     return rx.center(
-        rx.vstack(
-            rx.heading("PS Fila Prioritária", size="8"),
-            rx.link("Abrir identificação de Paciente", href="/recepcao/pacientes"),
-            spacing="4",
-            padding="4rem",
-        )
+        rx.form(
+            rx.vstack(
+                rx.center(
+                    rx.text("PS", weight="bold", size="5", color="white"),
+                    width="64px",
+                    height="64px",
+                    border_radius="50%",
+                    background=COR_MARINHO,
+                ),
+                rx.text("Sistema de Fila Prioritária", weight="bold", size="5", color=COR_TEXTO),
+                rx.text("Acesso da equipe — Recepção/Triagem, Médico e Administrador", size="2", color=COR_SECUNDARIA, text_align="center"),
+                rx.box(height="8px"),
+                campo_rotulado("E-MAIL", rx.input(name="email", type="email", placeholder="nome@ps.com.br", size="3", width="100%")),
+                campo_rotulado("SENHA", rx.input(name="senha", type="password", placeholder="••••••••", size="3", width="100%")),
+                rx.cond(
+                    AuthState.mensagem != "",
+                    rx.text(AuthState.mensagem, size="2", color=COR_ERRO, width="100%"),
+                ),
+                rx.button("Entrar", type="submit", loading=AuthState.entrando, size="3", background=COR_AZUL, width="100%"),
+                align="center",
+                spacing="3",
+                padding="40px 20px",
+                background="white",
+                border=f"1px solid {COR_BORDA}",
+                border_radius="16px",
+                box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
+                width="min(100%, 420px)",
+            ),
+            on_submit=AuthState.entrar,
+            width="min(100%, 420px)",
+        ),
+        rx.text("Acesso restrito a profissionais autorizados do PS", size="1", color=COR_SECUNDARIA, position="absolute", bottom="24px"),
+        background=COR_FUNDO,
+        font_family="Inter, sans-serif",
+        min_height="100vh",
+        padding="16px",
+        position="relative",
+        width="100%",
+    )
+
+
+def area_inicial(perfil: str, titulo: str, sigla: str, nome_perfil: str, conteudo: rx.Component) -> rx.Component:
+    return protegido(
+        perfil,
+        rx.box(
+            cabecalho(titulo, f"Área inicial — {nome_perfil}", sigla),
+            rx.center(
+                rx.vstack(
+                    rx.text("Olá, ", AuthState.nome, weight="bold", size="5", color=COR_TEXTO),
+                    rx.text(f"Perfil: {nome_perfil}", size="2", color=COR_SECUNDARIA),
+                    conteudo,
+                    spacing="3",
+                    padding="28px 32px",
+                    background="white",
+                    border=f"1px solid {COR_BORDA}",
+                    border_radius="12px",
+                    width="min(100%, 772px)",
+                ),
+                padding="40px 16px",
+                width="100%",
+            ),
+            background=COR_FUNDO,
+            font_family="Inter, sans-serif",
+            min_height="100vh",
+            width="100%",
+        ),
+    )
+
+
+def area_recepcao() -> rx.Component:
+    return area_inicial(
+        "RECEPCAO_TRIAGEM",
+        "RECEPÇÃO/TRIAGEM",
+        "R",
+        "Recepção/Triagem",
+        rx.link(rx.button("Identificar paciente", size="3", background=COR_AZUL), href="/recepcao/pacientes"),
+    )
+
+
+def area_medico() -> rx.Component:
+    return area_inicial("MEDICO", "MÉDICO", "M", "Médico", rx.text("As funções do Médico ainda estão em construção.", size="2", color=COR_SECUNDARIA))
+
+
+def area_admin() -> rx.Component:
+    return area_inicial(
+        "ADMINISTRADOR",
+        "ADMINISTRADOR",
+        "A",
+        "Administrador",
+        rx.text("As funções do Administrador ainda estão em construção.", size="2", color=COR_SECUNDARIA),
     )
 
 
@@ -804,6 +1016,28 @@ def recepcao_ficha() -> rx.Component:
 
 
 app = rx.App(stylesheets=["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"])
-app.add_page(index, route="/")
-app.add_page(recepcao_pacientes, route="/recepcao/pacientes", title="Identificação de Paciente")
-app.add_page(recepcao_ficha, route="/recepcao/ficha/[id]", title="Ficha de atendimento", on_load=FichaState.carregar_da_rota)
+app.add_page(index, route="/", on_load=AuthState.ir_para_inicio)
+app.add_page(login, route="/login", title="Login")
+app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=AuthState.verificar_sessao("RECEPCAO_TRIAGEM"))
+app.add_page(area_medico, route="/medico", title="Médico", on_load=AuthState.verificar_sessao("MEDICO"))
+app.add_page(area_admin, route="/admin", title="Administrador", on_load=AuthState.verificar_sessao("ADMINISTRADOR"))
+def pagina_recepcao_pacientes() -> rx.Component:
+    return protegido("RECEPCAO_TRIAGEM", recepcao_pacientes())
+
+
+def pagina_recepcao_ficha() -> rx.Component:
+    return protegido("RECEPCAO_TRIAGEM", recepcao_ficha())
+
+
+app.add_page(
+    pagina_recepcao_pacientes,
+    route="/recepcao/pacientes",
+    title="Identificação de Paciente",
+    on_load=AuthState.verificar_sessao("RECEPCAO_TRIAGEM"),
+)
+app.add_page(
+    pagina_recepcao_ficha,
+    route="/recepcao/ficha/[id]",
+    title="Ficha de atendimento",
+    on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FichaState.carregar_da_rota],
+)
