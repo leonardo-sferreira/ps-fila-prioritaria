@@ -150,6 +150,16 @@ reflex run                      # http://localhost:3000
 python -m pytest                # testes
 ```
 
+### Primeiro administrador
+
+Não existe tela de cadastro aberta: o primeiro Administrador é criado à mão no painel do Xano.
+
+1. Abra a tabela **`usuario`** e use **Add record**.
+2. Preencha nome, e-mail, senha (mínimo de 8 caracteres), **perfil** `ADMINISTRADOR` e **ativo** `true`.
+3. Entre em `http://localhost:3000/login` com esse e-mail e senha. Os demais usuários são criados pelo Administrador.
+
+Para os testes de integração do login, coloque no `frontend/.env` (nunca no repositório) as credenciais `TEST_ADMIN_*`, `TEST_RECEPCAO_*` e `TEST_MEDICO_*` de usuários de teste de cada perfil. Sem elas, esses testes são ignorados.
+
 Detalhes do ambiente, do Xano e do fluxo de trabalho no [guia de contribuição](CONTRIBUTING.md).
 
 ## Equipe

@@ -41,20 +41,22 @@ Campos: `usuario_id`, `login_em`, `logout_em` (nulo enquanto aberta), `expira_em
 - **Por quê:** é a base da futura tela "Pessoas logadas e status" e evita migração depois. O status operacional (almoço etc.) será adicionado na change `add-acompanhamento-administrador`.
 
 ### D6. Token no Reflex guardado em `rx.LocalStorage`, com guarda de rota em `on_load`
-Um `AuthState` guarda o token (em `rx.LocalStorage`, para sobreviver a um recarregamento da página), o nome e o perfil. Cada página interna usa um `on_load` que chama `auth/me`: sem token ou com resposta 401, redireciona para `/login`; com perfil diferente do exigido pela página, redireciona para a área inicial do perfil. Um cliente HTTP único (`api.py`) injeta o header `Authorization` e trata os erros 401 e 403 de forma centralizada.
+Um `AuthState` guarda o token (em `rx.LocalStorage`, para sobreviver a um recarregamento da página), o nome e o perfil. Cada página interna usa um `on_load` que chama `auth/me`: sem token ou com resposta 401, redireciona para `/login`; com perfil diferente do exigido pela página, redireciona para a área inicial do perfil. Enquanto a sessão não é confirmada, a página mostra só o carregamento (não exibe o conteúdo). Um cliente HTTP pequeno (`frontend/ps_fila_prioritaria/api.py`) monta a URL a partir do `.env` e injeta o header `Authorization`; nesta change ele é usado pelo `AuthState`. Como cada grupo de API do Xano tem a própria URL base, o login usa a variável `XANO_AUTH_API_URL` (grupo `Autenticacao`, canonical `ps-fila-prioritaria-auth`), ao lado das já existentes `XANO_API_URL` (Pacientes) e `XANO_TRIAGEM_API_URL`.
 - **Por quê:** a guarda no frontend existe só por usabilidade; a segurança real é a D3.
 - **Alternativa:** cookie HttpOnly. Descartada porque o Xano emite o token no corpo da resposta, e o Reflex precisaria de um proxy só para isso.
 
 ### D7. Rotas do frontend
 `/login`, `/recepcao` (área inicial Recepção/Triagem), `/medico`, `/admin` e `/admin/usuarios`. As áreas iniciais nesta change mostram apenas o nome do usuário, o perfil e o botão "Sair".
 
-### D8. Estrutura do repositório
+### D8. Estrutura do repositório (revisada em 25/10/2026, princípio YAGNI)
+Mantém-se a estrutura que já existe, sem criar pastas novas para uso futuro:
 ```
-frontend/            app Reflex (rxconfig.py, frontend/ com pages/, state/, api.py)
-backend/xano/        XanoScript versionado (tabelas, funções, endpoints)
-tests/api/           testes pytest contra a API do Xano
-.env.example         XANO_API_URL, credenciais de teste (sem valores reais)
+frontend/ps_fila_prioritaria/   app Reflex (módulo único + api.py, criado nesta change)
+frontend/tests/                 testes pytest (estado do Reflex e integração com o Xano)
+frontend/.env.example           URLs dos grupos de API do Xano (sem valores reais)
+backend/xano/                   XanoScript versionado (tabelas, funções, endpoints)
 ```
+- **Alternativa descartada:** a estrutura original desta change (`pages/`, `state/`, `tests/api/` na raiz), que criaria pastas sem uso imediato e duplicaria o que já existe.
 
 ### D9. Regras de "último administrador" e "desativar a si mesmo" no backend
 As duas validações ficam nos endpoints de edição e desativação no Xano, não só na tela.
