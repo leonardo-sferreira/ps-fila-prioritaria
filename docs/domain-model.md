@@ -251,13 +251,18 @@ Pessoa atendida no PS.
 Ticket simples emitido pelo Totem na chegada, antes da triagem.
 
 ### Principais informações
-- número sequencial do dia;
+- tipo, escolhido pelo paciente no Totem: `PEDIATRICO`, `PREFERENCIAL` ou `NORMAL`;
+- número sequencial do dia, separado por tipo e exibido com o prefixo do tipo (`C-001`, `P-001`, `N-001`);
 - horário de emissão;
 - status: `AGUARDANDO`, `CHAMADO`, `ATENDIDO` ou `NAO_COMPARECEU`.
 
 ### Regras
-- Não tem cor nem prioridade: é chamado pela Recepção/Triagem em ordem de emissão.
+- O tipo é autodeclarado no Totem e vale somente na fila de Recepção/Triagem (pré-triagem). Ele não define cor nem condição prioritária da ficha; depois da triagem, a ordem segue a classificação e a condição prioritária calculadas na triagem.
+- Prioridade na pré-triagem: Pediátrico antes de Preferencial; os dois juntos formam os prioritários. Prioritários e normais alternam no ciclo configurável da fila pré-triagem (valor inicial: 2 prioritários : 1 normal), para que o Normal não espere indefinidamente. Dentro do mesmo tipo, vale a ordem de emissão.
+- Cada tipo tem sua própria sequência diária, reiniciada a cada dia em `America/Sao_Paulo`.
 - Não guarda dados pessoais.
+- A ordem de chamada pela Recepção/Triagem pertence à futura change de operação da fila pré-triagem; a emissão por tipo pertence à change `add-totem`.
+- Divergência pendente: o documento formal (Confluence) ainda descreve o ticket sem prioridade; deve ser atualizado pelo PO.
 - As chamadas respeitam intervalo mínimo de 30 segundos entre chamadas da mesma senha e até 3 tentativas por oportunidade.
 - Esgotada a primeira oportunidade sem comparecimento, o ticket volta ao fim da fila uma única vez, sem novo número e sem perder sua identidade.
 - Após a segunda oportunidade encerrada sem atendimento, o ticket recebe `NAO_COMPARECEU` e sai da fila ativa.
@@ -344,6 +349,7 @@ Parâmetros configuráveis pelo Administrador e invariantes operacionais aprovad
 | Idade mínima para idoso | 60 anos |
 | Idade máxima para criança | 11 anos (menor de 12) |
 | Ciclo de chamada sem vermelhos | 2 amarelas : 1 azul |
+| Ciclo da fila pré-triagem (tickets do Totem) | 2 prioritários (Pediátrico antes de Preferencial) : 1 normal |
 | Intervalo entre chamadas da mesma senha | 30 segundos |
 | Tentativas por oportunidade | 3 |
 | Novas oportunidades após a primeira reentrada | 1 |

@@ -38,10 +38,12 @@ A função lê `parametro` pela `chave` e converte o `valor` conforme o `tipo` (
 | `idade_maxima_crianca` | INTEIRO | 11 |
 | `amarelas_por_ciclo` | INTEIRO | 2 |
 | `azuis_por_ciclo` | INTEIRO | 1 |
+| `prioritarios_por_ciclo_pretriagem` | INTEIRO | 2 |
+| `normais_por_ciclo_pretriagem` | INTEIRO | 1 |
 | `tamanho_previsao` | INTEIRO | 5 |
 | `especialidade_padrao` | ESPECIALIDADE | CLI |
 
-Os nomes de chave das idades são definidos aqui; os demais seguem o que as changes 4 a 7 já usam. O intervalo de 30 segundos, até 3 chamadas por oportunidade e uma reentrada são invariantes operacionais da baseline, não parâmetros editáveis. `limiar_risco_moderado` e `limiar_risco_alto` continuam na carga de `add-triagem-classificacao` (task 1.1 daquela change).
+As chaves do ciclo da fila pré-triagem vêm da decisão do PO de 25/10/2026 sobre os tipos de ticket do Totem (ver `add-totem` D5 e `docs/domain-model.md`): Pediátrico antes de Preferencial formam os prioritários, que alternam com os normais nessa proporção. São carregadas aqui e consumidas pela futura change de operação da fila pré-triagem. Os nomes de chave das idades são definidos aqui; os demais seguem o que as changes 4 a 7 já usam. O intervalo de 30 segundos, até 3 chamadas por oportunidade e uma reentrada são invariantes operacionais da baseline, não parâmetros editáveis. `limiar_risco_moderado` e `limiar_risco_alto` continuam na carga de `add-triagem-classificacao` (task 1.1 daquela change).
 
 ### D5. Carga inicial idempotente que não sobrescreve
 A função `carga_inicial` é exposta por `POST admin/carga-inicial` (ADMINISTRADOR). Ela insere só o que falta: especialidades por `sigla`, sintomas por `nome`, parâmetros por `chave`. As relações (`especialidade_alternativa` e `sintoma_especialidade`) só são criadas para registros que a própria execução inseriu. Registros que já existem não são alterados. Cada inserção é auditada com tipo `CADASTRO`.
