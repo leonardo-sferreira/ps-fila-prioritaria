@@ -28,7 +28,7 @@ Em muitos prontos-socorros a fila ainda é organizada manualmente, por ordem de 
 |---|---|
 | **Totem** | Retirada de ticket sem dados pessoais, por tipo: Pediátrico (`C-001`), Preferencial (`P-001`) ou Normal (`N-001`) |
 | **Acesso da equipe** | Login por e-mail com perfil · redefinição de senha com código enviado por e-mail |
-| **Recepção/Triagem** | Fila pré-triagem por tipo de ticket · identificação por CPF ou, para estrangeiros, pela CRNM · RG no cadastro · ficha com sintomas e sinais vitais · classificação automática com ajuste manual justificado · especialidade sugerida e atribuída · senha e comprovante impresso |
+| **Recepção/Triagem** | Fila pré-triagem por tipo de ticket · identificação e cadastro pelo CPF · ficha com sintomas e sinais vitais · classificação automática com ajuste manual justificado · especialidade sugerida e atribuída · senha e comprovante impresso |
 | **Médico** | Fila atribuída por elegibilidade · "Chamar próximo" sem duplicidade · 30 s entre chamadas, até 3 tentativas por oportunidade e uma reentrada ao fim da fila · Pausar/Retomar · encerrar plantão com fila zerada · impressão da ficha |
 | **Painel público** | Senha e sala da chamada em destaque · previsão das próximas 5 senhas · sem nome nem CPF |
 | **Administrador** | Usuários e perfis · cadastros de Médicos e Recepção/Triagem · especialidades, sintomas e salas · disponibilidade por período · parâmetros e faixas de risco · acompanhamento da fila, da equipe e da auditoria |
@@ -38,7 +38,7 @@ Em muitos prontos-socorros a fila ainda é organizada manualmente, por ordem de 
 ```mermaid
 flowchart LR
     A[Totem<br/>ticket Pediátrico, Preferencial<br/>ou Normal] --> B[Fila de<br/>Recepção/Triagem]
-    B --> C[Triagem<br/>CPF ou CRNM · sintomas · sinais vitais]
+    B --> C[Triagem<br/>CPF · sintomas · sinais vitais]
     C --> D{Escore e<br/>direcionamento}
     D --> E[Fila da especialidade<br/>indicada pelos sintomas]
     E --> F[Médico elegível<br/>chamada em sala]
@@ -79,7 +79,6 @@ flowchart LR
 - Trilha de **auditoria** imutável para prioridade, sintomas, disponibilidade e chamadas.
 - **Privacidade:** o painel e o comprovante impresso não exibem dados pessoais.
 - **Totem:** desenvolvido pela equipe, emite tickets por tipo com código e sequência diária próprios.
-- **Documentos do paciente:** brasileiro com CPF e RG (RG opcional para criança); estrangeiro identificado pela CRNM, com CPF e RG opcionais.
 - **Redefinição de senha:** código de 6 dígitos por e-mail, válido por 10 minutos, sem revelar quais e-mails estão cadastrados.
 - **Plantão:** o Médico pode pausar ou retomar novas atribuições; só encerra o plantão quando sua fila atribuída estiver zerada.
 
@@ -114,7 +113,6 @@ O projeto segue o desenvolvimento **orientado a especificação** com [OpenSpec]
 - [x] Ficha de atendimento com sintomas e observação — [v0.1.0](https://github.com/leonardo-sferreira/ps-fila-prioritaria/releases/tag/v0.1.0)
 - [ ] Autenticação, perfis, gestão de usuários e redefinição de senha
 - [ ] Base compartilhada: auditoria, fuso e parâmetros
-- [ ] Documentos do paciente: RG e CRNM para estrangeiros
 - [ ] Totem com tickets Pediátrico, Preferencial e Normal
 - [ ] Cadastros do administrador
 - [ ] Triagem: sinais vitais e classificação de risco
