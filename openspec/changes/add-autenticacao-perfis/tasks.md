@@ -28,6 +28,7 @@
 ## 3. Xano — endpoints de autenticação
 
 - [ ] 3.1 [Xano] Implementar `POST auth/login`: valida os campos obrigatórios, usa a mesma mensagem genérica para e-mail e senha inválidos, recusa usuário inativo, emite o token com o TTL configurado, cria a `sessao` e retorna token, nome e perfil; verificar com os testes 3.4
+  - Atenção (25/10/2026): com o código no login (D13), o `auth/login` deixa de devolver o token; a mudança está na tarefa 3A.3.
   - Parcial: verificado ao vivo (8 testes de `test_api_autenticacao.py` passando): login válido dos três perfis com token/nome/perfil, e-mail com maiúsculas e espaços, senha errada e e-mail inexistente com a mesma mensagem, campos ausentes. Faltam usuário inativo (grupo 4) e conferir o registro em `sessao` (não há consulta de sessões nesta change; conferir no painel ou na `add-acompanhamento-administrador`).
 - [ ] 3.2 [Xano] Implementar `GET auth/me` (autenticado + `verificar_acesso` com todos os perfis), que retorna id, nome e perfil; verificar com os testes 3.4
   - Parcial: verificado ao vivo com token válido (200, sem `password`), sem token (401) e com token adulterado (401). Falta usuário desativado com token ainda válido (grupo 4).
@@ -36,6 +37,25 @@
 - [ ] 3.4 Escrever `tests/api/test_autenticacao.py` cobrindo: login bem-sucedido, credenciais inválidas (mensagem idêntica), campos ausentes, usuário inativo, `me` sem token, com token adulterado e com usuário desativado após o login, login criando sessão, login recusado sem sessão, logout encerrando a sessão; verificar que `pytest tests/api/test_autenticacao.py` passa
 - [x] 3.5 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
   - Evidência: `backend/xano/api/autenticacao/` (api_group, auth_login_post, auth_me_get, auth_logout_post) com GUIDs do servidor.
+
+## 3A. Código de verificação no login (D13)
+
+- [x] 3A.1 Criar na Brevo os modelos de e-mail do código de login e da redefinição de senha, com a identidade visual do PS, e versionar o HTML em `backend/brevo/`; verificar que aparecem na lista de modelos da conta
+  - Evidência (25/10/2026): `ps_codigo_acesso_login` (templateId 6) e `ps_redefinicao_senha` (templateId 7) criados pela API da Brevo, ativos, com o remetente de `BREVO_REMETENTE`; parâmetros `nome`, `codigo` e `minutos`; prévias aprovadas pelo PO.
+- [x] 3A.2 [PO] Publicar a tabela `codigo_verificacao` (D12, finalidades `LOGIN` e `REDEFINICAO_SENHA`) e as variáveis `CODIGO_TTL_SEGUNDOS=600`, `CODIGO_REENVIO_SEGUNDOS=60` e `CODIGO_TENTATIVAS=5`; verificar o `.xs` exportado em `backend/xano/table/` e as variáveis por `workspace pull --env`
+  - Evidência (25/10/2026): `table/codigo_verificacao.xs` publicado na `v1` (com o campo `iniciado_em`, que guarda o início do pedido para a janela de reenvio do login); `CODIGO_TTL_SEGUNDOS=600`, `CODIGO_REENVIO_SEGUNDOS=60` e `CODIGO_TENTATIVAS=5` confirmadas por `workspace pull --env`.
+- [x] 3A.3 [Xano] Alterar `POST auth/login`: com senha correta e usuário ativo, invalidar o código `LOGIN` anterior, gerar um novo (hash), enviar o modelo 6 e responder `{codigo_enviado: true}`, sem token e sem sessão; verificar com os testes 3A.6
+  - Evidência: publicado; ao vivo, senha correta dos três perfis responde `codigo_enviado` sem `token`. A emissão e o envio ficam na função `auth/emitir_codigo`, reutilizada pelo reenvio e, depois, pela redefinição de senha.
+- [x] 3A.4 [Xano] Implementar `POST auth/login/verificar` (código com hash, validade, limite de 5 tentativas, recusa de usuário desativado; emite o token com `TOKEN_TTL_SEGUNDOS`, cria a `sessao` e devolve token, nome e perfil) e `POST auth/login/reenviar` (só dentro dos 10 minutos do primeiro passo, bloqueio antes de 60 s, invalida o código anterior); verificar com os testes 3A.6
+  - Evidência: publicados, com a conferência na função `auth/conferir_codigo`; ao vivo: código errado (6 tentativas recusadas, sem token), código ausente (400), reenvio cedo (429 "Aguarde N segundos…") e reenvio sem login pendente (403).
+  - Validado pelo PO em 25/10/2026: fluxo completo com e-mail real nos testes manuais.
+- [x] 3A.5 [Reflex] Criar a tela `/login/codigo` no padrão da tela A2 do Figma (6 dígitos, botão desabilitado durante o envio, contador de reenvio de 60 s, aviso "Não recebeu? Confira a caixa de spam", "Voltar ao login"); o `AuthState` guarda só o e-mail entre as etapas, nunca a senha; atualizar `test_auth_state.py`; verificar manualmente o login dos três perfis com e-mail real
+  - Evidência: tela `/login/codigo` e `AuthState` (`verificar_codigo`, `reenviar_codigo`, contador em segundo plano, guarda `exigir_login_pendente`) criados; `reflex compile` sem erros; 17 testes de estado passando.
+  - Validado pelo PO em 25/10/2026: fluxo completo com e-mail real nos testes manuais.
+- [ ] 3A.6 Atualizar `test_api_autenticacao.py` (o login passa a responder `codigo_enviado`) e cobrir: código errado, limite de 5 tentativas, reenvio antes de 60 s, reenvio sem login pendente e nenhuma sessão criada sem código; o caminho feliz até o token, a validade de 9 min 59 s/10 min e o reenvio após 10 minutos ficam no roteiro manual (D13); verificar que passam
+  - Parcial: `test_api_autenticacao.py` com 11 testes ao vivo passando. Falta conferir que nenhuma sessão é criada sem o código (não há consulta de sessões nesta change; conferir no painel do Xano).
+- [x] 3A.7 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
+  - Evidência: `codigo_verificacao.xs`, `function/auth/emitir_codigo.xs`, `function/auth/conferir_codigo.xs`, `auth_login_verificar_post.xs` e `auth_login_reenviar_post.xs` versionados com os GUIDs do servidor.
 
 ## 4. Xano — gestão de usuários
 
@@ -68,12 +88,20 @@
 
 - [x] 6A.1 [PO] Configurar a Brevo: chave de API e remetente verificado como variáveis de ambiente do Xano (`BREVO_API_KEY`, `BREVO_REMETENTE`); verificar um envio de teste
   - Evidência (25/10/2026): `BREVO_API_KEY` válida (`GET /v3/account` 200, plano free); `BREVO_REMETENTE` cadastrado; envio de teste `POST /v3/smtp/email` 201 recebido pelo PO, porém na pasta de spam ("por brevosend.com"), porque o domínio do remetente não autentica a Brevo (SPF/DKIM).
-- [ ] 6A.2 [PO] Publicar a tabela `codigo_redefinicao_senha` (D12) e as variáveis `CODIGO_SENHA_TTL_SEGUNDOS=600`, `CODIGO_SENHA_REENVIO_SEGUNDOS=60` e `CODIGO_SENHA_TENTATIVAS=5`; verificar o `.xs` exportado em `backend/xano/table/`
-- [ ] 6A.3 [Xano] Implementar `POST auth/senha/solicitar`, com resposta idêntica para qualquer e-mail, envio só para usuário ativo, bloqueio de reenvio antes de 60 s e invalidação do código anterior; verificar com os testes 6A.6
-- [ ] 6A.4 [Xano] Implementar `POST auth/senha/verificar` (código com hash, validade, limite de 5 tentativas, token de redefinição de uso único) e `POST auth/senha/redefinir` (senha de 8 ou mais caracteres, código marcado como usado, sessões abertas encerradas, recusa para usuário desativado); verificar com os testes 6A.6
-- [ ] 6A.5 [Reflex] Criar as telas do fluxo "Esqueci minha senha" conforme o Figma (A1 a A4: e-mail, código, código inválido, nova senha e sucesso) com o link na tela de login, o contador de reenvio e o aviso "Não recebeu? Confira a caixa de spam"; verificar manualmente o fluxo completo com um e-mail real de teste
-- [ ] 6A.6 Escrever `tests/api/test_redefinicao_senha.py` cobrindo todos os cenários do requisito "Redefinição de senha pelo próprio usuário", com os valores-limite de 59/60 s no reenvio, 9 min 59 s/10 min na validade, 5ª/6ª tentativa e senha de 7/8 caracteres, simulando o envio de e-mail no ambiente de teste; verificar que passam
-- [ ] 6A.7 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
+- [x] 6A.2 [PO] Tabela e variáveis dos códigos: feitas na tarefa 3A.2 (tabela `codigo_verificacao` compartilhada, D12); verificar que a finalidade `REDEFINICAO_SENHA` está no enum
+  - Evidência (25/10/2026): o enum `finalidade` da `codigo_verificacao` publicada tem `REDEFINICAO_SENHA`; as variáveis são as da 3A.2.
+- [x] 6A.3 [Xano] Implementar `POST auth/senha/solicitar`, com resposta idêntica para qualquer e-mail, envio só para usuário ativo (modelo 7 da Brevo), bloqueio de reenvio antes de 60 s e invalidação do código anterior; verificar com os testes 6A.6
+  - Evidência: publicado; ao vivo, e-mail inexistente e e-mail de usuário ativo recebem a mesma resposta ("Se o e-mail estiver cadastrado, enviamos um código"), campo vazio dá 400 e um segundo pedido imediato dá 429 "Aguarde N segundos…".
+- [x] 6A.4 [Xano] Implementar `POST auth/senha/verificar` (código com hash, validade, limite de 5 tentativas; só confere, sem usar o código) e `POST auth/senha/redefinir` (e-mail, código e nova senha de 8 ou mais caracteres; código marcado como usado, sessões abertas encerradas, recusa para usuário desativado); verificar com os testes 6A.6
+  - Evidência: publicados (D12 revisado: sem token de redefinição); ao vivo, código errado recusado nas 6 tentativas, senha de 7 caracteres recusada antes de usar o código, código errado não troca a senha e a senha anterior continua entrando.
+  - Validado pelo PO em 25/10/2026: fluxo completo com e-mail real nos testes manuais.
+- [x] 6A.5 [Reflex] Criar as telas do fluxo "Esqueci minha senha" conforme o Figma (A1 a A4: e-mail, código, código inválido, nova senha e sucesso) com o link na tela de login, o contador de reenvio e o aviso "Não recebeu? Confira a caixa de spam"; verificar manualmente o fluxo completo com um e-mail real de teste
+  - Evidência: telas `/senha` (A1), `/senha/codigo` (A2/A2b), `/senha/nova` (A3) e `/senha/sucesso` (A4) e o link "Esqueci minha senha" no login, com o mesmo cartão das telas de login; A1 e login conferidas com o Figma por captura de tela; 9 testes de estado em `test_senha_state.py`.
+  - Validado pelo PO em 25/10/2026: fluxo completo com e-mail real nos testes manuais.
+- [ ] 6A.6 Escrever `frontend/tests/test_api_redefinicao_senha.py` cobrindo todos os cenários do requisito "Redefinição de senha pelo próprio usuário", com os valores-limite de 59/60 s no reenvio, 9 min 59 s/10 min na validade, 5ª/6ª tentativa e senha de 7/8 caracteres, simulando o envio de e-mail no ambiente de teste; verificar que passam
+  - Parcial: 4 testes ao vivo passando (resposta genérica, reenvio cedo, tentativas, senha curta e senha anterior mantida). Os limites de tempo e o caminho feliz ficam no roteiro manual, como na D13, porque o código só chega por e-mail.
+- [x] 6A.7 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
+  - Evidência: `auth_senha_solicitar_post.xs`, `auth_senha_verificar_post.xs`, `auth_senha_redefinir_post.xs` e `conferir_codigo.xs` (opção `consumir`) versionados com os GUIDs do servidor.
 
 ## 7. Integração e documentação
 
