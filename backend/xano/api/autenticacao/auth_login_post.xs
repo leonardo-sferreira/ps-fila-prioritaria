@@ -1,6 +1,6 @@
 query "auth/login" verb=POST {
   api_group = "Autenticacao"
-  description = "Autentica a equipe por e-mail e senha, registra a sessão e devolve token, nome e perfil."
+  description = "Primeira etapa do login: confere e-mail, senha e usuário ativo e envia o código de verificação por e-mail."
 
   input {
     text email? filters=trim|lower
@@ -46,35 +46,22 @@ query "auth/login" verb=POST {
       error = "Usuário inativo. Procure o administrador."
     }
 
-    var $ttl {
-      value = $env.TOKEN_TTL_SEGUNDOS|to_int
-    }
-
-    precondition ($ttl > 0) {
-      error_type = "standard"
-      error = "Variável de ambiente TOKEN_TTL_SEGUNDOS não configurada."
-    }
-
-    security.create_auth_token {
-      table = "usuario"
-      id = $usuario.id
-      extras = {}
-      expiration = $ttl
-    } as $token
-
-    db.add sessao {
-      data = {
-        usuario_id: $usuario.id,
-        login_em  : now,
-        expira_em : now|add_secs_to_timestamp:$ttl
+    // Senha conferida: o token só sai em auth/login/verificar, com o código enviado por e-mail (D13).
+    function.run "auth/emitir_codigo" {
+      input = {
+        usuario_id : $usuario.id
+        nome       : $usuario.nome
+        email      : $usuario.email
+        finalidade : "LOGIN"
+        iniciado_em: now
       }
-    }
+    } as $emitido
   }
 
   response = {
-    token : $token
-    nome  : $usuario.nome
-    perfil: $usuario.perfil
+    codigo_enviado     : true
+    mensagem           : "Enviamos um código de 6 dígitos para o seu e-mail."
+    reenvio_em_segundos: $env.CODIGO_REENVIO_SEGUNDOS|to_int
   }
   guid = "E83kmLVAho4jK6rRpAtlgdt0V_c"
 }

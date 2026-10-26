@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Seu código de acesso</title></head>
+<body style="margin:0;padding:0;background-color:#F3F5F7;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Use este código para concluir o login no Sistema de Fila Prioritária.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F5F7;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background-color:#FFFFFF;border:1px solid #DDE3E8;border-radius:12px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;">
+<tr><td style="background-color:#123C6B;padding:20px 32px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+<td style="width:40px;height:40px;border-radius:20px;background-color:#2A5384;color:#FFFFFF;font-weight:bold;font-size:15px;text-align:center;vertical-align:middle;">PS</td>
+<td style="padding-left:12px;color:#FFFFFF;font-size:16px;font-weight:bold;">Sistema de Fila Prioritária</td>
+</tr></table>
+</td></tr>
+<tr><td style="padding:32px 32px 8px 32px;color:#1A2027;">
+<p style="margin:0 0 16px 0;font-size:20px;font-weight:bold;">Seu código de acesso</p>
+<p style="margin:0 0 16px 0;font-size:15px;line-height:22px;">Olá, {{ params.nome }}.</p>
+<p style="margin:0 0 24px 0;font-size:15px;line-height:22px;">Recebemos um pedido de login com o seu e-mail e a sua senha. Para concluir o acesso, digite o código abaixo na tela do sistema:</p>
+</td></tr>
+<tr><td align="center" style="padding:0 32px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F5F7;border:1px solid #DDE3E8;border-radius:8px;">
+<tr><td style="padding:18px 32px;font-family:'Courier New',Courier,monospace;font-size:32px;font-weight:bold;letter-spacing:8px;color:#123C6B;text-align:center;">{{ params.codigo }}</td></tr>
+</table>
+</td></tr>
+<tr><td style="padding:24px 32px 8px 32px;color:#1A2027;">
+<p style="margin:0 0 8px 0;font-size:14px;line-height:21px;">O código vale por <strong>{{ params.minutos }} minutos</strong> e só pode ser usado uma vez.</p>
+<p style="margin:0 0 24px 0;font-size:14px;line-height:21px;color:#66707A;">Se não foi você que tentou entrar, ignore este e-mail e avise o administrador do sistema: a sua senha pode estar com outra pessoa.</p>
+</td></tr>
+<tr><td style="padding:16px 32px;border-top:1px solid #DDE3E8;color:#66707A;font-size:12px;line-height:18px;">
+E-mail automático do Sistema de Fila Prioritária — projeto acadêmico. Não responda a esta mensagem.<br>
+A equipe do PS nunca pede este código por telefone ou mensagem.
+</td></tr>
+</table>
+</td></tr>
+</table>
+</body>
+</html>

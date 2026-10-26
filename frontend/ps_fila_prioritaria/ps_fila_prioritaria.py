@@ -1,5 +1,6 @@
 """Fluxo de identificação e cadastro de Paciente da Recepção/Triagem."""
 
+import asyncio
 import os
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -49,6 +50,46 @@ AREA_POR_PERFIL = {
 }
 
 
+def _postar_publico(estado: Any, caminho: str, corpo: dict[str, Any]) -> httpx.Response | None:
+    """Chama um endpoint público de autenticação; em falha de conexão ou configuração, avisa e devolve None."""
+    try:
+        return api.requisitar("POST", "XANO_AUTH_API_URL", caminho, json=corpo)
+    except api.ConfiguracaoAusente:
+        estado.mensagem = "Configure XANO_AUTH_API_URL para conectar o login à API do PS."
+    except httpx.RequestError:
+        estado.mensagem = "Não foi possível conectar à API de autenticação."
+    return None
+
+
+def _segundos_reenvio(resposta: httpx.Response) -> int:
+    return int(resposta.json().get("reenvio_em_segundos") or 60)
+
+
+async def _contar_reenvio(estado: Any) -> None:
+    """Contador do botão "Reenviar código"; um único contador por vez em cada estado."""
+    async with estado:
+        if estado.contando:
+            return
+        estado.contando = True
+    while True:
+        await asyncio.sleep(1)
+        async with estado:
+            estado.segundos_reenvio = max(estado.segundos_reenvio - 1, 0)
+            if estado.segundos_reenvio == 0:
+                estado.contando = False
+                return
+
+
+def _texto_reenvio(segundos: int) -> str:
+    return f"Reenviar código em {segundos // 60}:{segundos % 60:02d}"
+
+
+def _mascarar_email(email: str) -> str:
+    """a***@ps.com.br, como no Figma (tela A2)."""
+    usuario, _, dominio = email.partition("@")
+    return f"{usuario[:1]}***@{dominio}" if dominio else email
+
+
 class AuthState(rx.State):
     """Sessão da equipe no navegador. A autorização real é feita no Xano (design D3)."""
 
@@ -57,6 +98,10 @@ class AuthState(rx.State):
     perfil: str = ""
     entrando: bool = False
     mensagem: str = ""
+    aviso: str = ""
+    email_pendente: str = ""
+    segundos_reenvio: int = 0
+    contando: bool = False
 
     def _encerrar_sessao_local(self, mensagem: str = "") -> None:
         self.token = ""
@@ -91,27 +136,51 @@ class AuthState(rx.State):
             return rx.redirect(AREA_POR_PERFIL.get(self.perfil, "/login"))
         return None
 
+    @rx.var
+    def email_exibido(self) -> str:
+        return _mascarar_email(self.email_pendente)
+
+    @rx.var
+    def texto_reenvio(self) -> str:
+        return _texto_reenvio(self.segundos_reenvio)
+
+    def _postar(self, caminho: str, corpo: dict[str, Any]) -> httpx.Response | None:
+        return _postar_publico(self, caminho, corpo)
+
+    def _aguardar_reenvio(self, resposta: httpx.Response) -> None:
+        self.segundos_reenvio = _segundos_reenvio(resposta)
+
     def entrar(self, dados: dict[str, Any]):
+        """Primeira etapa: e-mail e senha. Com sucesso, o código segue por e-mail (design D13)."""
         self.mensagem = ""
         self.entrando = True
         yield
-        try:
-            resposta = api.requisitar(
-                "POST",
-                "XANO_AUTH_API_URL",
-                "/auth/login",
-                json={"email": dados.get("email", ""), "senha": dados.get("senha", "")},
-            )
-        except api.ConfiguracaoAusente:
-            self.mensagem = "Configure XANO_AUTH_API_URL para conectar o login à API do PS."
-            self.entrando = False
+        email = str(dados.get("email", "")).strip().lower()
+        resposta = self._postar("/auth/login", {"email": email, "senha": dados.get("senha", "")})
+        self.entrando = False
+        if resposta is None:
             return
-        except httpx.RequestError:
-            self.mensagem = "Não foi possível conectar à API de autenticação."
-            self.entrando = False
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
             return
 
+        # Só o e-mail fica guardado entre as etapas; a senha não.
+        self.email_pendente = email
+        self.aviso = ""
+        self._aguardar_reenvio(resposta)
+        yield rx.redirect("/login/codigo")
+        yield AuthState.contar_reenvio
+
+    def verificar_codigo(self, dados: dict[str, Any]):
+        """Segunda etapa: com o código conferido, guarda o token e leva à área do perfil."""
+        self.mensagem = ""
+        self.aviso = ""
+        self.entrando = True
+        yield
+        resposta = self._postar("/auth/login/verificar", {"email": self.email_pendente, "codigo": str(dados.get("codigo", "")).strip()})
         self.entrando = False
+        if resposta is None:
+            return
         if not resposta.is_success:
             self.mensagem = _mensagem_erro(resposta)
             return
@@ -120,7 +189,45 @@ class AuthState(rx.State):
         self.token = str(sessao["token"])
         self.nome = str(sessao.get("nome", ""))
         self.perfil = str(sessao.get("perfil", ""))
+        self.email_pendente = ""
+        self.segundos_reenvio = 0
         yield rx.redirect(AREA_POR_PERFIL.get(self.perfil, "/login"))
+
+    def reenviar_codigo(self):
+        self.mensagem = ""
+        self.aviso = ""
+        resposta = self._postar("/auth/login/reenviar", {"email": self.email_pendente})
+        if resposta is None:
+            return
+        if resposta.status_code == 403:
+            # Primeiro passo vencido: volta ao login para informar a senha de novo.
+            self.email_pendente = ""
+            self.mensagem = _mensagem_erro(resposta)
+            yield rx.redirect("/login")
+            return
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            return
+
+        self.aviso = "Enviamos um novo código para o seu e-mail."
+        self._aguardar_reenvio(resposta)
+        yield AuthState.contar_reenvio
+
+    @rx.event(background=True)
+    async def contar_reenvio(self):
+        await _contar_reenvio(self)
+
+    def exigir_login_pendente(self) -> rx.event.EventSpec | None:
+        """Guarda da tela do código: sem a primeira etapa feita, volta ao login."""
+        if not self.email_pendente:
+            return rx.redirect("/login")
+        return None
+
+    def voltar_ao_login(self) -> rx.event.EventSpec:
+        self.email_pendente = ""
+        self.mensagem = ""
+        self.aviso = ""
+        return rx.redirect("/login")
 
     def verificar_sessao(self, perfil_exigido: str = "") -> rx.event.EventSpec | None:
         """Guarda de rota usada no on_load das páginas internas."""
@@ -139,6 +246,132 @@ class AuthState(rx.State):
             except (api.ConfiguracaoAusente, httpx.RequestError):
                 pass  # O token é descartado mesmo se a API não responder.
         self._encerrar_sessao_local()
+        return rx.redirect("/login")
+
+
+class SenhaState(rx.State):
+    """"Esqueci minha senha" (telas A1 a A4 do Figma). As regras do código ficam no Xano (design D12)."""
+
+    email: str = ""
+    codigo: str = ""
+    enviando: bool = False
+    mensagem: str = ""
+    aviso: str = ""
+    segundos_reenvio: int = 0
+    contando: bool = False
+
+    @rx.var
+    def email_exibido(self) -> str:
+        return _mascarar_email(self.email)
+
+    @rx.var
+    def texto_reenvio(self) -> str:
+        return _texto_reenvio(self.segundos_reenvio)
+
+    def _limpar(self) -> None:
+        self.email = ""
+        self.codigo = ""
+        self.mensagem = ""
+        self.aviso = ""
+
+    def iniciar(self) -> None:
+        self.mensagem = ""
+        self.aviso = ""
+
+    def solicitar_codigo(self, dados: dict[str, Any]):
+        """A1: a resposta é a mesma para qualquer e-mail; só usuário ativo recebe o código."""
+        self.mensagem = ""
+        self.enviando = True
+        yield
+        email = str(dados.get("email", "")).strip().lower()
+        resposta = _postar_publico(self, "/auth/senha/solicitar", {"email": email})
+        self.enviando = False
+        if resposta is None:
+            return
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            return
+
+        self.email = email
+        self.codigo = ""
+        self.aviso = ""
+        self.segundos_reenvio = _segundos_reenvio(resposta)
+        yield rx.redirect("/senha/codigo")
+        yield SenhaState.contar_reenvio
+
+    def reenviar_codigo(self):
+        self.mensagem = ""
+        self.aviso = ""
+        resposta = _postar_publico(self, "/auth/senha/solicitar", {"email": self.email})
+        if resposta is None:
+            return
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            return
+
+        self.aviso = "Se o e-mail estiver cadastrado, enviamos um novo código."
+        self.segundos_reenvio = _segundos_reenvio(resposta)
+        yield SenhaState.contar_reenvio
+
+    @rx.event(background=True)
+    async def contar_reenvio(self):
+        await _contar_reenvio(self)
+
+    def verificar_codigo(self, dados: dict[str, Any]):
+        """A2: confere o código sem usá-lo; o uso definitivo é na troca da senha (A3)."""
+        self.mensagem = ""
+        self.aviso = ""
+        self.enviando = True
+        yield
+        codigo = str(dados.get("codigo", "")).strip()
+        resposta = _postar_publico(self, "/auth/senha/verificar", {"email": self.email, "codigo": codigo})
+        self.enviando = False
+        if resposta is None:
+            return
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)  # A2b
+            return
+
+        self.codigo = codigo
+        yield rx.redirect("/senha/nova")
+
+    def redefinir(self, dados: dict[str, Any]):
+        """A3: a confirmação é só da tela; o mínimo de 8 caracteres é validado no Xano."""
+        self.mensagem = ""
+        nova_senha = str(dados.get("nova_senha", ""))
+        if nova_senha != str(dados.get("confirmacao", "")):
+            self.mensagem = "As duas senhas devem ser iguais."
+            return
+        self.enviando = True
+        yield
+        resposta = _postar_publico(
+            self, "/auth/senha/redefinir", {"email": self.email, "codigo": self.codigo, "nova_senha": nova_senha}
+        )
+        self.enviando = False
+        if resposta is None:
+            return
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            return
+
+        self._limpar()
+        self.segundos_reenvio = 0
+        yield rx.redirect("/senha/sucesso")
+
+    def exigir_email(self) -> rx.event.EventSpec | None:
+        """Guarda da tela A2: sem o pedido feito na A1, volta para ela."""
+        if not self.email:
+            return rx.redirect("/senha")
+        return None
+
+    def exigir_codigo(self) -> rx.event.EventSpec | None:
+        """Guarda da tela A3: sem o código conferido na A2, volta para a A1."""
+        if not self.email or not self.codigo:
+            return rx.redirect("/senha")
+        return None
+
+    def voltar_ao_login(self) -> rx.event.EventSpec:
+        self._limpar()
         return rx.redirect("/login")
 
 
@@ -766,39 +999,35 @@ def index() -> rx.Component:
     return carregando()
 
 
-def login() -> rx.Component:
+def logo_ps() -> rx.Component:
     return rx.center(
-        rx.form(
-            rx.vstack(
-                rx.center(
-                    rx.text("PS", weight="bold", size="5", color="white"),
-                    width="64px",
-                    height="64px",
-                    border_radius="50%",
-                    background=COR_MARINHO,
-                ),
-                rx.text("Sistema de Fila Prioritária", weight="bold", size="5", color=COR_TEXTO),
-                rx.text("Acesso da equipe — Recepção/Triagem, Médico e Administrador", size="2", color=COR_SECUNDARIA, text_align="center"),
-                rx.box(height="8px"),
-                campo_rotulado("E-MAIL", rx.input(name="email", type="email", placeholder="nome@ps.com.br", size="3", width="100%")),
-                campo_rotulado("SENHA", rx.input(name="senha", type="password", placeholder="••••••••", size="3", width="100%")),
-                rx.cond(
-                    AuthState.mensagem != "",
-                    rx.text(AuthState.mensagem, size="2", color=COR_ERRO, width="100%"),
-                ),
-                rx.button("Entrar", type="submit", loading=AuthState.entrando, size="3", background=COR_AZUL, width="100%"),
-                align="center",
-                spacing="3",
-                padding="40px 20px",
-                background="white",
-                border=f"1px solid {COR_BORDA}",
-                border_radius="16px",
-                box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
-                width="min(100%, 420px)",
-            ),
-            on_submit=AuthState.entrar,
-            width="min(100%, 420px)",
-        ),
+        rx.text("PS", weight="bold", size="5", color="white"),
+        width="64px",
+        height="64px",
+        border_radius="50%",
+        background=COR_MARINHO,
+    )
+
+
+def cartao_acesso(icone: rx.Component, titulo: str, subtitulo: rx.Component | str, *corpo: rx.Component, on_submit: Any = None) -> rx.Component:
+    """Cartão centralizado das telas de acesso (login, código e redefinição de senha), como no Figma."""
+    cartao = rx.vstack(
+        icone,
+        rx.text(titulo, weight="bold", size="5", color=COR_TEXTO),
+        rx.text(subtitulo, size="2", color=COR_SECUNDARIA, text_align="center") if isinstance(subtitulo, str) else subtitulo,
+        rx.box(height="8px"),
+        *corpo,
+        align="center",
+        spacing="3",
+        padding="40px 20px",
+        background="white",
+        border=f"1px solid {COR_BORDA}",
+        border_radius="16px",
+        box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
+        width="min(100%, 420px)",
+    )
+    return rx.center(
+        rx.form(cartao, on_submit=on_submit, width="min(100%, 420px)") if on_submit is not None else cartao,
         rx.text("Acesso restrito a profissionais autorizados do PS", size="1", color=COR_SECUNDARIA, position="absolute", bottom="24px"),
         background=COR_FUNDO,
         font_family="Inter, sans-serif",
@@ -806,6 +1035,147 @@ def login() -> rx.Component:
         padding="16px",
         position="relative",
         width="100%",
+    )
+
+
+def mensagens_acesso(mensagem: rx.Var, aviso: rx.Var | None = None) -> rx.Component:
+    erro = rx.cond(mensagem != "", rx.text(mensagem, size="2", color=COR_ERRO, width="100%"))
+    if aviso is None:
+        return erro
+    return rx.fragment(erro, rx.cond(aviso != "", rx.text("✓ ", aviso, size="2", color=COR_SUCESSO, width="100%")))
+
+
+def botao_principal(texto: str, ocupado: rx.Var) -> rx.Component:
+    return rx.button(texto, type="submit", loading=ocupado, size="3", background=COR_AZUL, width="100%")
+
+
+def link_acao(texto: str, **props: Any) -> rx.Component:
+    return rx.button(texto, type="button", variant="ghost", size="2", color=COR_AZUL, **props)
+
+
+def campo_codigo() -> rx.Component:
+    return campo_rotulado(
+        "CÓDIGO DE VERIFICAÇÃO",
+        rx.input(
+            name="codigo",
+            placeholder="000000",
+            max_length=6,
+            input_mode="numeric",
+            custom_attrs={"autoComplete": "one-time-code"},
+            auto_focus=True,
+            size="3",
+            width="100%",
+            text_align="center",
+            letter_spacing="8px",
+            font_size="22px",
+        ),
+    )
+
+
+def bloco_reenvio(segundos: rx.Var, texto: rx.Var, ao_reenviar: Any) -> rx.Component:
+    return rx.cond(
+        segundos > 0,
+        rx.text(texto, size="2", color=COR_SECUNDARIA),
+        link_acao("Reenviar código", on_click=ao_reenviar),
+    )
+
+
+def login() -> rx.Component:
+    return cartao_acesso(
+        logo_ps(),
+        "Sistema de Fila Prioritária",
+        "Acesso da equipe — Recepção/Triagem, Médico e Administrador",
+        campo_rotulado("E-MAIL", rx.input(name="email", type="email", placeholder="nome@ps.com.br", size="3", width="100%")),
+        campo_rotulado("SENHA", rx.input(name="senha", type="password", placeholder="••••••••", size="3", width="100%")),
+        mensagens_acesso(AuthState.mensagem),
+        botao_principal("Entrar", AuthState.entrando),
+        rx.link("Esqueci minha senha", href="/senha", size="2", color=COR_AZUL),
+        on_submit=AuthState.entrar,
+    )
+
+
+def login_codigo() -> rx.Component:
+    # Segunda etapa do login (design D13), no padrão da tela A2 do Figma.
+    return cartao_acesso(
+        logo_ps(),
+        "Digite o código",
+        rx.text(
+            "Enviamos um código de 6 dígitos para ",
+            AuthState.email_exibido,
+            ". Digite-o abaixo para entrar.",
+            size="2",
+            color=COR_SECUNDARIA,
+            text_align="center",
+        ),
+        campo_codigo(),
+        mensagens_acesso(AuthState.mensagem, AuthState.aviso),
+        botao_principal("Verificar código", AuthState.entrando),
+        bloco_reenvio(AuthState.segundos_reenvio, AuthState.texto_reenvio, AuthState.reenviar_codigo),
+        rx.text("Não recebeu? Confira a caixa de spam.", size="1", color=COR_SECUNDARIA),
+        link_acao("Voltar ao login", on_click=AuthState.voltar_ao_login),
+        on_submit=AuthState.verificar_codigo,
+    )
+
+
+def senha_email() -> rx.Component:
+    # A1 — Esqueci minha senha (e-mail).
+    return cartao_acesso(
+        logo_ps(),
+        "Redefinir senha",
+        "Informe o e-mail cadastrado. Enviaremos um código de verificação.",
+        campo_rotulado("E-MAIL", rx.input(name="email", type="email", placeholder="nome@ps.com.br", size="3", width="100%")),
+        mensagens_acesso(SenhaState.mensagem),
+        botao_principal("Enviar código", SenhaState.enviando),
+        link_acao("Voltar ao login", on_click=SenhaState.voltar_ao_login),
+        on_submit=SenhaState.solicitar_codigo,
+    )
+
+
+def senha_codigo() -> rx.Component:
+    # A2 — Código enviado por e-mail; a A2b é esta tela com a mensagem "Código inválido ou expirado".
+    return cartao_acesso(
+        logo_ps(),
+        "Digite o código",
+        rx.text(
+            "Se o e-mail estiver cadastrado, enviamos um código de 6 dígitos para ",
+            SenhaState.email_exibido,
+            ".",
+            size="2",
+            color=COR_SECUNDARIA,
+            text_align="center",
+        ),
+        campo_codigo(),
+        mensagens_acesso(SenhaState.mensagem, SenhaState.aviso),
+        botao_principal("Verificar código", SenhaState.enviando),
+        bloco_reenvio(SenhaState.segundos_reenvio, SenhaState.texto_reenvio, SenhaState.reenviar_codigo),
+        rx.text("Não recebeu? Confira a caixa de spam.", size="1", color=COR_SECUNDARIA),
+        link_acao("Voltar ao login", on_click=SenhaState.voltar_ao_login),
+        on_submit=SenhaState.verificar_codigo,
+    )
+
+
+def senha_nova() -> rx.Component:
+    # A3 — Nova senha.
+    return cartao_acesso(
+        logo_ps(),
+        "Crie uma nova senha",
+        "Código confirmado. Escolha a nova senha de acesso.",
+        campo_rotulado("NOVA SENHA", rx.input(name="nova_senha", type="password", placeholder="••••••••", size="3", width="100%")),
+        campo_rotulado("CONFIRMAR NOVA SENHA", rx.input(name="confirmacao", type="password", placeholder="••••••••", size="3", width="100%")),
+        rx.text("Mínimo de 8 caracteres. As duas senhas devem ser iguais.", size="1", color=COR_SECUNDARIA, width="100%"),
+        mensagens_acesso(SenhaState.mensagem),
+        botao_principal("Salvar nova senha", SenhaState.enviando),
+        on_submit=SenhaState.redefinir,
+    )
+
+
+def senha_sucesso() -> rx.Component:
+    # A4 — Senha redefinida.
+    return cartao_acesso(
+        rx.center(rx.icon("check", size=28, color=COR_SUCESSO), width="64px", height="64px", border_radius="50%", background="#E8F5E9"),
+        "Senha redefinida",
+        "Sua senha foi alterada. A senha anterior deixou de funcionar; entre com a nova senha.",
+        rx.link(rx.button("Ir para o login", size="3", background=COR_AZUL, width="100%"), href="/login", width="100%"),
     )
 
 
@@ -1018,6 +1388,11 @@ def recepcao_ficha() -> rx.Component:
 app = rx.App(stylesheets=["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"])
 app.add_page(index, route="/", on_load=AuthState.ir_para_inicio)
 app.add_page(login, route="/login", title="Login")
+app.add_page(login_codigo, route="/login/codigo", title="Código de acesso", on_load=AuthState.exigir_login_pendente)
+app.add_page(senha_email, route="/senha", title="Redefinir senha", on_load=SenhaState.iniciar)
+app.add_page(senha_codigo, route="/senha/codigo", title="Redefinir senha", on_load=SenhaState.exigir_email)
+app.add_page(senha_nova, route="/senha/nova", title="Nova senha", on_load=SenhaState.exigir_codigo)
+app.add_page(senha_sucesso, route="/senha/sucesso", title="Senha redefinida")
 app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=AuthState.verificar_sessao("RECEPCAO_TRIAGEM"))
 app.add_page(area_medico, route="/medico", title="Médico", on_load=AuthState.verificar_sessao("MEDICO"))
 app.add_page(area_admin, route="/admin", title="Administrador", on_load=AuthState.verificar_sessao("ADMINISTRADOR"))
