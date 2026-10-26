@@ -15,6 +15,13 @@ query "auth/me" verb=GET {
     } as $usuario
   }
 
-  response = $usuario
+  // inatividade_segundos: tempo sem uso até a tela encerrar a sessão (add-privacidade, D4).
+  response = {
+    id                  : $usuario.id
+    nome                : $usuario.nome
+    email               : $usuario.email
+    perfil              : $usuario.perfil
+    inatividade_segundos: $env.INATIVIDADE_SEGUNDOS|to_int
+  }
   guid = "nT4cvJFnCLpa3B6ijMw3TEyYfBw"
 }

@@ -158,6 +158,8 @@ Não existe tela de cadastro aberta: o primeiro Administrador é criado à mão 
 2. Preencha nome, e-mail, senha (mínimo de 8 caracteres), **perfil** `ADMINISTRADOR` e **ativo** `true`.
 3. Entre em `http://localhost:3000/login` com esse e-mail e senha. Os demais usuários são criados pelo Administrador.
 
+As regras de tempo ficam em variáveis de ambiente do Xano (nunca no repositório): `TOKEN_TTL_SEGUNDOS` (validade da sessão, 12 h), `CODIGO_TTL_SEGUNDOS`, `CODIGO_REENVIO_SEGUNDOS` e `CODIGO_TENTATIVAS` (códigos por e-mail) e `INATIVIDADE_SEGUNDOS` (saída por inatividade, 1 h). O aviso de privacidade mostrado em `/privacidade` é o arquivo [docs/aviso-de-privacidade.md](docs/aviso-de-privacidade.md).
+
 Para os testes de integração do login, coloque no `frontend/.env` (nunca no repositório) as credenciais `TEST_ADMIN_*`, `TEST_RECEPCAO_*` e `TEST_MEDICO_*` de usuários de teste de cada perfil. Sem elas, esses testes são ignorados.
 
 Detalhes do ambiente, do Xano e do fluxo de trabalho no [guia de contribuição](CONTRIBUTING.md).

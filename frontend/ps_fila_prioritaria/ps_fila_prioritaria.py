@@ -14,6 +14,8 @@ from ps_fila_prioritaria import api
 
 
 ARQUIVO_ENV = Path(__file__).resolve().parents[1] / ".env"
+# Fonte única do aviso de privacidade: a página mostra este arquivo sem alterá-lo (add-privacidade, D1).
+ARQUIVO_AVISO_PRIVACIDADE = Path(__file__).resolve().parents[2] / "docs" / "aviso-de-privacidade.md"
 
 
 def carregar_variaveis_ambiente() -> None:
@@ -90,6 +92,14 @@ def _mascarar_email(email: str) -> str:
     return f"{usuario[:1]}***@{dominio}" if dominio else email
 
 
+def mascarar_cpf(valor: object) -> str:
+    """***.456.789-** nas telas internas; CPF ausente ou sem 11 dígitos não aparece em parte (spec privacidade)."""
+    digitos = "".join(c for c in str(valor or "") if c.isdigit())
+    if len(digitos) != 11:
+        return "—"
+    return f"***.{digitos[3:6]}.{digitos[6:9]}-**"
+
+
 class AuthState(rx.State):
     """Sessão da equipe no navegador. A autorização real é feita no Xano (design D3)."""
 
@@ -102,6 +112,8 @@ class AuthState(rx.State):
     email_pendente: str = ""
     segundos_reenvio: int = 0
     contando: bool = False
+    # Vem do auth/me (INATIVIDADE_SEGUNDOS no Xano); 0 enquanto a sessão não foi conferida.
+    inatividade_segundos: int = 0
 
     def _encerrar_sessao_local(self, mensagem: str = "") -> None:
         self.token = ""
@@ -132,6 +144,7 @@ class AuthState(rx.State):
         usuario = resposta.json()
         self.nome = str(usuario.get("nome", ""))
         self.perfil = str(usuario.get("perfil", ""))
+        self.inatividade_segundos = int(usuario.get("inatividade_segundos") or 0)
         if perfil_exigido and self.perfil != perfil_exigido:
             return rx.redirect(AREA_POR_PERFIL.get(self.perfil, "/login"))
         return None
@@ -239,14 +252,22 @@ class AuthState(rx.State):
             return redirecionamento
         return rx.redirect(AREA_POR_PERFIL.get(self.perfil, "/login"))
 
-    def sair(self) -> rx.event.EventSpec:
+    def _sair(self, mensagem: str = "") -> rx.event.EventSpec:
         if self.token:
             try:
                 api.requisitar("POST", "XANO_AUTH_API_URL", "/auth/logout", token=self.token)
             except (api.ConfiguracaoAusente, httpx.RequestError):
                 pass  # O token é descartado mesmo se a API não responder.
-        self._encerrar_sessao_local()
+        self._encerrar_sessao_local(mensagem)
+        self.inatividade_segundos = 0
         return rx.redirect("/login")
+
+    def sair(self) -> rx.event.EventSpec:
+        return self._sair()
+
+    def sair_por_inatividade(self) -> rx.event.EventSpec:
+        """Chamado pela página /sair/inatividade quando o contador da tela estoura (add-privacidade, D5)."""
+        return self._sair("Sua sessão foi encerrada por inatividade.")
 
 
 class SenhaState(rx.State):
@@ -604,6 +625,10 @@ class FichaState(rx.State):
     salvando: bool = False
     mensagem: str = ""
     erro: bool = False
+
+    @rx.var
+    def cpf_exibido(self) -> str:
+        return mascarar_cpf(self.paciente.get("cpf"))
 
     def _url(self, caminho: str) -> str | None:
         base_url = os.getenv("XANO_TRIAGEM_API_URL", "").strip().rstrip("/")
@@ -989,9 +1014,40 @@ def carregando() -> rx.Component:
     return rx.center(rx.spinner(size="3"), height="100vh", width="100%", background=COR_FUNDO)
 
 
+# Contagem de inatividade no navegador (add-privacidade, D5). Instala os ouvintes uma única vez; só conta
+# enquanto o marcador #ps-inatividade estiver na página, então as telas públicas não encerram nada.
+SCRIPT_INATIVIDADE = """
+(function () {
+  if (window.__psInatividade) return;
+  window.__psInatividade = true;
+  var ultima = Date.now();
+  ["mousemove", "mousedown", "keydown", "scroll", "touchstart"].forEach(function (evento) {
+    window.addEventListener(evento, function () { ultima = Date.now(); }, { passive: true, capture: true });
+  });
+  setInterval(function () {
+    var marcador = document.getElementById("ps-inatividade");
+    if (!marcador) { ultima = Date.now(); return; }
+    var limite = parseInt(marcador.getAttribute("data-inatividade-ms") || "0", 10);
+    if (limite > 0 && Date.now() - ultima >= limite) {
+      window.__psInatividade = false;
+      window.location.href = "/sair/inatividade";
+    }
+  }, 1000);
+})();
+"""
+
+
 def protegido(perfil: str, conteudo: rx.Component) -> rx.Component:
     """Só mostra a página ao perfil certo; enquanto a sessão é conferida, mostra o carregamento."""
-    return rx.cond(AuthState.perfil == perfil, conteudo, carregando())
+    return rx.cond(
+        AuthState.perfil == perfil,
+        rx.fragment(
+            conteudo,
+            rx.el.div(id="ps-inatividade", custom_attrs={"data-inatividade-ms": AuthState.inatividade_segundos * 1000}, display="none"),
+            rx.script(SCRIPT_INATIVIDADE),
+        ),
+        carregando(),
+    )
 
 
 def index() -> rx.Component:
@@ -1026,14 +1082,30 @@ def cartao_acesso(icone: rx.Component, titulo: str, subtitulo: rx.Component | st
         box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
         width="min(100%, 420px)",
     )
+    return fundo_acesso(rx.form(cartao, on_submit=on_submit, width="min(100%, 420px)") if on_submit is not None else cartao)
+
+
+def fundo_acesso(conteudo: rx.Component) -> rx.Component:
+    """Fundo das páginas públicas, com o rodapé e o link do aviso de privacidade (add-privacidade, D2)."""
     return rx.center(
-        rx.form(cartao, on_submit=on_submit, width="min(100%, 420px)") if on_submit is not None else cartao,
-        rx.text("Acesso restrito a profissionais autorizados do PS", size="1", color=COR_SECUNDARIA, position="absolute", bottom="24px"),
+        rx.vstack(
+            conteudo,
+            rx.hstack(
+                rx.text("Acesso restrito a profissionais autorizados do PS", size="1", color=COR_SECUNDARIA),
+                rx.text("·", size="1", color=COR_SECUNDARIA),
+                rx.link("Aviso de privacidade", href="/privacidade", size="1", color=COR_AZUL),
+                spacing="2",
+                wrap="wrap",
+                justify="center",
+            ),
+            align="center",
+            spacing="6",
+            width="100%",
+        ),
         background=COR_FUNDO,
         font_family="Inter, sans-serif",
         min_height="100vh",
-        padding="16px",
-        position="relative",
+        padding="24px 16px",
         width="100%",
     )
 
@@ -1179,6 +1251,29 @@ def senha_sucesso() -> rx.Component:
     )
 
 
+def carregar_aviso_privacidade() -> str:
+    return ARQUIVO_AVISO_PRIVACIDADE.read_text(encoding="utf-8")
+
+
+def privacidade() -> rx.Component:
+    # Página pública do aviso: não exige login nem mexe na sessão aberta (spec privacidade).
+    return fundo_acesso(
+        rx.vstack(
+            logo_ps(),
+            rx.box(rx.markdown(carregar_aviso_privacidade()), color=COR_TEXTO, width="100%"),
+            rx.link(rx.button("Voltar ao login", size="3", background=COR_AZUL), href="/login"),
+            align="center",
+            spacing="4",
+            padding="40px 32px",
+            background="white",
+            border=f"1px solid {COR_BORDA}",
+            border_radius="16px",
+            box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
+            width="min(100%, 760px)",
+        )
+    )
+
+
 def area_inicial(perfil: str, titulo: str, sigla: str, nome_perfil: str, conteudo: rx.Component) -> rx.Component:
     return protegido(
         perfil,
@@ -1287,7 +1382,7 @@ def recepcao_ficha() -> rx.Component:
                     FichaState.paciente != {},
                     rx.vstack(
                         rx.text("Paciente: ", FichaState.paciente["nome"], weight="medium"),
-                        rx.text("CPF: ", FichaState.paciente["cpf"], size="2", color_scheme="gray"),
+                        rx.text("CPF: ", FichaState.cpf_exibido, size="2", color_scheme="gray"),
                         spacing="1",
                         align="start",
                     ),
@@ -1393,6 +1488,8 @@ app.add_page(senha_email, route="/senha", title="Redefinir senha", on_load=Senha
 app.add_page(senha_codigo, route="/senha/codigo", title="Redefinir senha", on_load=SenhaState.exigir_email)
 app.add_page(senha_nova, route="/senha/nova", title="Nova senha", on_load=SenhaState.exigir_codigo)
 app.add_page(senha_sucesso, route="/senha/sucesso", title="Senha redefinida")
+app.add_page(privacidade, route="/privacidade", title="Aviso de privacidade")
+app.add_page(carregando, route="/sair/inatividade", title="Sessão encerrada", on_load=AuthState.sair_por_inatividade)
 app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=AuthState.verificar_sessao("RECEPCAO_TRIAGEM"))
 app.add_page(area_medico, route="/medico", title="Médico", on_load=AuthState.verificar_sessao("MEDICO"))
 app.add_page(area_admin, route="/admin", title="Administrador", on_load=AuthState.verificar_sessao("ADMINISTRADOR"))

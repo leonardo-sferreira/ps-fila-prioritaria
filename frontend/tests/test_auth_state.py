@@ -39,7 +39,9 @@ class EstadoFalso:
     voltar_ao_login = AuthState.voltar_ao_login.fn
     verificar_sessao = AuthState.verificar_sessao.fn
     ir_para_inicio = AuthState.ir_para_inicio.fn
+    _sair = AuthState._sair
     sair = AuthState.sair.fn
+    sair_por_inatividade = AuthState.sair_por_inatividade.fn
 
     def __init__(self, token: str = "") -> None:
         self.token = token
@@ -50,6 +52,7 @@ class EstadoFalso:
         self.aviso = ""
         self.email_pendente = ""
         self.segundos_reenvio = 0
+        self.inatividade_segundos = 0
 
 
 def _executar(estado: EstadoFalso, handler, resposta: Resposta, *args: object) -> tuple[list[object], object]:
@@ -202,6 +205,31 @@ def test_guarda_com_perfil_certo_libera_a_pagina() -> None:
     assert estado.nome == "Ana"
 
 
+def test_guarda_guarda_o_tempo_de_inatividade_vindo_do_auth_me() -> None:
+    estado = EstadoFalso(token="tok")
+    with patch.dict("os.environ", AMBIENTE, clear=False), patch(
+        REQUISICAO, return_value=Resposta(200, {"id": 1, "nome": "Ana", "perfil": "RECEPCAO_TRIAGEM", "inatividade_segundos": 3600})
+    ):
+        assert estado.verificar_sessao("RECEPCAO_TRIAGEM") is None
+    assert estado.inatividade_segundos == 3600
+
+
+def test_saida_por_inatividade_encerra_a_sessao_e_avisa_no_login() -> None:
+    estado = EstadoFalso(token="tok")
+    estado.nome = "Ana"
+    estado.perfil = "RECEPCAO_TRIAGEM"
+    estado.inatividade_segundos = 3600
+    with patch.dict("os.environ", AMBIENTE, clear=False), patch(
+        REQUISICAO, return_value=Resposta(200, {"encerrada": True})
+    ) as requisicao, patch(REDIRECT, side_effect=lambda rota: rota):
+        assert estado.sair_por_inatividade() == "/login"
+    assert requisicao.call_args.args[:2] == ("POST", "https://auth.test/auth/logout")
+    assert requisicao.call_args.kwargs["headers"] == {"Authorization": "Bearer tok"}
+    assert estado.token == estado.nome == estado.perfil == ""
+    assert estado.inatividade_segundos == 0
+    assert estado.mensagem == "Sua sessão foi encerrada por inatividade."
+
+
 def test_raiz_leva_usuario_logado_para_a_sua_area() -> None:
     estado = EstadoFalso(token="tok")
     with patch.dict("os.environ", AMBIENTE, clear=False), patch(
@@ -274,6 +302,12 @@ class TestAuthState(unittest.TestCase):
 
     def test_guarda_perfil_certo(self) -> None:
         test_guarda_com_perfil_certo_libera_a_pagina()
+
+    def test_tempo_de_inatividade(self) -> None:
+        test_guarda_guarda_o_tempo_de_inatividade_vindo_do_auth_me()
+
+    def test_saida_por_inatividade(self) -> None:
+        test_saida_por_inatividade_encerra_a_sessao_e_avisa_no_login()
 
     def test_raiz(self) -> None:
         test_raiz_leva_usuario_logado_para_a_sua_area()

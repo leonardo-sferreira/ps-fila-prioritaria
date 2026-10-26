@@ -68,6 +68,7 @@ Paciente → Totem → Ticket na fila de Recepção/Triagem → Triagem e classi
 - Painel público com senha, sala e previsão das próximas 5, sem nome nem CPF.
 - Cadastros do administrador e disponibilidade diária dos médicos.
 - Tela de acompanhamento do administrador: fila geral, pessoas logadas e seus status, auditoria.
+- Aviso de privacidade público, acessível pelas telas de acesso (texto em `docs/aviso-de-privacidade.md`).
 
 ## 7. Regras e restrições importantes
 
@@ -78,6 +79,7 @@ Paciente → Totem → Ticket na fila de Recepção/Triagem → Triagem e classi
 - **Chamadas:** intervalo mínimo de 30 segundos entre chamadas da mesma senha; até 3 tentativas em cada oportunidade; após a primeira oportunidade sem comparecimento, uma reentrada ao fim da mesma fila. A regra vale para Recepção/Triagem e Médico.
 - **Médico:** PAUSA e AUSENTE impedem novas atribuições sem remover itens já atribuídos. Retomar volta a DISPONIVEL se houver plantão vigente. Encerrar plantão é ação explícita e exige fila atribuída zerada.
 - **Painel público:** pode exibir senha e sala; nunca exibe CPF nem nome completo.
+- **Privacidade nas telas internas (decisão do PO, 26/10/2026):** o CPF aparece mascarado (`***.456.789-**`) onde não precisa ser lido inteiro; os campos de digitação mostram o CPF completo. A sessão é encerrada após 1 hora sem uso (configurável, `INATIVIDADE_SEGUNDOS`), além da expiração de 12 h.
 - Toda alteração relevante (sintomas, classificação, disponibilidade, chamadas) registra usuário, data/hora, valor anterior e novo valor.
 
 ### Matriz global de permissões
