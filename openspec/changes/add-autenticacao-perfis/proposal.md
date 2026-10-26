@@ -51,7 +51,7 @@ _Nenhuma (não existem specs anteriores)._
 
 - **Xano:** novas tabelas `usuario` (tabela de autenticação) e `sessao`; endpoints de autenticação (`login`, `logout`, `me`) e de gestão de usuários; função reutilizável de verificação de perfil, que será usada por todos os endpoints das próximas changes. Para a redefinição de senha: tabela `codigo_redefinicao_senha` (mudança de esquema pelo PO), endpoints públicos `auth/senha/solicitar`, `auth/senha/verificar` e `auth/senha/redefinir`, e envio de e-mail por provedor transacional (D12).
 - **Reflex:** criação do app, tela de login, proteção de rotas, telas iniciais por perfil e telas de gestão de usuários; fluxo "Esqueci minha senha" (telas A1 a A4 do Figma).
-- **Dependência externa nova:** provedor de e-mail transacional acessado por API HTTP, com chave guardada em variável de ambiente do Xano (D12).
+- **Dependência externa nova:** Brevo (e-mail transacional) acessada por API HTTP, com chave guardada em variável de ambiente do Xano (D12).
 - **Testes:** suíte de testes de API em Python (pytest) contra um ambiente de desenvolvimento do Xano.
 - **Configuração:** URL da API do Xano por variável de ambiente, sem credenciais no repositório.
 - **Documentação:** `docs/domain-model.md` (Usuário e Sessão) atualizado conforme o que for implementado.
@@ -63,5 +63,6 @@ _Nenhuma (não existem specs anteriores)._
 - [ ] A `gestao-usuarios` (tela e API do Administrador) entra em qual sprint? Hoje não há card. · PENDENTE PO
 - [ ] Ajustar as tasks 1.4, 2.1 e 2.2: o README e as tabelas `usuario` e `sessao` já existem. · dupla da fatia
 - [x] Redefinição de senha pelo próprio usuário com código por e-mail: decidida pelo PO em 25/10/2026. · DECIDIDO PO
-- [ ] Escolher o provedor de e-mail transacional (D12) e criar a conta com remetente do projeto. · PENDENTE PO
+- [x] Escolher o provedor de e-mail transacional (D12): Brevo, decidido pelo PO em 25/10/2026. · DECIDIDO PO
+- [ ] Cadastrar `BREVO_REMETENTE` (e-mail verificado na Brevo) no Xano. · PENDENTE PO
 - [ ] Registrar no Confluence: o RF39 prevê só a redefinição pelo Administrador. · PENDENTE PO
