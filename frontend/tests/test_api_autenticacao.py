@@ -42,13 +42,13 @@ def _login(perfil: str) -> httpx.Response:
 
 
 @pytest.mark.parametrize("perfil", ["ADMINISTRADOR", "RECEPCAO_TRIAGEM", "MEDICO"])
-def test_login_valido_devolve_token_nome_e_perfil(perfil: str) -> None:
+def test_senha_correta_envia_o_codigo_e_ainda_nao_devolve_token(perfil: str) -> None:
     resposta = _login(perfil)
     assert resposta.status_code == 200, resposta.text
     corpo = resposta.json()
-    assert corpo["token"]
-    assert corpo["nome"]
-    assert corpo["perfil"] == perfil
+    assert corpo["codigo_enviado"] is True
+    assert corpo["reenvio_em_segundos"] > 0
+    assert "token" not in corpo
     assert "password" not in corpo
 
 
@@ -56,6 +56,7 @@ def test_email_com_maiusculas_e_espacos_tambem_entra() -> None:
     email, senha = USUARIOS["RECEPCAO_TRIAGEM"]
     resposta = _chamar("POST", "/auth/login", json={"email": f"  {email.upper()}  ", "senha": senha})
     assert resposta.status_code == 200, resposta.text
+    assert resposta.json()["codigo_enviado"] is True
 
 
 def test_senha_errada_usa_a_mesma_mensagem_generica() -> None:
@@ -73,19 +74,33 @@ def test_campos_ausentes_sao_recusados_sem_token() -> None:
     assert sem_senha.status_code == 400 and sem_senha.json()["message"] == "Informe a senha."
 
 
-def test_me_devolve_o_usuario_do_token_e_logout_encerra_a_sessao() -> None:
-    login = _login("ADMINISTRADOR")
-    assert login.status_code == 200, login.text
-    token = login.json()["token"]
+def test_codigo_errado_e_tentativas_esgotadas_sao_recusados_sem_token() -> None:
+    assert _login("MEDICO").status_code == 200
+    email, _ = USUARIOS["MEDICO"]
+    # Nenhum código real tem 7 dígitos, então todas as tentativas erram.
+    for _tentativa in range(6):
+        resposta = _chamar("POST", "/auth/login/verificar", json={"email": email, "codigo": "0000000"})
+        assert resposta.status_code == 401, resposta.text
+        assert resposta.json()["message"] == "Código inválido ou expirado"
+        assert "token" not in resposta.json()
 
-    eu = _chamar("GET", "/auth/me", token=token)
-    assert eu.status_code == 200, eu.text
-    assert eu.json()["perfil"] == "ADMINISTRADOR"
-    assert "password" not in eu.json()
 
-    saida = _chamar("POST", "/auth/logout", token=token)
-    assert saida.status_code == 200, saida.text
-    assert saida.json() == {"encerrada": True}
+def test_reenvio_antes_do_intervalo_informa_quanto_falta() -> None:
+    assert _login("ADMINISTRADOR").status_code == 200
+    resposta = _chamar("POST", "/auth/login/reenviar", json={"email": USUARIOS["ADMINISTRADOR"][0]})
+    assert resposta.status_code == 429, resposta.text
+    assert resposta.json()["message"].startswith("Aguarde ")
+
+
+def test_reenvio_sem_login_pendente_pede_novo_login() -> None:
+    resposta = _chamar("POST", "/auth/login/reenviar", json={"email": "ninguem@ps.test"})
+    assert resposta.status_code == 403, resposta.text
+    assert resposta.json()["message"] == "Não foi possível reenviar o código. Faça login novamente."
+
+
+def test_verificar_sem_codigo_e_recusado() -> None:
+    resposta = _chamar("POST", "/auth/login/verificar", json={"email": USUARIOS["ADMINISTRADOR"][0]})
+    assert resposta.status_code == 400 and resposta.json()["message"] == "Informe o código."
 
 
 def test_me_recusa_requisicao_sem_token_ou_com_token_adulterado() -> None:

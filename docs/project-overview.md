@@ -55,7 +55,7 @@ Paciente → Totem → Ticket na fila de Recepção/Triagem → Triagem e classi
 
 ## 6. Principais funcionalidades
 
-- Autenticação e controle de acesso por perfil.
+- Autenticação e controle de acesso por perfil, com código enviado por e-mail no login e na redefinição de senha.
 - Emissão de ticket e fila pré-triagem.
 - Pesquisa, cadastro e atualização de pacientes por CPF.
 - Ficha de atendimento com sintomas, observações e sinais vitais (PA, FC, FR, temperatura, glicemia capilar, SpO2).

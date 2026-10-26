@@ -76,6 +76,21 @@ Registro de um login da equipe; alimenta a visão "Pessoas logadas e status".
 - PAUSA e AUSENTE são status operacionais durante uma sessão; não encerram a sessão.
 - Encerramento do plantão é um evento operacional próprio, diferente de logout e expiração.
 
+## Código de verificação
+
+Código temporário de 6 dígitos enviado ao e-mail do usuário, usado no login (finalidade `LOGIN`) e na redefinição de senha (finalidade `REDEFINICAO_SENHA`).
+
+### Principais informações
+- usuário e finalidade;
+- código (armazenado como hash, nunca em texto aberto);
+- horário de criação, expiração e uso;
+- número de tentativas de verificação.
+
+### Regras
+- Vale por 10 minutos, é de uso único e aceita no máximo 5 tentativas (valores configuráveis, os mesmos nas duas finalidades).
+- Só existe um código válido por usuário e finalidade; pedir outro invalida o anterior, e um novo envio só é aceito 60 segundos após o último.
+- No login, a sessão só é criada quando o código é conferido.
+
 ### Ciclo da sessão e status operacional
 
 ```

@@ -30,7 +30,13 @@ class EstadoFalso:
 
     _encerrar_sessao_local = AuthState._encerrar_sessao_local
     _validar_sessao = AuthState._validar_sessao
+    _postar = AuthState._postar
+    _aguardar_reenvio = AuthState._aguardar_reenvio
     entrar = AuthState.entrar.fn
+    verificar_codigo = AuthState.verificar_codigo.fn
+    reenviar_codigo = AuthState.reenviar_codigo.fn
+    exigir_login_pendente = AuthState.exigir_login_pendente.fn
+    voltar_ao_login = AuthState.voltar_ao_login.fn
     verificar_sessao = AuthState.verificar_sessao.fn
     ir_para_inicio = AuthState.ir_para_inicio.fn
     sair = AuthState.sair.fn
@@ -41,36 +47,113 @@ class EstadoFalso:
         self.perfil = ""
         self.entrando = False
         self.mensagem = ""
+        self.aviso = ""
+        self.email_pendente = ""
+        self.segundos_reenvio = 0
 
 
-def _executar_login(estado: EstadoFalso, resposta: Resposta) -> list[object]:
+def _executar(estado: EstadoFalso, handler, resposta: Resposta, *args: object) -> tuple[list[object], object]:
     with patch.dict("os.environ", AMBIENTE, clear=False), patch(REQUISICAO, return_value=resposta) as requisicao, patch(
         REDIRECT, side_effect=lambda rota: f"redirect:{rota}"
     ):
-        eventos = [evento for evento in estado.entrar({"email": "ana@ps.com.br", "senha": "segredo123"}) if evento]
+        eventos = [evento for evento in handler(estado, *args) if evento]
+    return eventos, requisicao
+
+
+def _executar_login(estado: EstadoFalso, resposta: Resposta) -> list[object]:
+    eventos, requisicao = _executar(estado, EstadoFalso.entrar, resposta, {"email": " Ana@PS.com.br ", "senha": "segredo123"})
     assert requisicao.call_args.args[:2] == ("POST", "https://auth.test/auth/login")
     assert requisicao.call_args.kwargs["json"] == {"email": "ana@ps.com.br", "senha": "segredo123"}
     return eventos
 
 
-def test_login_valido_guarda_token_e_vai_para_a_area_do_perfil() -> None:
-    for perfil, rota in (("RECEPCAO_TRIAGEM", "/recepcao"), ("MEDICO", "/medico"), ("ADMINISTRADOR", "/admin")):
-        estado = EstadoFalso()
-        eventos = _executar_login(estado, Resposta(200, {"token": "tok", "nome": "Ana", "perfil": perfil}))
-        assert estado.token == "tok"
-        assert estado.nome == "Ana"
-        assert estado.perfil == perfil
-        assert not estado.entrando
-        assert eventos == [f"redirect:{rota}"]
+def test_senha_correta_vai_para_o_codigo_sem_token_e_sem_guardar_a_senha() -> None:
+    estado = EstadoFalso()
+    eventos = _executar_login(estado, Resposta(200, {"codigo_enviado": True, "reenvio_em_segundos": 60}))
+    assert estado.token == ""
+    assert estado.email_pendente == "ana@ps.com.br"
+    assert estado.segundos_reenvio == 60
+    assert "segredo123" not in vars(estado).values()
+    assert not estado.entrando
+    assert eventos == ["redirect:/login/codigo", AuthState.contar_reenvio]
 
 
 def test_login_recusado_mostra_mensagem_da_api_e_nao_guarda_token() -> None:
     estado = EstadoFalso()
     eventos = _executar_login(estado, Resposta(401, {"message": "E-mail ou senha inválidos"}))
     assert estado.token == ""
+    assert estado.email_pendente == ""
     assert estado.mensagem == "E-mail ou senha inválidos"
     assert not estado.entrando
     assert eventos == []
+
+
+def test_codigo_correto_guarda_token_e_vai_para_a_area_do_perfil() -> None:
+    for perfil, rota in (("RECEPCAO_TRIAGEM", "/recepcao"), ("MEDICO", "/medico"), ("ADMINISTRADOR", "/admin")):
+        estado = EstadoFalso()
+        estado.email_pendente = "ana@ps.com.br"
+        eventos, requisicao = _executar(
+            estado, EstadoFalso.verificar_codigo, Resposta(200, {"token": "tok", "nome": "Ana", "perfil": perfil}), {"codigo": " 123456 "}
+        )
+        assert requisicao.call_args.args[:2] == ("POST", "https://auth.test/auth/login/verificar")
+        assert requisicao.call_args.kwargs["json"] == {"email": "ana@ps.com.br", "codigo": "123456"}
+        assert estado.token == "tok"
+        assert estado.nome == "Ana"
+        assert estado.perfil == perfil
+        assert estado.email_pendente == ""
+        assert not estado.entrando
+        assert eventos == [f"redirect:{rota}"]
+
+
+def test_codigo_recusado_mostra_mensagem_e_nao_guarda_token() -> None:
+    estado = EstadoFalso()
+    estado.email_pendente = "ana@ps.com.br"
+    eventos, _ = _executar(estado, EstadoFalso.verificar_codigo, Resposta(401, {"message": "Código inválido ou expirado"}), {"codigo": "000000"})
+    assert estado.token == ""
+    assert estado.email_pendente == "ana@ps.com.br"
+    assert estado.mensagem == "Código inválido ou expirado"
+    assert not estado.entrando
+    assert eventos == []
+
+
+def test_reenvio_aceito_avisa_e_reinicia_o_contador() -> None:
+    estado = EstadoFalso()
+    estado.email_pendente = "ana@ps.com.br"
+    eventos, requisicao = _executar(estado, EstadoFalso.reenviar_codigo, Resposta(200, {"codigo_enviado": True, "reenvio_em_segundos": 60}))
+    assert requisicao.call_args.args[:2] == ("POST", "https://auth.test/auth/login/reenviar")
+    assert requisicao.call_args.kwargs["json"] == {"email": "ana@ps.com.br"}
+    assert estado.aviso == "Enviamos um novo código para o seu e-mail."
+    assert estado.segundos_reenvio == 60
+    assert eventos == [AuthState.contar_reenvio]
+
+
+def test_reenvio_cedo_demais_mostra_o_tempo_que_falta() -> None:
+    estado = EstadoFalso()
+    estado.email_pendente = "ana@ps.com.br"
+    eventos, _ = _executar(estado, EstadoFalso.reenviar_codigo, Resposta(429, {"message": "Aguarde 12 segundos para pedir um novo código."}))
+    assert estado.mensagem == "Aguarde 12 segundos para pedir um novo código."
+    assert estado.email_pendente == "ana@ps.com.br"
+    assert eventos == []
+
+
+def test_reenvio_sem_login_pendente_volta_ao_login() -> None:
+    estado = EstadoFalso()
+    estado.email_pendente = "ana@ps.com.br"
+    mensagem = "Não foi possível reenviar o código. Faça login novamente."
+    eventos, _ = _executar(estado, EstadoFalso.reenviar_codigo, Resposta(403, {"message": mensagem}))
+    assert estado.email_pendente == ""
+    assert estado.mensagem == mensagem
+    assert eventos == ["redirect:/login"]
+
+
+def test_tela_do_codigo_sem_primeira_etapa_volta_ao_login() -> None:
+    estado = EstadoFalso()
+    with patch(REDIRECT, side_effect=lambda rota: rota):
+        assert estado.exigir_login_pendente() == "/login"
+        estado.email_pendente = "ana@ps.com.br"
+        assert estado.exigir_login_pendente() is None
+        assert estado.voltar_ao_login() == "/login"
+    assert estado.email_pendente == ""
 
 
 def test_login_sem_configuracao_avisa_e_nao_chama_api() -> None:
@@ -153,8 +236,26 @@ def test_sair_descarta_token_mesmo_sem_conexao() -> None:
 class TestAuthState(unittest.TestCase):
     """Compatível tanto com unittest quanto com pytest."""
 
-    def test_login_valido(self) -> None:
-        test_login_valido_guarda_token_e_vai_para_a_area_do_perfil()
+    def test_senha_correta(self) -> None:
+        test_senha_correta_vai_para_o_codigo_sem_token_e_sem_guardar_a_senha()
+
+    def test_codigo_correto(self) -> None:
+        test_codigo_correto_guarda_token_e_vai_para_a_area_do_perfil()
+
+    def test_codigo_recusado(self) -> None:
+        test_codigo_recusado_mostra_mensagem_e_nao_guarda_token()
+
+    def test_reenvio_aceito(self) -> None:
+        test_reenvio_aceito_avisa_e_reinicia_o_contador()
+
+    def test_reenvio_cedo(self) -> None:
+        test_reenvio_cedo_demais_mostra_o_tempo_que_falta()
+
+    def test_reenvio_sem_pendente(self) -> None:
+        test_reenvio_sem_login_pendente_volta_ao_login()
+
+    def test_tela_do_codigo(self) -> None:
+        test_tela_do_codigo_sem_primeira_etapa_volta_ao_login()
 
     def test_login_recusado(self) -> None:
         test_login_recusado_mostra_mensagem_da_api_e_nao_guarda_token()
