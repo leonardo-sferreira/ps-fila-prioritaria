@@ -1,12 +1,20 @@
 query "pacientes" verb=GET {
   api_group = "Pacientes"
-  description = "Pesquisa um Paciente pelo CPF normalizado. Autorização será integrada pela change de autenticação."
+  description = "Pesquisa um Paciente pelo CPF normalizado para Recepção/Triagem ou Administrador."
+  auth = "usuario"
 
   input {
     text cpf filters=trim
   }
 
   stack {
+    function.run "auth/verificar_acesso" {
+      input = {
+        usuario_id       : $auth.id,
+        perfis_permitidos: ["RECEPCAO_TRIAGEM", "ADMINISTRADOR"]
+      }
+    } as $usuario
+
     function.run "pacientes/normalizar_cpf" {
       input = { cpf: $input.cpf }
     } as $cpf_normalizado

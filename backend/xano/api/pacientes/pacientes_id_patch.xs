@@ -1,6 +1,7 @@
 query "pacientes/{paciente_id}" verb=PATCH {
   api_group = "Pacientes"
-  description = "Atualiza parcialmente os dados cadastrais de um Paciente. Autorização e auditoria serão integradas pelas changes dependentes."
+  description = "Atualiza parcialmente os dados cadastrais de um Paciente para Recepção/Triagem, com auditoria atômica."
+  auth = "usuario"
 
   input {
     int paciente_id
@@ -13,6 +14,13 @@ query "pacientes/{paciente_id}" verb=PATCH {
   }
 
   stack {
+    function.run "auth/verificar_acesso" {
+      input = {
+        usuario_id       : $auth.id,
+        perfis_permitidos: ["RECEPCAO_TRIAGEM"]
+      }
+    } as $usuario
+
     precondition ($input.cpf == "__CPF_AUSENTE__") {
       error_type = "inputerror"
       error = "CPF não pode ser alterado"
@@ -94,12 +102,14 @@ query "pacientes/{paciente_id}" verb=PATCH {
     }
 
     var $houve_alteracao { value = false }
+    var $valor_anterior { value = {} }
     var $paciente_resultado { value = $paciente_atual }
     conditional {
       if ($input.nome != "__NOME_AUSENTE__") {
         conditional {
           if ($atualizacoes.nome != $paciente_atual.nome) {
             var.update $houve_alteracao { value = true }
+            var.update $valor_anterior { value = $valor_anterior|set:"nome":$paciente_atual.nome }
           }
         }
       }
@@ -109,6 +119,7 @@ query "pacientes/{paciente_id}" verb=PATCH {
         conditional {
           if ($atualizacoes.data_nascimento != $paciente_atual.data_nascimento) {
             var.update $houve_alteracao { value = true }
+            var.update $valor_anterior { value = $valor_anterior|set:"data_nascimento":$paciente_atual.data_nascimento }
           }
         }
       }
@@ -118,6 +129,7 @@ query "pacientes/{paciente_id}" verb=PATCH {
         conditional {
           if ($atualizacoes.telefone != $paciente_atual.telefone) {
             var.update $houve_alteracao { value = true }
+            var.update $valor_anterior { value = $valor_anterior|set:"telefone":$paciente_atual.telefone }
           }
         }
       }
@@ -125,31 +137,45 @@ query "pacientes/{paciente_id}" verb=PATCH {
 
     conditional {
       if ($houve_alteracao) {
-        db.patch paciente {
-          field_name = "id"
-          field_value = $paciente_atual.id
-          data = $atualizacoes
-          mock = {
-            "limpa telefone com null": {
-              id: 1,
-              cpf: "52998224725",
-              nome: "Paciente de teste",
-              data_nascimento: "1990-01-01",
-              telefone: null,
-              ativo: true
-          },
-          "limpa telefone com texto vazio": {
-            id: 1,
-            cpf: "52998224725",
-            nome: "Paciente de teste",
-            data_nascimento: "1990-01-01",
-            telefone: null,
-            ativo: true
-            }
-          }
-        } as $paciente_atualizado
+        db.transaction {
+          stack {
+            db.patch paciente {
+              field_name = "id"
+              field_value = $paciente_atual.id
+              data = $atualizacoes
+              mock = {
+                "limpa telefone com null": {
+                  id: 1,
+                  cpf: "52998224725",
+                  nome: "Paciente de teste",
+                  data_nascimento: "1990-01-01",
+                  telefone: null,
+                  ativo: true
+                },
+                "limpa telefone com texto vazio": {
+                  id: 1,
+                  cpf: "52998224725",
+                  nome: "Paciente de teste",
+                  data_nascimento: "1990-01-01",
+                  telefone: null,
+                  ativo: true
+                }
+              }
+            } as $paciente_atualizado
 
-        var.update $paciente_resultado { value = $paciente_atualizado }
+            function.run "registrar_alteracao" {
+              input = {
+                usuario_id    : $usuario.id,
+                tipo_evento   : "ALTERACAO",
+                entidade      : "PACIENTE",
+                registro_id   : $paciente_atual.id,
+                valor_anterior: $valor_anterior,
+                valor_novo    : $atualizacoes
+              }
+            }
+            var.update $paciente_resultado { value = $paciente_atualizado }
+          }
+        }
       }
     }
   }
