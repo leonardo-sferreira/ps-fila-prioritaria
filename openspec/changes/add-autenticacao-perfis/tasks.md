@@ -18,8 +18,8 @@
   - Evidência: `sessao.xs` no servidor igual ao repositório (inclui `status_operacional`, usado depois por `add-acompanhamento-administrador`).
 - [x] 2.3 [Xano] Criar a variável de ambiente `TOKEN_TTL_SEGUNDOS=43200` (D4) e verificar que ela é lida pelo `auth/login`
   - Evidência: variável criada na `v1` (confirmada por `workspace pull --env`); login dos três perfis devolve token, o que só ocorre com a variável lida (sem ela o endpoint recusa).
-- [ ] 2.4 [Xano] Criar a função `auth/verificar_acesso(usuario_id, perfis_permitidos)`, que recarrega o usuário, responde 401 se ele não existir ou estiver inativo e 403 se o perfil não for permitido (D3); verificar nos três casos
-  - Parcial: função publicada; caso de usuário ativo verificado (`auth/me` 200 para o Administrador). Faltam usuário inativo (depende de desativar, grupo 4) e perfil não permitido (só há endpoint restrito por perfil a partir do grupo 4).
+- [x] 2.4 [Xano] Criar a função `auth/verificar_acesso(usuario_id, perfis_permitidos)`, que recarrega o usuário, responde 401 se ele não existir ou estiver inativo e 403 se o perfil não for permitido (D3); verificar nos três casos
+  - Evidência (26/10/2026, validação manual no Xano): usuário de teste ativo com perfil permitido foi autorizado; o mesmo usuário com perfil fora de `perfis_permitidos` retornou 403; após emitir token válido e desativar um usuário de teste, `GET auth/me` retornou 401. O usuário de teste foi restaurado ao estado ativo.
 - [x] 2.5 [Xano] Inserir o primeiro Administrador manualmente (D10), documentar o passo no README e verificar que o registro existe com `ativo=true`
   - Evidência: PO criou Administrador, Recepção/Triagem e Médico de teste pelo painel (25/10/2026); login do Administrador funciona; passo documentado no README ("Primeiro administrador").
 - [x] 2.6 Exportar o XanoScript das tabelas e da função para `backend/xano/` e verificar que os arquivos estão no repositório

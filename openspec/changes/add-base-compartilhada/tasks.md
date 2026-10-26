@@ -6,6 +6,7 @@
 
 - [x] 1.1 [Xano] Conferir `backend/xano/table/historico_alteracao.xs` com o D1 (campos e índices) e verificar no painel que não existe nenhum endpoint de escrita, edição ou exclusão nessa tabela
 - [ ] 1.2 [Xano] Criar a função `registrar_alteracao` (D1) e verificar com Run & Debug que (a) uma chamada dentro de `db.transaction` grava o registro com o usuário do token e (b) um erro forçado depois da chamada não deixa registro (D2); se a transação não estiver disponível, registrar a limitação no design.md antes de seguir
+  - Parcial (26/10/2026): a função foi publicada na `v1` e validada dentro das transações de POST e PATCH de Pacientes. O Run & Debug criou `CADASTRO` e `ALTERACAO` para o mesmo Paciente sintético com o usuário autenticado; a tabela ficou com dois registros e o PATCH no-op não criou terceiro. A falha induzida e a prova direta de rollback permanecem pendentes, pois não há ambiente isolado e não foi criada função ou endpoint temporário.
 - [ ] 1.3 [Xano] Criar a variável de ambiente `FUSO_HORARIO = America/Sao_Paulo` (D3) e verificar com Run & Debug que 02:59 UTC de 05/10 resulta no dia 04/10 no fuso do PS
 - [ ] 1.4 Escrever `tests/api/test_auditoria.py` cobrindo operação válida auditada com todos os campos, operação recusada sem auditoria e ausência de operação de escrita, edição ou exclusão de auditoria pela API; verificar que passam
 

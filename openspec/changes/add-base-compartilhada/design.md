@@ -16,14 +16,14 @@ As tabelas desta change já estão publicadas no Xano e versionadas em `backend/
 
 ## Decisões
 
-### D1. `registrar_alteracao(tipo_evento, entidade, registro_id, anterior, novo, justificativa?)`
-É uma função do Xano chamada **dentro** do `db.transaction` da operação que altera os dados. Ela obtém o usuário pelo token da requisição e grava em `historico_alteracao`. Nenhum endpoint da API faz escrita, edição ou exclusão nessa tabela.
+### D1. `registrar_alteracao(usuario_id, tipo_evento, entidade, registro_id, anterior, novo, justificativa?)`
+É uma função do Xano chamada **dentro** do `db.transaction` da operação que altera os dados. O endpoint autenticado chama `verificar_acesso` e passa exclusivamente `$auth.id` como `usuario_id`; a função recarrega esse usuário e grava em `historico_alteracao`. Nenhum endpoint da API faz escrita, edição ou exclusão nessa tabela.
 - **Por quê:** deixa a auditoria atômica com a operação (spec `auditoria`) e o formato fica centralizado.
 - **Alternativa:** gatilho genérico por tabela. Descartada porque o XanoScript não oferece gatilho de banco e a justificativa depende da operação.
 - **Observação:** a data/hora é o `created_at` da tabela já publicada. O design de `add-cadastros-administrador` (D1) chama esse campo de `criado_em`; vale o `.xs`.
 
 ### D2. Validar transações primeiro
-A primeira task confere, com Run & Debug, que `db.transaction` desfaz a auditoria quando a operação falha depois de gravá-la. Se o plano do Xano não suportar transação, a função passa a ser chamada como último passo da operação, e a limitação fica registrada aqui antes de seguir.
+A primeira task confere, com Run & Debug, que `db.transaction` desfaz a auditoria quando a operação falha depois de gravá-la. Se a transação não estiver disponível, a task fica bloqueada e a função NÃO DEVE ser usada como último passo nem fora da transação, pois isso violaria a atomicidade exigida pela spec.
 
 ### D3. `FUSO_HORARIO` como variável de ambiente
 `FUSO_HORARIO = America/Sao_Paulo` no Xano. As changes que precisam de "o dia do PS" (ticket, senha, disponibilidade) convertem o instante com essa variável. Não existe tabela nem endpoint para isso.
