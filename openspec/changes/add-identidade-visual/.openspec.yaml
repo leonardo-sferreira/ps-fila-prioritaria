@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-10-27
+# Mudança só de apresentação (logo e favicon): nenhum requisito muda.
+skip_specs: true

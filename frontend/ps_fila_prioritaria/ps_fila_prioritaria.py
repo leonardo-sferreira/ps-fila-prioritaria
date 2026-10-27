@@ -832,16 +832,10 @@ def sessao_no_cabecalho() -> rx.Component:
     )
 
 
-def cabecalho(titulo: str, subtitulo: str, sigla: str) -> rx.Component:
+def cabecalho(titulo: str, subtitulo: str) -> rx.Component:
     return rx.hstack(
-        rx.center(
-            rx.text(sigla, weight="bold", size="4", color="white"),
-            width="48px",
-            height="48px",
-            border_radius="50%",
-            background="rgba(255, 255, 255, 0.15)",
-            flex_shrink="0",
-        ),
+        # Ícone Prioriza branco no lugar da sigla do perfil (Figma: Marca/Ícone Prioriza, versão branca).
+        rx.image(src="/logo/icone-prioriza-branco.svg", alt="Prioriza", width="48px", height="48px", flex_shrink="0"),
         rx.vstack(
             rx.text(titulo, weight="bold", size="5", color="white"),
             rx.text(subtitulo, size="2", color="#CCDEF0"),
@@ -954,7 +948,6 @@ def recepcao_pacientes() -> rx.Component:
         cabecalho(
             "RECEPÇÃO/TRIAGEM — IDENTIFICAÇÃO DO PACIENTE",
             "Identifique o paciente pelo CPF antes de abrir a ficha",
-            "R",
         ),
         rx.center(
             rx.vstack(
@@ -1051,20 +1044,20 @@ def index() -> rx.Component:
 
 
 def logo_ps() -> rx.Component:
-    return rx.center(
-        rx.text("PS", weight="bold", size="5", color="white"),
-        width="64px",
-        height="64px",
-        border_radius="50%",
-        background=COR_MARINHO,
-    )
+    """Ícone Prioriza das telas de acesso (Figma: Marca/Ícone Prioriza, versão colorida)."""
+    return rx.image(src="/logo/icone-prioriza.svg", alt="Prioriza", width="64px", height="64px")
+
+
+def logo_prioriza_completo() -> rx.Component:
+    """Logo com o nome, usado só no login (Figma: Marca/Logo Prioriza, versão colorida)."""
+    return rx.image(src="/logo/logo-prioriza.svg", alt="Prioriza · Fila de atendimento", width="260px", height="80px")
 
 
 def cartao_acesso(icone: rx.Component, titulo: str, subtitulo: rx.Component | str, *corpo: rx.Component, on_submit: Any = None) -> rx.Component:
     """Cartão centralizado das telas de acesso (login, código e redefinição de senha), como no Figma."""
     cartao = rx.vstack(
         icone,
-        rx.text(titulo, weight="bold", size="5", color=COR_TEXTO),
+        *([rx.text(titulo, weight="bold", size="5", color=COR_TEXTO)] if titulo else []),
         rx.text(subtitulo, size="2", color=COR_SECUNDARIA, text_align="center") if isinstance(subtitulo, str) else subtitulo,
         rx.box(height="8px"),
         *corpo,
@@ -1149,8 +1142,8 @@ def bloco_reenvio(segundos: rx.Var, texto: rx.Var, ao_reenviar: Any) -> rx.Compo
 
 def login() -> rx.Component:
     return cartao_acesso(
-        logo_ps(),
-        "Sistema de Fila Prioritária",
+        logo_prioriza_completo(),
+        "",
         "Acesso da equipe — Recepção/Triagem, Médico e Administrador",
         campo_rotulado("E-MAIL", rx.input(name="email", type="email", placeholder="nome@ps.com.br", size="3", width="100%")),
         campo_rotulado("SENHA", rx.input(name="senha", type="password", placeholder="••••••••", size="3", width="100%")),
@@ -1269,11 +1262,11 @@ def privacidade() -> rx.Component:
     )
 
 
-def area_inicial(perfil: str, titulo: str, sigla: str, nome_perfil: str, conteudo: rx.Component) -> rx.Component:
+def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Component) -> rx.Component:
     return protegido(
         perfil,
         rx.box(
-            cabecalho(titulo, f"Área inicial — {nome_perfil}", sigla),
+            cabecalho(titulo, f"Área inicial — {nome_perfil}"),
             rx.center(
                 rx.vstack(
                     rx.text("Olá, ", AuthState.nome, weight="bold", size="5", color=COR_TEXTO),
@@ -1301,21 +1294,19 @@ def area_recepcao() -> rx.Component:
     return area_inicial(
         "RECEPCAO_TRIAGEM",
         "RECEPÇÃO/TRIAGEM",
-        "R",
         "Recepção/Triagem",
         rx.link(rx.button("Identificar paciente", size="3", background=COR_AZUL), href="/recepcao/pacientes"),
     )
 
 
 def area_medico() -> rx.Component:
-    return area_inicial("MEDICO", "MÉDICO", "M", "Médico", rx.text("As funções do Médico ainda estão em construção.", size="2", color=COR_SECUNDARIA))
+    return area_inicial("MEDICO", "MÉDICO", "Médico", rx.text("As funções do Médico ainda estão em construção.", size="2", color=COR_SECUNDARIA))
 
 
 def area_admin() -> rx.Component:
     return area_inicial(
         "ADMINISTRADOR",
         "ADMINISTRADOR",
-        "A",
         "Administrador",
         rx.text("As funções do Administrador ainda estão em construção.", size="2", color=COR_SECUNDARIA),
     )
