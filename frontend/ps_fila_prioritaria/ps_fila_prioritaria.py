@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+from datetime import datetime, timezone
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -412,6 +413,7 @@ class PacienteState(rx.State):
     alterado: bool | None = None
     telefone_alterado: bool = False
     abrindo_ficha: bool = False
+    ticket_id: int = 0
 
     def set_cpf_busca(self, valor: str) -> None:
         self.cpf_busca = valor
@@ -566,7 +568,12 @@ class PacienteState(rx.State):
         self.mensagem = "Dados atualizados." if self.alterado else "Nenhuma alteração cadastral foi necessária."
         return None
 
-    def continuar_atendimento(self) -> rx.event.EventSpec | None:
+    def iniciar_sem_ticket(self):
+        self.ticket_id = 0
+        self._resetar_paciente_atual()
+        return rx.redirect("/recepcao/pacientes")
+
+    async def continuar_atendimento(self) -> rx.event.EventSpec | None:
         """Abre a ficha do Paciente identificado e segue para sua edição."""
         if not self.paciente_id:
             self.mensagem = "Identifique um Paciente antes de abrir a ficha."
@@ -583,7 +590,11 @@ class PacienteState(rx.State):
         self.mensagem = ""
         self.erro = False
         try:
-            resposta = httpx.post(f"{base_url}/fichas", json={"paciente_id": self.paciente_id}, timeout=10)
+            auth = await self.get_state(AuthState)
+            dados = {"paciente_id": self.paciente_id}
+            if self.ticket_id:
+                dados["ticket_id"] = self.ticket_id
+            resposta = api.requisitar("POST", "XANO_TRIAGEM_API_URL", "/fichas", token=auth.token, json=dados)
         except httpx.RequestError:
             self.mensagem = "Não foi possível conectar à API de Fichas."
             self.erro = True
@@ -591,12 +602,16 @@ class PacienteState(rx.State):
             return None
 
         self.abrindo_ficha = False
+        if resposta.status_code == 401:
+            auth._encerrar_sessao_local("Sua sessão expirou. Faça login novamente.")
+            return rx.redirect("/login")
         if not resposta.is_success:
             self.mensagem = _mensagem_erro(resposta)
             self.erro = True
             return None
 
         ficha = resposta.json()
+        self.ticket_id = 0
         try:
             ficha_id = int(ficha["id"])
         except (KeyError, TypeError, ValueError):
@@ -604,6 +619,117 @@ class PacienteState(rx.State):
             self.erro = True
             return None
         return rx.redirect(f"/recepcao/ficha/{ficha_id}")
+
+
+def _timestamp_segundos(valor: Any) -> float | None:
+    """Aceita timestamps Xano em milissegundos ou datas ISO."""
+    if isinstance(valor, (int, float)):
+        return valor / 1000 if valor > 100_000_000_000 else float(valor)
+    if isinstance(valor, str):
+        try:
+            data = datetime.fromisoformat(valor.replace("Z", "+00:00"))
+            return data.replace(tzinfo=timezone.utc).timestamp() if data.tzinfo is None else data.timestamp()
+        except ValueError:
+            return None
+    return None
+
+
+class FilaTicketsState(rx.State):
+    tickets: list[dict[str, Any]] = []
+    mensagem: str = ""
+    erro: bool = False
+    monitorando: bool = False
+
+    async def _requisitar(self, metodo: str, caminho: str, **kwargs: Any) -> httpx.Response | None:
+        auth = await self.get_state(AuthState)
+        try:
+            resposta = api.requisitar(metodo, "XANO_TRIAGEM_API_URL", caminho, token=auth.token, **kwargs)
+        except (api.ConfiguracaoAusente, httpx.RequestError):
+            self.erro = True
+            self.mensagem = "Não foi possível conectar à fila de pré-triagem."
+            return None
+        if resposta.status_code == 401:
+            auth._encerrar_sessao_local("Sua sessão expirou. Faça login novamente.")
+        if not resposta.is_success:
+            self.erro = True
+            self.mensagem = _mensagem_erro(resposta)
+            return None
+        return resposta
+
+    async def carregar(self) -> None:
+        resposta = await self._requisitar("GET", "/tickets")
+        if resposta is not None:
+            corpo = resposta.json() or {}
+            self.tickets = corpo.get("tickets", []) if isinstance(corpo, dict) else corpo
+            agora = _timestamp_segundos(corpo.get("agora")) if isinstance(corpo, dict) else None
+            intervalo = int(corpo.get("intervalo_segundos") or 0) if isinstance(corpo, dict) else 0
+            for ticket in self.tickets:
+                ticket.setdefault("presente", False)
+                chamado = _timestamp_segundos(ticket.get("chamado_em"))
+                ticket["segundos_restantes"] = max(0, int(chamado + intervalo - agora + 0.999)) if chamado is not None and agora is not None and intervalo > 0 else -1
+                prefixo = {"PEDIATRICO": "C", "PREFERENCIAL": "P", "NORMAL": "N"}.get(ticket.get("tipo"), "?")
+                ticket["senha_exibida"] = f"{prefixo}-{int(ticket.get('numero') or 0):03d}"
+
+    async def atualizar_automaticamente(self):
+        for ticket in self.tickets:
+            if (ticket.get("status") == "CHAMADO" and not ticket.get("presente")
+                    and ticket.get("segundos_restantes") == 0):
+                ticket["segundos_restantes"] = -1  # Evita insistir em caso de erro; a próxima sincronização recupera.
+                await self.acao(ticket["id"], "AVANCAR")
+                break
+
+    @rx.event(background=True)
+    async def monitorar(self):
+        async with self:
+            if self.monitorando:
+                return
+            self.monitorando = True
+        try:
+            ciclos = 0
+            while True:
+                await asyncio.sleep(1)
+                async with self:
+                    conexao = app.event_namespace
+                    if (self.router.page.path != "/recepcao/fila" or conexao is None
+                            or self.router.session.client_token not in conexao.token_to_sid):
+                        return
+                    ciclos += 1
+                    if ciclos % 10 == 0:
+                        await self.carregar()
+                    else:
+                        tickets = [dict(ticket) for ticket in self.tickets]
+                        for ticket in tickets:
+                            if ticket.get("status") == "CHAMADO" and not ticket.get("presente"):
+                                restante = ticket.get("segundos_restantes", -1)
+                                if restante > 0:
+                                    ticket["segundos_restantes"] = restante - 1
+                        self.tickets = tickets
+                    await self.atualizar_automaticamente()
+        finally:
+            async with self:
+                self.monitorando = False
+
+    async def proximo(self) -> None:
+        self.erro = False
+        self.mensagem = ""
+        resposta = await self._requisitar("POST", "/tickets/proximo")
+        if resposta is not None:
+            self.mensagem = "Ticket chamado."
+            await self.carregar()
+
+    async def acao(self, ticket_id: int, acao: str) -> None:
+        self.erro = False
+        self.mensagem = ""
+        resposta = await self._requisitar("POST", f"/tickets/{ticket_id}/acao", json={"acao": acao})
+        if resposta is not None:
+            self.mensagem = "Operação registrada."
+            await self.carregar()
+
+    async def identificar(self, ticket_id: int):
+        paciente = await self.get_state(PacienteState)
+        paciente._resetar_paciente_atual()
+        paciente.ticket_id = ticket_id
+        return rx.redirect("/recepcao/pacientes")
 
 
 class FichaState(rx.State):
@@ -644,7 +770,7 @@ class FichaState(rx.State):
         self.observacao = str(ficha.get("observacao") or "")
         self.sintoma_ids_selecionados = sorted(int(sintoma["id"]) for sintoma in (dados.get("sintomas") or []))
 
-    def carregar(self, ficha_id: str | int) -> None:
+    async def carregar(self, ficha_id: str | int) -> None:
         """Recupera catálogo ativo e estado persistido para edição da ficha."""
         try:
             ficha_id_int = int(ficha_id)
@@ -658,11 +784,13 @@ class FichaState(rx.State):
         if not url_ficha or not url_sintomas:
             return
 
+        auth = await self.get_state(AuthState)
+        cabecalhos = {"Authorization": f"Bearer {auth.token}"}
         self.carregando = True
         self._limpar_feedback()
         try:
-            resposta_ficha = httpx.get(url_ficha, timeout=10)
-            resposta_sintomas = httpx.get(url_sintomas, timeout=10)
+            resposta_ficha = httpx.get(url_ficha, headers=cabecalhos, timeout=10)
+            resposta_sintomas = httpx.get(url_sintomas, headers=cabecalhos, timeout=10)
         except httpx.RequestError:
             self.mensagem = "Não foi possível conectar à API de Fichas."
             self.erro = True
@@ -689,9 +817,9 @@ class FichaState(rx.State):
         self.observacao_alterada = False
         self.carregando = False
 
-    def carregar_da_rota(self) -> None:
+    async def carregar_da_rota(self) -> None:
         ficha_id = self.router.page.params.get("id", "")
-        self.carregar(ficha_id)
+        await self.carregar(ficha_id)
 
     def set_observacao(self, valor: str) -> None:
         self.observacao = valor
@@ -743,11 +871,14 @@ class FichaState(rx.State):
             self.erro = False
             return
 
+        auth = await self.get_state(AuthState)
+        cabecalhos = {"Authorization": f"Bearer {auth.token}"}
+
         # Entrega o loading antes das requisições de PATCH e GET.
         yield
         try:
             try:
-                resposta = httpx.patch(url_ficha, json=dados, timeout=10)
+                resposta = httpx.patch(url_ficha, json=dados, headers=cabecalhos, timeout=10)
             except httpx.RequestError:
                 self.mensagem = "Não foi possível conectar à API de Fichas."
                 self.erro = True
@@ -757,8 +888,8 @@ class FichaState(rx.State):
                     self.erro = True
                 else:
                     try:
-                        resposta_ficha = httpx.get(url_ficha, timeout=10)
-                        resposta_sintomas = httpx.get(url_sintomas, timeout=10)
+                        resposta_ficha = httpx.get(url_ficha, headers=cabecalhos, timeout=10)
+                        resposta_sintomas = httpx.get(url_sintomas, headers=cabecalhos, timeout=10)
                     except httpx.RequestError:
                         self.mensagem = "A ficha foi salva, mas não foi possível recarregá-la."
                         self.erro = True
@@ -883,7 +1014,7 @@ def formulario_paciente() -> rx.Component:
         rx.hstack(
             campo_rotulado(
                 "DATA DE NASCIMENTO",
-                rx.input(type="date", value=PacienteState.data_nascimento, on_change=PacienteState.set_data_nascimento, size="3", width="100%"),
+                rx.input(type="date", value=PacienteState.data_nascimento, on_change=PacienteState.set_data_nascimento, on_blur=PacienteState.set_data_nascimento, size="3", width="100%"),
             ),
             campo_rotulado(
                 "TELEFONE (OPCIONAL)",
@@ -1303,7 +1434,38 @@ def area_recepcao() -> rx.Component:
         "RECEPÇÃO/TRIAGEM",
         "R",
         "Recepção/Triagem",
-        rx.link(rx.button("Identificar paciente", size="3", background=COR_AZUL), href="/recepcao/pacientes"),
+        rx.vstack(
+            rx.link(rx.button("Fila de pré-triagem", size="3", background=COR_AZUL), href="/recepcao/fila"),
+            rx.button("Identificar paciente sem ticket", size="3", variant="outline", on_click=PacienteState.iniciar_sem_ticket),
+        ),
+    )
+
+
+def linha_ticket(ticket: dict[str, Any]) -> rx.Component:
+    return rx.vstack(
+        rx.text(ticket["senha_exibida"], " — ", ticket["status"], " — tentativa ", ticket["tentativas"]),
+        rx.cond((ticket["status"] == "CHAMADO") & ~ticket["presente"],
+                rx.text("Próxima etapa em ", ticket["segundos_restantes"], " s")),
+        rx.hstack(
+            rx.cond((ticket["status"] == "CHAMADO") & ~ticket["presente"],
+                    rx.button("Marcar presente", on_click=FilaTicketsState.acao(ticket["id"], "PRESENTE"))),
+            rx.button("Desistência", on_click=FilaTicketsState.acao(ticket["id"], "DESISTENCIA")),
+            rx.cond((ticket["status"] == "CHAMADO") & ticket["presente"],
+                    rx.button("Identificar", on_click=FilaTicketsState.identificar(ticket["id"]))),
+            wrap="wrap",
+        ),
+        width="100%", padding="12px", border_bottom="1px solid #ddd",
+    )
+
+def pagina_fila_tickets() -> rx.Component:
+    return area_inicial(
+        "RECEPCAO_TRIAGEM", "FILA DE PRÉ-TRIAGEM", "R", "Recepção/Triagem",
+        rx.vstack(
+            rx.hstack(rx.button("Chamar próximo", on_click=FilaTicketsState.proximo), rx.button("Atualizar", on_click=FilaTicketsState.carregar)),
+            rx.text(FilaTicketsState.mensagem, color=rx.cond(FilaTicketsState.erro, "red", "green")),
+            rx.cond(FilaTicketsState.tickets.length() == 0, rx.text("Nenhum ticket ativo."), rx.foreach(FilaTicketsState.tickets, linha_ticket)),
+            rx.link("Voltar", href="/recepcao"), width="100%",
+        ),
     )
 
 
@@ -1508,3 +1670,5 @@ app.add_page(
     title="Ficha de atendimento",
     on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FichaState.carregar_da_rota],
 )
+
+app.add_page(pagina_fila_tickets, route="/recepcao/fila", title="Fila de pré-triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FilaTicketsState.carregar, FilaTicketsState.monitorar])

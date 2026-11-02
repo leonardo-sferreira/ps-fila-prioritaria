@@ -59,6 +59,7 @@ class EstadoFalso:
         self.alterado = None
         self.telefone_alterado = False
         self.abrindo_ficha = False
+        self.ticket_id = 0
         self.auth = AuthFalsa()
 
     async def get_state(self, estado: type[AuthState]):
@@ -207,12 +208,13 @@ def test_continuar_cria_ficha_para_paciente_identificado() -> None:
     estado.paciente_id = PACIENTE_A["id"]
 
     with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}, clear=False), patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.post",
+        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
         return_value=Resposta(201, {"id": 10, "paciente_id": PACIENTE_A["id"]}),
     ) as post:
-        redirecionamento = estado.continuar_atendimento()
+        redirecionamento = asyncio.run(estado.continuar_atendimento())
 
-    assert post.call_args.args[0] == "https://triagem.test/fichas"
+    assert post.call_args.args == ("POST", "XANO_TRIAGEM_API_URL", "/fichas")
+    assert post.call_args.kwargs["token"] == "token-teste"
     assert post.call_args.kwargs["json"] == {"paciente_id": PACIENTE_A["id"]}
     assert redirecionamento is not None
     assert not estado.erro
@@ -224,9 +226,9 @@ def test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes() -> None:
     estado.paciente_id = PACIENTE_A["id"]
 
     with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": ""}, clear=False), patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.post"
+        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar"
     ) as post:
-        estado.continuar_atendimento()
+        asyncio.run(estado.continuar_atendimento())
 
     post.assert_not_called()
     assert estado.erro
@@ -358,3 +360,18 @@ class TestPacienteState(unittest.TestCase):
 
     def test_arquivo_env(self) -> None:
         test_carregamento_de_env_usa_o_arquivo_do_frontend()
+
+    def test_ticket_associado(self) -> None:
+        test_continuar_encaminha_ticket_e_limpa_contexto_apos_sucesso()
+
+
+def test_continuar_encaminha_ticket_e_limpa_contexto_apos_sucesso() -> None:
+    estado = EstadoFalso()
+    estado.paciente_id = 1
+    estado.ticket_id = 42
+    with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}), patch(
+        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", return_value=Resposta(201, {"id": 5})
+    ) as requisitar:
+        asyncio.run(estado.continuar_atendimento())
+    assert requisitar.call_args.kwargs["json"] == {"paciente_id": 1, "ticket_id": 42}
+    assert estado.ticket_id == 0
