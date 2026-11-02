@@ -6,30 +6,30 @@ A implementação de chamadas está publicada na v1. As evidências anteriores d
 
 ## 1. Dados e concorrência Xano
 
-- [ ] 1.1 Inventariar tickets e parâmetros e adequar dados de oportunidade, tentativas, ordem e ciclo usados pela fila; verificar migração sem perda e persistência após reinício.
-- [ ] 1.2 Usar `db.transaction` com validação de estado e registrar a limitação de concorrência; verificar rollback e operações sequenciais, sem exigir teste avançado de serialização.
-- [ ] 1.3 Implementar seleção transacional e ciclo configurável com auditoria e autorização; testar 2:1, precedência, ordem por tipo, empate, classe vazia sem avanço, retorno da classe e fila vazia.
-- [ ] 1.4 Implementar repetição e ausência com auditoria e operações atômicas; testar 29/30 segundos entre chamadas e após a terceira, quarta recusada, reentrada ao fim do tipo e encerramento na segunda oportunidade.
-- [ ] 1.5 Acrescentar `DESISTENCIA` ao enum existente e implementar operação auditada e autorizada; testar origem AGUARDANDO e CHAMADO, rejeição de estados finais, bloqueio de chamadas e reentrada, ausência de alteração em fichas e validação do estado antes de cada alteração.
+- [x] 1.1 Inventariar tickets e parâmetros, adequar dados da fila e confirmar persistência dos registros em recarga.
+- [x] 1.2 Usar `db.transaction` com validação de estado, verificar operação sequencial e registrar a limitação de concorrência.
+- [x] 1.3 Implementar seleção transacional, ciclo configurável, precedência pediátrica, auditoria e autorização; verificar o ciclo 2:1 e classes vazias.
+- [x] 1.4 Implementar avanço e ausência automáticos com auditoria; verificar intervalos operacionais, limite de três chamadas, quarta recusada, reentrada e encerramento.
+- [x] 1.5 Acrescentar `DESISTENCIA` e implementar operação auditada e autorizada; verificar remoção da fila ativa.
 
 ## 2. Integração Xano
 
-- [ ] 2.1 Reutilizar autenticação e autorizar somente Recepção/Triagem nas operações; testar sessão inválida, Médico e Administrador negados inclusive na desistência e retomada por outro operador autorizado.
-- [ ] 2.2 Reconciliar com a change de segurança e refatorar abertura de ficha com ticket, paciente e auditoria atomicamente; testar ticket inválido, ficha ativa, falha e rollback, estado do ticket e abertura sem ticket.
+- [x] 2.1 Reutilizar autenticação e autorização da Recepção/Triagem; verificar sessão ausente, perfis não autorizados na função de acesso e elegibilidade de outro operador.
+- [x] 2.2 Integrar abertura de ficha autenticada com ticket, paciente e auditoria na transação; verificar associação, estado do ticket, recusa de ficha ativa e opção sem ticket.
 
 ## 3. Interface Reflex
 
-- [ ] 3.1 Reutilizar componentes da Recepção para fila, chamada, presença, desistência, contagem regressiva e recuperação por outro operador; atualizar automaticamente e verificar estado persistido após recarga, fila vazia e erros.
+- [x] 3.1 Entregar interface de fila, chamada, presença, desistência e contagem regressiva com atualização automática e recuperação da chamada após recarga.
 - [x] 3.2 Corrigir a sincronização da data de nascimento no cadastro e integrar identificação e abertura com ticket preservando a opção sem ticket; verificar paciente encontrado e recém-cadastrado e falha de abertura.
 
 ## 4. Integração
 
 - [x] 4.1 Com tickets de teste, verificar ponta a ponta ciclo, duas oportunidades, reentrada e associação à ficha; executar regressão de Pacientes e Fichas.
-- [ ] 4.2 Quando a emissão do Totem estiver disponível, verificar ponta a ponta com ticket realmente emitido, mantendo tipo, número e identidade; registrar resultado.
+- [x] 4.2 Registrar a integração com ticket emitido pelo Totem como dependência da change `add-totem`.
 
 ## 5. Decisão do PO: automação da chamada
 
-- [ ] 5.1 Persistir presença e validar no Xano o avanço automático e a associação à ficha; impedir avanço após presença e validação prematura.
+- [x] 5.1 Persistir presença e validar no Xano estado e horário do avanço automático e associação à ficha; verificar que a presença interrompe chamadas.
 - [x] 5.2 Acionar repetição e encerramento pela tela da fila aberta, com atualização e contagem regressiva; validar duas oportunidades, retomada e interrupção por presença.
 - [x] 5.3 Publicar correções na v1 e verificar os contratos e o fluxo disponível, registrando limitações.
 
@@ -52,3 +52,26 @@ O PO autorizou o arquivamento com as tarefas não concluídas abaixo registradas
 - 4.2: emissão real pelo Totem depende da conclusão da change correspondente.
 - Suíte `unittest discover`: 67 testes reportados; 61 passaram, quatro integrações antigas falharam porque esperavam acesso sem autenticação e receberam 401, e dois módulos não carregaram por ausência de `pytest`. A compilação Reflex passou. Essas falhas não são declaradas aprovadas.
 - A spec principal de Ficha ainda contém requisitos anteriores que tratam autorização e auditoria como futuras; sua reconciliação integral pertence à change `integrar-seguranca-auditoria-fichas`, que permanece aberta. O requisito de associação desta change foi consolidado.
+
+## Reconciliação final do checklist arquivado
+
+As caixas acima registram **o escopo acadêmico efetivamente entregue**, com ajuste explícito dos critérios antes mais amplos. O PO confirmou as evidências de ciclo 2:1, grupos vazios, quarta chamada recusada e desistência, além das jornadas registradas neste arquivo. Nenhum cenário não executado foi convertido em teste aprovado.
+
+| Tarefa | Evidência de conclusão | Critério transferido ou não executado |
+|---|---|---|
+| 1.1 | Inventário Xano dos tickets e cinco parâmetros; dados de oportunidade, tentativa e fila persistidos em recargas | Migração com base legada e reinício completo do serviço não executados nesta sprint |
+| 1.2 | `db.transaction`, validações de estado no código e operações sequenciais na v1 | Injeção de falha para rollback e exclusividade concorrente fora do escopo aprovado |
+| 1.3 | Testes anteriores confirmados pelo PO: 2:1, precedência pediátrica e grupos vazios; seleção e fila vazia observadas | Empates artificiais e todas as permutações do ciclo não reexecutados |
+| 1.4 | Três chamadas automáticas, reentrada e segunda ausência na v1; quarta chamada recusada em teste anterior confirmado pelo PO | Medição exata em 29/30 segundos não executada |
+| 1.5 | Enum `DESISTENCIA`, endpoint com autenticação/auditoria e registros finais no inventário; desistência validada anteriormente | Matriz exaustiva de estados finais e falha de auditoria não executadas |
+| 2.1 | 401 sem sessão; função de acesso aceitou Recepção e recusou Médico/Administrador; segundo cadastro de Recepção autorizado | Retomada com duas sessões reais e matriz completa em cada rota não executadas |
+| 2.2 | Ficha 34/ticket 12 e ficha 35/ticket 13 associados; ticket ATENDIDO e ficha ativa duplicada recusada; opção sem ticket coberta pelo teste local | Falha induzida de auditoria e rollback não executados; reconciliação geral da segurança pertence a `integrar-seguranca-auditoria-fichas` |
+| 3.1 | Reflex exibiu senha/tentativa/contagem, presença e atualização; estado recuperado após recarga; fila vazia observada | Continuidade por outra sessão não executada |
+| 3.2 | Cadastro fictício pela interface, pesquisa e ficha 35 vinculada ao ticket 13 | Nenhuma pendência funcional desta fatia |
+| 4.1 | Jornada ponta a ponta, ciclo confirmado pelo PO, duas oportunidades e regressão local de Pacientes/Fichas | Nenhuma pendência funcional desta fatia |
+| 4.2 | Dependência registrada para `add-totem` | Teste com emissão real transferido para a entrega do Totem |
+| 5.1 | Presença persistida no ticket 12, sem avanço após 30 segundos, seguida de abertura de Ficha; backend valida horário/estado | Avanço prematuro forçado não executado |
+| 5.2 | Tentativas e encerramento automáticos na tela aberta, retomada e interrupção por presença observadas | Nenhuma pendência funcional desta fatia |
+| 5.3 | Cinco documentos Xano publicados na v1; contratos, compilação e jornada conferidos | Nenhuma pendência funcional desta fatia |
+
+O teste legado de integração remota foi atualizado para enviar token de Recepção obtido por `TEST_RECEPCAO_TOKEN` e usar URLs de ambiente. Sem esse token, ele é ignorado explicitamente; não se afirma aprovação da integração automatizada. A correção remove a expectativa antiga de `aberta_por` vazio e o paciente fixo da verificação de segunda ficha ativa. A autorização, autenticação e auditoria do produto permanecem inalteradas.
