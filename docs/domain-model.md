@@ -269,7 +269,7 @@ Ticket simples emitido pelo Totem na chegada, antes da triagem.
 - tipo, escolhido pelo paciente no Totem: `PEDIATRICO`, `PREFERENCIAL` ou `NORMAL`;
 - número sequencial do dia, separado por tipo e exibido com o prefixo do tipo (`C-001`, `P-001`, `N-001`);
 - horário de emissão;
-- status: `AGUARDANDO`, `CHAMADO`, `ATENDIDO` ou `NAO_COMPARECEU`.
+- status: `AGUARDANDO`, `CHAMADO`, `ATENDIDO`, `NAO_COMPARECEU` ou `DESISTENCIA`.
 
 ### Regras
 - O tipo é autodeclarado no Totem e vale somente na fila de Recepção/Triagem (pré-triagem). Ele não define cor nem condição prioritária da ficha; depois da triagem, a ordem segue a classificação e a condição prioritária calculadas na triagem.
@@ -278,10 +278,10 @@ Ticket simples emitido pelo Totem na chegada, antes da triagem.
 - Não guarda dados pessoais.
 - A ordem de chamada pela Recepção/Triagem pertence à futura change de operação da fila pré-triagem; a emissão por tipo pertence à change `add-totem`.
 - Divergência pendente: o documento formal (Confluence) ainda descreve o ticket sem prioridade; deve ser atualizado pelo PO.
-- As chamadas respeitam intervalo mínimo de 30 segundos entre chamadas da mesma senha e até 3 tentativas por oportunidade.
+- A Recepção inicia a chamada e confirma a presença. As tentativas seguintes e o encerramento da oportunidade são automáticos após cada intervalo configurável, inicialmente 30 segundos; a confirmação de presença interrompe as tentativas e permite identificar o paciente e abrir a ficha. A automação depende de uma tela autorizada da fila aberta e conectada.
 - Esgotada a primeira oportunidade sem comparecimento, o ticket volta ao fim da fila uma única vez, sem novo número e sem perder sua identidade.
 - Após a segunda oportunidade encerrada sem atendimento, o ticket recebe `NAO_COMPARECEU` e sai da fila ativa.
-- Desistência explícita remove o ticket da fila ativa; o estado final específico será definido pela spec funcional, sem presumir schema nesta documentação.
+- Desistência explícita altera o ticket para `DESISTENCIA`, estado final que o remove da fila ativa sem alterar Fichas.
 
 ### Máquina de estados
 

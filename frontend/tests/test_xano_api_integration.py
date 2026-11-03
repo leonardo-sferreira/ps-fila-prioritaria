@@ -3,14 +3,20 @@ import urllib.request
 import json
 import time
 import random
+import os
 
-BASE_TRIAGEM = "https://x8ki-letl-twmt.n7.xano.io/api:ps-fila-prioritaria-triagem"
-BASE_PACIENTES = "https://x8ki-letl-twmt.n7.xano.io/api:ps-fila-prioritaria-pacientes"
+from ps_fila_prioritaria.ps_fila_prioritaria import carregar_variaveis_ambiente
+
+carregar_variaveis_ambiente()
+
+BASE_TRIAGEM = os.getenv("XANO_TRIAGEM_API_URL", "").strip().rstrip("/")
+BASE_PACIENTES = os.getenv("XANO_API_URL", "").strip().rstrip("/")
+TOKEN_RECEPCAO = os.getenv("TEST_RECEPCAO_TOKEN", "").strip()
 
 def _req(base_url, method, path, data=None):
     time.sleep(2.5)  # Respeita o rate limit do plano Free (10 reqs / 20s)
     url = f"{base_url}{path}"
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {TOKEN_RECEPCAO}"}
     body = json.dumps(data).encode("utf-8") if data is not None else None
     req = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
@@ -44,6 +50,11 @@ class TestXanoApiIntegration(unittest.TestCase):
     Testes de integração com a API remota do Xano cobrindo:
     RF06, RN03, RF07, RN04.
     """
+
+    @classmethod
+    def setUpClass(cls):
+        if not (BASE_TRIAGEM and BASE_PACIENTES and TOKEN_RECEPCAO):
+            raise unittest.SkipTest("Configure URLs Xano e TEST_RECEPCAO_TOKEN para integração autenticada")
 
     def test_catalogo_sintomas_46_ativos(self):
         """Valida que GET /sintomas retorna exatamente 46 sintomas ativos com campos obrigatórios."""
@@ -79,14 +90,22 @@ class TestXanoApiIntegration(unittest.TestCase):
         self.assertEqual(ficha["paciente_id"], paciente_id)
         self.assertEqual(ficha["status"], "EM_TRIAGEM")
         self.assertIsNotNone(ficha.get("chegada_em"))
-        self.assertIn(ficha.get("aberta_por"), [None, 0])
+        self.assertIsInstance(ficha.get("aberta_por"), int)
+        self.assertGreater(ficha["aberta_por"], 0)
         self.assertIn(ficha.get("ticket_id"), [None, 0])
         self.assertTrue(ficha["chegada_em"] > 1700000000000)
 
     def test_rn03_bloqueio_segunda_ficha_ativa(self):
         """RN03: Bloqueia abertura de segunda ficha quando já existe ficha em EM_TRIAGEM."""
-        # Paciente 1 já possui ficha 1 em EM_TRIAGEM
-        status, res = _req(BASE_TRIAGEM, "POST", "/fichas", {"paciente_id": 1})
+        cpf = _gerar_cpf_valido()
+        status_p, paciente = _req(BASE_PACIENTES, "POST", "/pacientes", {
+            "cpf": cpf, "nome": "Paciente Fictício RN03", "data_nascimento": "1990-01-01"
+        })
+        self.assertEqual(status_p, 200)
+        paciente_id = paciente["id"]
+        status_f, _ = _req(BASE_TRIAGEM, "POST", "/fichas", {"paciente_id": paciente_id})
+        self.assertEqual(status_f, 200)
+        status, res = _req(BASE_TRIAGEM, "POST", "/fichas", {"paciente_id": paciente_id})
         self.assertEqual(status, 400)
         self.assertEqual(res.get("message"), "FICHA_NAO_FINALIZADA_EXISTENTE")
 
