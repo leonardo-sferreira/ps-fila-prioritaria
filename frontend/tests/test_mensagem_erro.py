@@ -31,3 +31,11 @@ class TestMensagensDaFicha(unittest.TestCase):
     def test_codigo_desconhecido_continua_aparecendo(self):
         resposta = httpx.Response(400, json={"message": "OUTRO_ERRO"})
         self.assertEqual(_mensagem_erro(resposta), "OUTRO_ERRO")
+
+
+class TestIdDaRota(unittest.TestCase):
+    def test_extrai_o_id_do_caminho(self):
+        from ps_fila_prioritaria.ps_fila_prioritaria import _id_da_rota
+        self.assertEqual(_id_da_rota("/recepcao/ficha/12"), "12")
+        self.assertEqual(_id_da_rota("/recepcao/comprovante/7/"), "7")
+        self.assertEqual(_id_da_rota(""), "")
