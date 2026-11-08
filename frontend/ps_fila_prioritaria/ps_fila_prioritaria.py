@@ -40,6 +40,10 @@ MENSAGENS_ERRO_API = {
     "JUSTIFICATIVA_OBRIGATORIA": "A justificativa é obrigatória.",
     "PRIORIDADE_IGUAL_A_CALCULADA": "Essa já é a prioridade calculada. Escolha outra cor.",
     "PRIORIDADE_INVALIDA": "Escolha a prioridade.",
+    "FICHA_SEM_PRIORIDADE": "Defina a cor antes de confirmar: salve os sinais vitais ou ajuste a prioridade manualmente.",
+    "DESTINO_NAO_CONFIGURADO": "Não há especialidade de destino configurada. Avise o Administrador.",
+    "SENHA_NAO_ATIVA": "Esta ficha não tem senha ativa para o comprovante.",
+    "SENHA_NAO_GERADA": "Não foi possível gerar a senha. Tente confirmar de novo.",
 }
 MENSAGEM_LIMITE_XANO ="O sistema recebeu muitos acessos ao mesmo tempo. Aguarde alguns segundos e tente novamente."
 
@@ -923,6 +927,9 @@ class FichaState(rx.State):
     ajuste_justificativa: str = ""
     ajuste_erro: str = ""
     ajustando: bool = False
+    # Direcionamento: especialidade prevista enquanto EM_TRIAGEM (add-direcionamento-senha, D7).
+    destino_previsto: dict[str, Any] = {}
+    confirmando: bool = False
 
     @rx.var
     def cpf_exibido(self) -> str:
@@ -958,6 +965,26 @@ class FichaState(rx.State):
     @rx.var
     def condicao_texto(self) -> str:
         return NOME_CONDICAO.get(str(self.classificacao.get("condicao_prioritaria") or "NENHUMA"), "Nenhuma")
+
+    @rx.var
+    def em_triagem(self) -> bool:
+        return self.ficha.get("status") == "EM_TRIAGEM"
+
+    @rx.var
+    def destino_texto(self) -> str:
+        especialidade = (self.destino_previsto or {}).get("especialidade") or {}
+        if not especialidade:
+            return "Destino ainda indisponível (calculado ao confirmar)."
+        motivo = {"PEDIATRIA": " (até 11 anos)", "PADRAO": " (sem sintoma da lista)"}.get(str(self.destino_previsto.get("motivo")), "")
+        return f"{especialidade.get('nome')}{motivo}"
+
+    @rx.var
+    def senha_ficha(self) -> str:
+        return str(self.ficha.get("senha") or "")
+
+    @rx.var
+    def especialidade_ficha(self) -> str:
+        return str((self.ficha.get("especialidade") or {}).get("nome") or "")
 
     @rx.var
     def idade_texto(self) -> str:
@@ -1004,6 +1031,7 @@ class FichaState(rx.State):
         self.glicemia_gravidade = bool(ficha.get("glicemia_sinais_gravidade"))
         self.gestante = bool(ficha.get("gestante"))
         self.classificacao = dict(dados.get("classificacao") or {})
+        self.destino_previsto = dict(dados.get("destino_previsto") or {})
         self.sintomas_alterados = False
         self.observacao_alterada = False
         self.livres_alterados = False
@@ -1183,6 +1211,31 @@ class FichaState(rx.State):
     def set_ajuste_justificativa(self, valor: str) -> None:
         self.ajuste_justificativa = valor
 
+    async def confirmar_triagem(self):
+        """Confirma a triagem: o Xano define o destino, gera a senha e leva a ficha a AGUARDANDO (D5)."""
+        if self.confirmando or not self.ficha_id:
+            return None
+        if self.sintomas_alterados or self.observacao_alterada or self.livres_alterados or self.sinais_alterados:
+            self.mensagem = "Salve a ficha antes de confirmar."
+            self.erro = True
+            return None
+        if not self.classificacao.get("prioridade_atual"):
+            self.mensagem = "Defina a cor antes de confirmar: salve os sinais vitais ou ajuste a prioridade manualmente."
+            self.erro = True
+            return None
+        self._limpar_feedback()
+        self.confirmando = True
+        try:
+            resposta = await self._requisitar("POST", f"/fichas/{self.ficha_id}/confirmar-triagem")
+        finally:
+            self.confirmando = False
+        if resposta is None:
+            return None
+        return rx.redirect(f"/recepcao/comprovante/{self.ficha_id}")
+
+    def reimprimir(self):
+        return rx.redirect(f"/recepcao/comprovante/{self.ficha_id}")
+
     async def confirmar_ajuste(self) -> None:
         """Ajuste manual ou classificação manual excepcional, sempre com justificativa (D6)."""
         if self.ajuste_prioridade not in ("VERMELHA", "AMARELA", "AZUL"):
@@ -1216,6 +1269,61 @@ class FichaState(rx.State):
                 self.erro = False
         finally:
             self.ajustando = False
+
+
+NOME_PRIORIDADE = {"VERMELHA": "Vermelha", "AMARELA": "Amarela", "AZUL": "Azul"}
+
+
+def _data_hora_brasilia(valor: Any) -> str:
+    instante = _timestamp_segundos(valor)
+    if instante is None:
+        return "—"
+    return datetime.fromtimestamp(instante, FUSO_BRASILIA).strftime("%d/%m/%Y %H:%M")
+
+
+class ComprovanteState(rx.State):
+    """Comprovante de 80 mm da senha (add-direcionamento-senha, D6): só senha, cor, especialidade e entrada."""
+
+    ficha_id: int = 0
+    senha: str = ""
+    prioridade: str = ""
+    especialidade: str = ""
+    entrada: str = ""
+    carregando: bool = False
+    mensagem: str = ""
+
+    async def carregar(self, ficha_id: str | int):
+        try:
+            self.ficha_id = int(ficha_id)
+        except (TypeError, ValueError):
+            self.mensagem = "Ficha inválida."
+            return None
+        auth = await self.get_state(AuthState)
+        self.carregando = True
+        self.mensagem = ""
+        try:
+            resposta = api.requisitar("GET", "XANO_TRIAGEM_API_URL", f"/fichas/{self.ficha_id}/comprovante", token=auth.token)
+        except (api.ConfiguracaoAusente, httpx.RequestError):
+            self.mensagem = "Não foi possível carregar o comprovante."
+            return None
+        finally:
+            self.carregando = False
+        if resposta.status_code == 401:
+            auth._encerrar_sessao_local("Sua sessão expirou. Faça login novamente.")
+            return rx.redirect("/login")
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            return None
+        dados = resposta.json() or {}
+        self.senha = str(dados.get("senha") or "")
+        self.prioridade = NOME_PRIORIDADE.get(str(dados.get("prioridade")), "")
+        self.especialidade = str((dados.get("especialidade") or {}).get("nome") or "")
+        self.entrada = _data_hora_brasilia(dados.get("chegada_em"))
+        # Abre a caixa de impressão do navegador (impressora térmica de 80 mm configurada no sistema).
+        return rx.call_script("setTimeout(function(){window.print()}, 300)")
+
+    async def carregar_da_rota(self):
+        return await self.carregar(self.router.page.params.get("id", ""))
 
 
 class SeletorSintomasState(rx.State):
@@ -2409,13 +2517,44 @@ def recepcao_ficha() -> rx.Component:
                             sintomas_ficha(),
                             classificacao_ficha(),
                             rx.divider(),
-                            rx.flex(
-                                botao_secundario("Ajustar prioridade (justificativa obrigatória)", on_click=FichaState.abrir_ajuste),
-                                rx.button("Salvar ficha", on_click=FichaState.salvar, loading=FichaState.salvando, size="3", background=COR_AZUL, min_width="200px"),
-                                justify="between",
-                                gap="12px",
-                                wrap="wrap",
-                                width="100%",
+                            rx.cond(
+                                FichaState.em_triagem,
+                                rx.vstack(
+                                    rx.hstack(
+                                        rotulo_secao("DESTINO PREVISTO"),
+                                        rx.text(FichaState.destino_texto, size="2", weight="medium", color=COR_TEXTO),
+                                        align="center",
+                                        spacing="3",
+                                        wrap="wrap",
+                                    ),
+                                    rx.flex(
+                                        botao_secundario("Ajustar prioridade (justificativa obrigatória)", on_click=FichaState.abrir_ajuste),
+                                        rx.hstack(
+                                            botao_secundario("Salvar ficha", on_click=FichaState.salvar, loading=FichaState.salvando),
+                                            rx.button("Confirmar e gerar senha", on_click=FichaState.confirmar_triagem, loading=FichaState.confirmando, size="3", background=COR_AZUL, min_width="220px"),
+                                            spacing="3",
+                                            wrap="wrap",
+                                        ),
+                                        justify="between",
+                                        gap="12px",
+                                        wrap="wrap",
+                                        width="100%",
+                                    ),
+                                    spacing="3",
+                                    width="100%",
+                                ),
+                                rx.callout(
+                                    rx.hstack(
+                                        rx.text("Triagem confirmada: senha ", rx.text.strong(FichaState.senha_ficha), " · ", FichaState.especialidade_ficha),
+                                        rx.spacer(),
+                                        rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="2", background=COR_AZUL),
+                                        align="center",
+                                        wrap="wrap",
+                                        width="100%",
+                                    ),
+                                    color_scheme="green",
+                                    width="100%",
+                                ),
                             ),
                             rx.link("← Voltar para a área inicial", href="/recepcao", size="2", color=COR_AZUL),
                             spacing="4",
@@ -2440,6 +2579,56 @@ def recepcao_ficha() -> rx.Component:
         min_height="100vh",
         width="100%",
     )
+
+
+def comprovante_senha() -> rx.Component:
+    """Comprovante térmico de 80 mm sem dados pessoais nem clínicos (Rev. 2.1, §9)."""
+    return rx.box(
+        rx.el.style("@page { size: 80mm auto; margin: 4mm; } @media print { .nao-imprimir { display: none !important; } body { background: white !important; } }"),
+        rx.cond(
+            ComprovanteState.mensagem != "",
+            rx.callout(ComprovanteState.mensagem, color_scheme="red", margin="16px"),
+            rx.vstack(
+                rx.text("PRONTO-SOCORRO", size="2", weight="bold", letter_spacing="0.08em"),
+                rx.text("SENHA DE ATENDIMENTO", size="1", color=COR_SECUNDARIA),
+                rx.text(ComprovanteState.senha, font_size="40px", weight="bold", line_height="1.1", letter_spacing="0.02em"),
+                rx.text("Prioridade: ", ComprovanteState.prioridade, size="3", weight="medium"),
+                rx.text("Especialidade: ", ComprovanteState.especialidade, size="3"),
+                rx.text("Entrada: ", ComprovanteState.entrada, size="2"),
+                rx.divider(),
+                rx.text(
+                    "Acompanhe o painel. Sua senha será chamada até 3 vezes, com intervalo de 30 segundos. "
+                    "Sem resposta, ela volta uma única vez ao fim da fila. A ordem segue a prioridade, não a chegada.",
+                    size="1",
+                    text_align="center",
+                ),
+                rx.text("Guarde este comprovante.", size="1", weight="bold"),
+                spacing="2",
+                align="center",
+                width="72mm",
+                padding="4mm",
+                background="white",
+                color="black",
+                font_family="Inter, sans-serif",
+            ),
+        ),
+        rx.hstack(
+            rx.button("Imprimir", on_click=rx.call_script("window.print()"), size="3", background=COR_AZUL),
+            rx.link(botao_secundario("Voltar à ficha"), href="/recepcao/ficha/" + ComprovanteState.ficha_id.to_string()),
+            rx.link(botao_secundario("Nova identificação"), href="/recepcao"),
+            spacing="3",
+            wrap="wrap",
+            class_name="nao-imprimir",
+            padding="16px",
+        ),
+        background=COR_FUNDO,
+        min_height="100vh",
+        padding="16px",
+    )
+
+
+def pagina_comprovante() -> rx.Component:
+    return protegido("RECEPCAO_TRIAGEM", comprovante_senha())
 
 
 app = rx.App(stylesheets=["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"])
@@ -2475,6 +2664,13 @@ app.add_page(
     route="/recepcao/ficha/[id]",
     title="Ficha de atendimento",
     on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FichaState.carregar_da_rota],
+)
+
+app.add_page(
+    pagina_comprovante,
+    route="/recepcao/comprovante/[id]",
+    title="Comprovante da senha",
+    on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), ComprovanteState.carregar_da_rota],
 )
 
 app.add_page(pagina_fila_tickets, route="/recepcao/fila", title="Fila de pré-triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FilaTicketsState.carregar, FilaTicketsState.monitorar])

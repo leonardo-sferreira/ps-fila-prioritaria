@@ -2,48 +2,56 @@
 
 ## Contexto
 
-Já existem: consulta de Médico elegível (change 2), `sintoma_especialidade`, parâmetro `especialidade_padrao`, `ficha_atendimento` com classificação e `registrar_alteracao`. Esta change liga a ficha à fila da especialidade indicada pelos sintomas e gera senha. A especialidade do Médico não altera nem filtra o destino da ficha.
+- A ficha já tem cor (`prioridade_atual`, calculada ou ajustada), sintomas do catálogo (`ficha_sintoma`), sintomas digitados (`ficha_sintoma_livre`) e a função `classificacao/avaliar_ficha`, que lê ficha, paciente, idade na chegada e sintomas (change `add-classificacao-prioridade`).
+- As tabelas `especialidade`, `sintoma_especialidade` (com `ordem`), `contador_senha` (índice único `data, especialidade_id`) e as colunas `especialidade_sugerida_id`, `especialidade_atribuida_id`, `senha`, `senha_numero` em `ficha_atendimento` já existem no servidor `v1`. Nenhum endpoint usa especialidades hoje; a carga do catálogo (`sintomas/carregar_catalogo_inicial`) não cria especialidades nem ligações.
+- `ficha_atendimento` e `contador_senha` estão entre as tabelas divergentes (card do Backlog); no servidor, `contador_senha.ultimo_numero` não tem default.
+- `parametro.tipo` já aceita `ESPECIALIDADE`.
+- O `PATCH /fichas/{id}` só aceita ficha `EM_TRIAGEM`; não há edição depois da confirmação.
 
 ## Objetivos / Fora dos objetivos
 
 **Objetivos:**
-- Uma única função `direcionar_ficha`, usada na confirmação e quando sintomas/dados de triagem forem atualizados antes de a ficha ser chamada.
-- Numeração de senha sem repetição com confirmações simultâneas.
+- Regra de destino numa função pura, testável com blocos `test` como a `classificacao/pontuar`.
+- Confirmação atômica que reaproveita `avaliar_ficha` e a auditoria existente.
 
 **Fora dos objetivos:**
-- Escolher ou balancear médicos elegíveis entre filas de especialidades distintas; essa política fica em `add-fila-chamada-medico` e não pode ser inventada aqui.
+- Alterar ou republicar tabelas.
+- Redirecionar fichas `AGUARDANDO` e trocar senha (outra change).
 
 ## Decisões
 
-### D1. Destino clínico estável
-A unidade de fila é a especialidade indicada pelo conjunto de sintomas. A ficha mantém esse destino mesmo se o Médico que a atender tiver outra especialidade de referência ou se nenhum Médico estiver elegível naquele instante. Disponibilidade afeta distribuição operacional, nunca redirecionamento clínico.
+### D1. Carga `direcionamento/inicializar_direcionamento`
+Cria, se não existirem pela sigla, as especialidades CAR (Cardiologia), CLI (Clínica Geral), NEU (Neurologia), ORT (Ortopedia) e PED (Pediatria); para cada linha do catálogo de `docs/domain-model.md` (nome do sintoma → especialidade), cria a ligação em `sintoma_especialidade` com `ordem` 1 se ainda não existir (sintoma localizado pelo nome; sintoma ausente é ignorado); cria `ESPECIALIDADE_PADRAO` (tipo `ESPECIALIDADE`, valor = ID de CLI) se não existir. Chamada no início da confirmação e no GET da ficha não (GET não grava; sem dados, a prévia fica vazia).
+- *Alternativa:* estender `carregar_catalogo_inicial`. Descartada: aquela função tem teste próprio e escopo de catálogo; mexer nela mistura cargas.
 
-### D2. `direcionar_ficha(ficha)`
-Resolve o destino conforme o conjunto de sintomas e as relações do catálogo oficial, não por cor do sintoma nem disponibilidade/especialidade do Médico. A regra de empate quando sintomas apontam a diferentes especialidades permanece pendente de decisão funcional. Sem sintomas direcionáveis, aplica-se somente a regra-base de destino definida para esse caso, sem fallback por disponibilidade. Para criança dentro do limite configurado, o destino é Pediatria sem alterar o escore/classificação. A função não procura alternativas por falta de Médico e não grava; quem chama decide.
+### D2. Função pura `direcionamento/escolher_destino`
+Entrada: idade, idade máxima de criança, ID de Pediatria, ID da especialidade padrão, lista de `{pontuacao, especialidade_ids[]}` dos sintomas do catálogo e mapa `especialidade_id → fichas AGUARDANDO`. Saída: `especialidade_id` e `motivo` (`PEDIATRIA`, `SINTOMAS`, `PADRAO`). Algoritmo: se idade ≤ idade de criança → Pediatria; se não há sintoma ligado → padrão; senão, para cada candidata, maior pontuação e soma; ordena por maior, soma (decrescentes), fila, ID (crescentes) e pega a primeira. Sem banco, os casos da spec viram blocos `test`.
 
-### D3. Contador de senha com linha por (data, especialidade)
-Tabela `contador_senha` (`data`, `especialidade_id`, `ultimo_numero`) com índice único. `gerar_senha` faz upsert da linha e incremento condicional (`UPDATE ... SET ultimo_numero = ultimo_numero + 1 WHERE ultimo_numero = lido`), repetindo em caso de conflito, dentro da transação da confirmação.
-- **Alternativa:** `max()+1` sobre as fichas, como no ticket. Descartada porque a senha muda quando a ficha é redirecionada, o que torna o `max` sobre fichas pouco confiável.
+### D3. Função `direcionamento/destino_da_ficha`
+Lê a ficha via `classificacao/avaliar_ficha` (idade e sintomas), as ligações dos sintomas, a contagem de `AGUARDANDO` por especialidade candidata, Pediatria (sigla PED) e o parâmetro padrão, e chama `escolher_destino`. Usada pelo GET (prévia) e pela confirmação. Devolve também a especialidade (nome e sigla).
 
-### D4. Confirmação em uma transação
-`POST fichas/{id}/confirmar-triagem` com `{aceitar_sem_medico: bool}`: valida completude (reusa a validação da change 4), chama `direcionar_ficha`, decide (atribuída, recusa com aviso, ou sugerida marcada `sem_medico_no_direcionamento`), gera a senha, muda o status para AGUARDANDO e audita.
+### D4. Senha via `contador_senha` dentro da transação
+`direcionamento/gerar_senha` (data em `America/Sao_Paulo`, especialidade): lê a linha `(data, especialidade)`; se não existe, cria com `ultimo_numero: 1` (o índice único recusa uma criação simultânea, que é tentada de novo até 5 vezes, como o Totem); se existe, grava `ultimo_numero + 1` com valor explícito. Formata `COR-SIGLA-NNN` (mínimo 3 dígitos). Exclusividade sob concorrência real não comprovada (ver proposal).
+- *Alternativa:* `max(senha_numero)+1` sobre fichas. Descartada: exigiria índice novo em `ficha_atendimento`, tabela divergente.
 
-### D5. Atualização do destino da ficha
-Em `PATCH fichas/{id}` e `ajustar-prioridade` da change de triagem, para ficha ainda não chamada, recalcular classificação e direcionamento conforme sintomas. Se o destino clínico ou a cor atual mudar, gera nova senha e auditoria, preservando `chegada_em`. Mudança de disponibilidade ou especialidade cadastral do Médico não redireciona fichas. Não criar `redirecionar_especialidade` por perda de Médico; distribuição/atribuição é responsabilidade da change de chamada.
+### D5. `POST fichas/{ficha_id}/confirmar-triagem`
+Recepção/Triagem; em `db.transaction`: `inicializar_direcionamento`; ficha `EM_TRIAGEM`; `avaliar_ficha` sem pendência de RN04 e `prioridade_atual` não nula (`FICHA_SEM_PRIORIDADE`); `destino_da_ficha`; `gerar_senha`; grava `especialidade_sugerida_id`, `especialidade_atribuida_id`, `senha`, `senha_numero`, `status: AGUARDANDO`; `registrar_alteracao` com evento `TRIAGEM_CONFIRMADA`. Resposta: id, senha, especialidade.
 
-### D6. Comprovante como página imprimível
-`GET fichas/{id}/comprovante` devolve só os campos permitidos (senha, cor, especialidade, chegada). O Reflex renderiza `/recepcao/comprovante/{id}` com CSS `@page { size: 80mm auto }` e chama `window.print()` ao abrir. A reimpressão reabre a mesma página.
-- **Alternativa:** gerar PDF no backend. Descartada porque o Xano não é bom nisso e a impressão pelo navegador atende uma impressora térmica configurada no sistema operacional.
+### D6. `GET fichas/{ficha_id}/comprovante`
+Recepção/Triagem; ficha `AGUARDANDO` ou `CHAMADO`; devolve só senha, prioridade, nome e sigla da especialidade e `chegada_em`. O Reflex renderiza `/recepcao/comprovante/[id]` com `@page { size: 80mm auto }` e chama `window.print()` ao abrir; "Reimprimir" reabre a mesma página.
+- *Alternativa:* PDF no backend. Descartada: impressora térmica configurada no sistema operacional atende pelo navegador.
+
+### D7. Tela da ficha
+`GET fichas/{id}` passa a devolver `destino_previsto` (especialidade e motivo) para `EM_TRIAGEM`, e `senha`/`especialidade` para as demais. A ficha `EM_TRIAGEM` mostra "Destino previsto: Cardiologia" e o botão "Confirmar e gerar senha" (desabilitado sem cor, com as pendências); após confirmar, redireciona para o comprovante. A ficha que não está `EM_TRIAGEM` aparece só para leitura, com senha, especialidade e "Reimprimir".
 
 ## Riscos / Compromissos
 
-- [Mudança de senha confunde o paciente com um comprovante antigo] → A tela de triagem mostra "Senha alterada: reimprima o comprovante" sempre que a senha muda.
-- [Vários sintomas podem apontar a destinos diferentes] → Requer decisão explícita de desempate antes da implementação; preservar a lista e sua ordem conforme catálogo até isso ser definido.
+- [Dados de especialidade ausentes no servidor] → A carga D1 roda na primeira confirmação; a prévia mostra "destino indisponível" até lá.
+- [Concorrência na senha] → Limitação registrada; operação sequencial suportada.
+- [Sintoma do catálogo renomeado no servidor] → A carga liga pelo nome; sintoma não encontrado fica sem ligação e cai na especialidade padrão.
 
 ## Plano de migração
 
-Campos novos em `ficha_atendimento` (nulos em fichas EM_TRIAGEM) e uma tabela nova. Rollback: remover campos, tabela e endpoints, e voltar os endpoints das changes 2 e 4 à versão anterior.
-
-## Questões em aberto
-
-- Desempate quando sintomas selecionados apontarem a diferentes destinos clínicos.
+1. Publicar funções e endpoints novos e `fichas/{ficha_id}` GET (`--dry-run` antes, push restrito, sem tabelas).
+2. Publicar o Reflex.
+3. Reversão: republicar o GET anterior e remover os endpoints novos; especialidades e ligações podem ficar.
