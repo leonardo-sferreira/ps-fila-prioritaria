@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from collections.abc import AsyncIterator
 from pathlib import Path
 from typing import Any
@@ -672,8 +672,27 @@ def _timestamp_segundos(valor: Any) -> float | None:
     return None
 
 
+# Nome e cor de cada tipo na fila de pré-triagem (mesmas cores do Totem, tela 1/2 do Figma).
+COR_SECUNDARIA_FILA = "#66707A"
+APARENCIA_TIPO_TICKET = {
+    "PEDIATRICO": ("Pediátrico", "#6554C0"),
+    "PREFERENCIAL": ("Preferencial", "#ED8B00"),
+    "NORMAL": ("Normal", "#1565C0"),
+}
+# O Brasil não tem horário de verão desde 2019: America/Sao_Paulo é sempre UTC-3. Evita depender do pacote tzdata no Windows.
+FUSO_BRASILIA = timezone(timedelta(hours=-3))
+
+
+def _hora_brasilia(valor: Any, segundos: bool = False) -> str:
+    instante = _timestamp_segundos(valor)
+    if instante is None:
+        return "—"
+    return datetime.fromtimestamp(instante, FUSO_BRASILIA).strftime("%H:%M:%S" if segundos else "%H:%M")
+
+
 class FilaTicketsState(rx.State):
     tickets: list[dict[str, Any]] = []
+    atualizado_em: str = ""
     mensagem: str = ""
     erro: bool = False
     monitorando: bool = False
@@ -707,6 +726,25 @@ class FilaTicketsState(rx.State):
                 ticket["segundos_restantes"] = max(0, int(chamado + intervalo - agora + 0.999)) if chamado is not None and agora is not None and intervalo > 0 else -1
                 prefixo = {"PEDIATRICO": "C", "PREFERENCIAL": "P", "NORMAL": "N"}.get(ticket.get("tipo"), "?")
                 ticket["senha_exibida"] = f"{prefixo}-{int(ticket.get('numero') or 0):03d}"
+                ticket["nome_tipo"], ticket["cor_tipo"] = APARENCIA_TIPO_TICKET.get(ticket.get("tipo"), ("—", COR_SECUNDARIA_FILA))
+                ticket["emitido_hora"] = _hora_brasilia(ticket.get("emitido_em"))
+            self.atualizado_em = _hora_brasilia(corpo.get("agora") if isinstance(corpo, dict) else None, segundos=True)
+
+    @rx.var
+    def chamados(self) -> list[dict[str, Any]]:
+        return [ticket for ticket in self.tickets if ticket.get("status") == "CHAMADO"]
+
+    @rx.var
+    def aguardando(self) -> list[dict[str, Any]]:
+        return [ticket for ticket in self.tickets if ticket.get("status") == "AGUARDANDO"]
+
+    @rx.var
+    def resumo_tipos(self) -> list[dict[str, Any]]:
+        """Quantos tickets de cada tipo aguardam chamada, na ordem do Totem."""
+        return [
+            {"nome": nome, "cor": cor, "quantidade": sum(1 for t in self.tickets if t.get("status") == "AGUARDANDO" and t.get("tipo") == tipo)}
+            for tipo, (nome, cor) in APARENCIA_TIPO_TICKET.items()
+        ]
 
     async def atualizar_automaticamente(self):
         for ticket in self.tickets:
@@ -1437,9 +1475,9 @@ def privacidade() -> rx.Component:
 
 # Tipos de ticket do Totem (add-totem D5), na ordem e com as cores da tela 1 do Figma.
 TIPOS_TOTEM = [
-    ("PEDIATRICO", "C", "Pediátrico", "#6554C0", "Crianças de até 11 anos. Atendimento com prioridade maior na Recepção/Triagem."),
-    ("PREFERENCIAL", "P", "Preferencial", "#ED8B00", "Idosos (60+), gestantes e demais pessoas com direito a atendimento preferencial."),
-    ("NORMAL", "N", "Normal", COR_AZUL, "Demais pacientes. Chamados em ordem de chegada, alternando com os prioritários."),
+    ("PEDIATRICO", "C", "Pediátrico", "#6554C0", "Crianças de até 11 anos."),
+    ("PREFERENCIAL", "P", "Preferencial", "#ED8B00", "Pessoas com 60 anos ou mais, gestantes e demais pessoas com direito a atendimento preferencial."),
+    ("NORMAL", "N", "Normal", COR_AZUL, "Todos os demais pacientes."),
 ]
 NOME_TIPO_TOTEM = {tipo: nome for tipo, _, nome, _, _ in TIPOS_TOTEM}
 
@@ -1451,7 +1489,6 @@ def cartao_tipo_totem(tipo: str, letra: str, nome: str, cor: str, descricao: str
             rx.text(nome, weight="bold", size="7", color=COR_TEXTO),
             rx.text(descricao, size="3", color=COR_SECUNDARIA),
             rx.spacer(),
-            rx.text(f"Código do ticket: {letra}-001, {letra}-002…", size="2", color=COR_SECUNDARIA),
             rx.divider(color=COR_BORDA),
             rx.text("Toque para retirar", weight="bold", size="3", color=cor),
             spacing="3",
@@ -1592,30 +1629,168 @@ def area_recepcao() -> rx.Component:
     )
 
 
-def linha_ticket(ticket: dict[str, Any]) -> rx.Component:
-    return rx.vstack(
-        rx.text(ticket["senha_exibida"], " — ", ticket["status"], " — tentativa ", ticket["tentativas"]),
-        rx.cond((ticket["status"] == "CHAMADO") & ~ticket["presente"],
-                rx.text("Próxima etapa em ", ticket["segundos_restantes"], " s")),
-        rx.hstack(
-            rx.cond((ticket["status"] == "CHAMADO") & ~ticket["presente"],
-                    rx.button("Marcar presente", on_click=FilaTicketsState.acao(ticket["id"], "PRESENTE"))),
-            rx.button("Desistência", on_click=FilaTicketsState.acao(ticket["id"], "DESISTENCIA")),
-            rx.cond((ticket["status"] == "CHAMADO") & ticket["presente"],
-                    rx.button("Identificar", on_click=FilaTicketsState.identificar(ticket["id"]))),
-            wrap="wrap",
-        ),
-        width="100%", padding="12px", border_bottom="1px solid #ddd",
+def chip_tipo_ticket(ticket: dict[str, Any]) -> rx.Component:
+    """Chip colorido do tipo, como na tela 2 do Figma."""
+    return rx.box(
+        rx.text(ticket["nome_tipo"], size="2", weight="medium", color=ticket["cor_tipo"]),
+        background=ticket["cor_tipo"].to(str) + "1F",
+        border_radius="999px",
+        padding="3px 14px",
+        width="fit-content",
     )
 
+
+def cartao_painel(*filhos: rx.Component, **props: Any) -> rx.Component:
+    return rx.box(
+        *filhos,
+        background="white",
+        border=f"1px solid {COR_BORDA}",
+        border_radius="12px",
+        box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
+        width="100%",
+        **props,
+    )
+
+
+def cartao_chamado(ticket: dict[str, Any]) -> rx.Component:
+    """Ticket em chamada: código grande, tentativa, contagem até a próxima etapa e ações da Recepção."""
+    presente = ticket["presente"].to(bool)
+    return cartao_painel(
+        rx.hstack(
+            rx.vstack(
+                rx.text(rx.cond(presente, "PRESENTE — PRONTO PARA IDENTIFICAR", "CHAMANDO AGORA"), size="1", weight="medium",
+                        color=rx.cond(presente, COR_SUCESSO, COR_SECUNDARIA)),
+                rx.text(ticket["senha_exibida"], weight="bold", font_size="44px", line_height="1.1", color=ticket["cor_tipo"]),
+                rx.hstack(
+                    chip_tipo_ticket(ticket),
+                    rx.text(ticket["tentativas"], "ª chamada", size="2", color=COR_TEXTO),
+                    rx.cond(ticket["oportunidade"].to(int) > 1, rx.text("· 2ª oportunidade", size="2", color=COR_SECUNDARIA)),
+                    rx.cond(~presente & (ticket["segundos_restantes"].to(int) >= 0),
+                            rx.text("· próxima etapa em ", ticket["segundos_restantes"], " s", size="2", color=COR_SECUNDARIA)),
+                    align="center",
+                    spacing="2",
+                    wrap="wrap",
+                ),
+                spacing="2",
+                align="start",
+            ),
+            rx.spacer(),
+            rx.hstack(
+                botao_secundario("Desistência", on_click=FilaTicketsState.acao(ticket["id"], "DESISTENCIA")),
+                rx.cond(
+                    presente,
+                    rx.button("Identificar paciente", on_click=FilaTicketsState.identificar(ticket["id"]), size="3", background=COR_AZUL),
+                    rx.button("Marcar presente", on_click=FilaTicketsState.acao(ticket["id"], "PRESENTE"), size="3", background=COR_SUCESSO),
+                ),
+                spacing="3",
+                wrap="wrap",
+            ),
+            align="center",
+            spacing="4",
+            wrap="wrap",
+            width="100%",
+        ),
+        border_left=rx.cond(presente, f"8px solid {COR_SUCESSO}", f"8px solid {COR_AZUL}"),
+        padding="20px 28px",
+    )
+
+
+def linha_ticket_aguardando(ticket: dict[str, Any], indice: rx.Var) -> rx.Component:
+    return rx.hstack(
+        rx.text(indice + 1, "º", size="2", color=COR_SECUNDARIA, width="48px"),
+        rx.text(ticket["senha_exibida"], weight="bold", size="4", color=ticket["cor_tipo"], width="120px"),
+        rx.box(chip_tipo_ticket(ticket), width="180px"),
+        rx.text(ticket["emitido_hora"], size="3", color=COR_TEXTO, width="120px"),
+        rx.text(rx.cond(ticket["oportunidade"].to(int) > 1, "2ª oportunidade", ""), size="2", color=COR_SECUNDARIA, flex="1"),
+        rx.button("Desistência", on_click=FilaTicketsState.acao(ticket["id"], "DESISTENCIA"), variant="ghost", color_scheme="gray", size="2"),
+        align="center",
+        width="100%",
+        padding="12px 16px",
+        border_radius="8px",
+        background=rx.cond(indice % 2 == 1, COR_FUNDO, "transparent"),
+    )
+
+
+def resumo_tipo(item: dict[str, Any]) -> rx.Component:
+    return rx.hstack(
+        rx.box(width="10px", height="10px", border_radius="50%", background=item["cor"]),
+        rx.text(item["nome"], size="2", color=COR_TEXTO),
+        rx.text(item["quantidade"], size="2", weight="bold", color=COR_TEXTO),
+        align="center",
+        spacing="2",
+        padding="6px 14px",
+        border=f"1px solid {COR_BORDA}",
+        border_radius="999px",
+        background="white",
+    )
+
+
 def pagina_fila_tickets() -> rx.Component:
-    return area_inicial(
-        "RECEPCAO_TRIAGEM", "FILA DE PRÉ-TRIAGEM", "Recepção/Triagem",
-        rx.vstack(
-            rx.hstack(rx.button("Chamar próximo", on_click=FilaTicketsState.proximo), rx.button("Atualizar", on_click=FilaTicketsState.carregar)),
-            rx.text(FilaTicketsState.mensagem, color=rx.cond(FilaTicketsState.erro, "red", "green")),
-            rx.cond(FilaTicketsState.tickets.length() == 0, rx.text("Nenhum ticket ativo."), rx.foreach(FilaTicketsState.tickets, linha_ticket)),
-            rx.link("Voltar", href="/recepcao"), width="100%",
+    cabecalho_tabela = rx.hstack(
+        *[rx.text(rotulo, size="1", weight="medium", color=COR_SECUNDARIA, **props) for rotulo, props in (
+            ("ORDEM", {"width": "48px"}), ("TICKET", {"width": "120px"}), ("TIPO", {"width": "180px"}),
+            ("RETIRADO ÀS", {"width": "120px"}), ("", {"flex": "1"}),
+        )],
+        width="100%",
+        padding="0 16px 10px",
+        border_bottom=f"1px solid {COR_BORDA}",
+    )
+    return protegido(
+        "RECEPCAO_TRIAGEM",
+        rx.box(
+            cabecalho("RECEPÇÃO/TRIAGEM — FILA DE PRÉ-TRIAGEM", "Chame os tickets retirados no Totem e confirme a presença"),
+            rx.center(
+                rx.vstack(
+                    rx.hstack(
+                        rx.button("Chamar próximo", on_click=FilaTicketsState.proximo, size="3", background=COR_AZUL, min_width="200px"),
+                        botao_secundario("Atualizar", on_click=FilaTicketsState.carregar),
+                        rx.spacer(),
+                        rx.foreach(FilaTicketsState.resumo_tipos, resumo_tipo),
+                        align="center",
+                        spacing="3",
+                        wrap="wrap",
+                        width="100%",
+                    ),
+                    rx.cond(
+                        FilaTicketsState.mensagem != "",
+                        rx.text(FilaTicketsState.mensagem, size="2", color=rx.cond(FilaTicketsState.erro, COR_ERRO, COR_SUCESSO)),
+                    ),
+                    rx.cond(
+                        FilaTicketsState.chamados.length() > 0,
+                        rx.vstack(rx.foreach(FilaTicketsState.chamados, cartao_chamado), spacing="3", width="100%"),
+                    ),
+                    rx.hstack(
+                        rx.text("Aguardando chamada", weight="bold", size="5", color=COR_TEXTO),
+                        rx.text("(ordem de chegada; a chamada alterna prioritários e normais)", size="2", color=COR_SECUNDARIA),
+                        rx.spacer(),
+                        rx.cond(FilaTicketsState.atualizado_em != "",
+                                rx.text("Atualizado às ", FilaTicketsState.atualizado_em, size="1", color=COR_SECUNDARIA)),
+                        align="baseline",
+                        spacing="3",
+                        wrap="wrap",
+                        width="100%",
+                        padding_top="8px",
+                    ),
+                    cartao_painel(
+                        rx.cond(
+                            FilaTicketsState.aguardando.length() == 0,
+                            rx.text("Nenhum ticket aguardando. Os tickets retirados no Totem aparecem aqui automaticamente.",
+                                    size="2", color=COR_SECUNDARIA, padding="8px 16px"),
+                            rx.vstack(cabecalho_tabela, rx.foreach(FilaTicketsState.aguardando, linha_ticket_aguardando), spacing="1", width="100%"),
+                        ),
+                        padding="20px 16px",
+                    ),
+                    rx.link("← Voltar para a área inicial", href="/recepcao", size="2", color=COR_AZUL),
+                    spacing="4",
+                    width="min(100%, 1184px)",
+                ),
+                padding="28px 16px 40px",
+                width="100%",
+            ),
+            background=COR_FUNDO,
+            font_family="Inter, sans-serif",
+            min_height="100vh",
+            width="100%",
         ),
     )
 
