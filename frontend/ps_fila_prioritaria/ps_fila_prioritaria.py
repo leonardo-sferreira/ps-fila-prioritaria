@@ -1320,6 +1320,9 @@ def login() -> rx.Component:
         mensagens_acesso(AuthState.mensagem),
         botao_principal("Entrar", AuthState.entrando),
         rx.link("Esqueci minha senha", href="/senha", size="2", color=COR_AZUL),
+        rx.divider(color=COR_BORDA),
+        # Só ida: o Totem é público e não tem caminho de volta ao login (decisão do PO, 08/11/2026).
+        rx.link("Abrir o Totem de autoatendimento →", href="/totem", size="2", color=COR_SECUNDARIA),
         on_submit=AuthState.entrar,
     )
 
@@ -1529,14 +1532,6 @@ def totem() -> rx.Component:
             rx.text("Escolha o tipo de atendimento e toque para retirar seu ticket de chegada", size="3", color=COR_SECUNDARIA),
             rx.box(height="12px"),
             rx.flex(*[cartao_tipo_totem(*t) for t in TIPOS_TOTEM], gap="24px", width="100%", direction={"base": "column", "md": "row"}),
-            rx.text(
-                "A cor de prioridade (Vermelha, Amarela ou Azul) é definida depois, na Recepção/Triagem. Nenhum dado pessoal é solicitado aqui.",
-                size="2",
-                color=COR_SECUNDARIA,
-                text_align="center",
-                width="100%",
-                padding_top="16px",
-            ),
             spacing="2",
             padding="48px",
             width="100%",

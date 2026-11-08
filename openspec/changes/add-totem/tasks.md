@@ -20,6 +20,9 @@
 - [x] 2.3 Verificar estados de carregamento e falha de emissão, sem retry automático que possa produzir tickets duplicados
   - Evidência: estados "emitindo", "ticket emitido" e "falha" em `aviso_totem()`; falha de API ou de conexão mostra o erro com uma única chamada, sem nova tentativa automática (testes de estado).
 
+- [x] 2.4 [Reflex] Na tela de login, link "Abrir o Totem de autoatendimento" para `/totem`; o Totem não tem link de volta ao login (decisão do PO em 08/11/2026). Verificar por captura que o link aparece no login e que a tela do Totem não tem nenhum caminho para o login
+  - Evidência (08/11/2026): captura do login com "Abrir o Totem de autoatendimento →" abaixo de "Esqueci minha senha"; o HTML de `/totem` não tem nenhum link (só a folha de estilo).
+
 ## 3. Integração e documentação
 
 - [ ] 3.1 Verificar ponta a ponta, quando a futura change de operação da fila existir, que o ticket emitido pelo Totem é consumido com a mesma identidade, tipo e número
