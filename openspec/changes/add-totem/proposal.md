@@ -7,7 +7,7 @@
 | Fatias no Trello | A definir |
 | Dupla | A definir |
 | Depende de | `add-base-compartilhada` (fuso oficial e parâmetros necessários) |
-| Situação | Proposta documental |
+| Situação | Em implementação (emissão e tela prontas; falta o roteiro manual) |
 | Rastreabilidade formal | RF40–RF41 quando aplicáveis; confirmar texto exato no Confluence sem inventar requisito |
 
 ## Why
@@ -53,4 +53,4 @@ O Totem faz parte do escopo aprovado e deve emitir um ticket sem dados pessoais,
 - Confirmar sprint, fatia do Trello e responsáveis na planning.
 - Confirmar no Confluence a rastreabilidade RF40–RF41 para a emissão de tickets.
 - **Divergência com o documento formal:** o Confluence descreve o ticket sem prioridade e chamado só por ordem de emissão. Os tipos Pediátrico/Preferencial/Normal e o ciclo da pré-triagem (decisão do PO em 25/10/2026) precisam ser registrados lá pelo PO.
-- Definir se o Totem deve imprimir ticket ou operar somente com exibição na tela.
+- [x] Impressão: o ticket só aparece na tela, sem impressão (Documentação de Requisitos Rev. 2.1, §2.1 e decisão D11).

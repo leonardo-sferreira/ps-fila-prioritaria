@@ -397,6 +397,44 @@ class SenhaState(rx.State):
         return rx.redirect("/login")
 
 
+class TotemState(rx.State):
+    """Tela pública do Totem (add-totem). Nenhum dado pessoal; a chave do dispositivo nunca vai ao navegador (D2)."""
+
+    emitindo: bool = False
+    codigo: str = ""
+    tipo_emitido: str = ""
+    erro: str = ""
+
+    def emitir(self, tipo: str):
+        self.erro = ""
+        self.codigo = ""
+        self.emitindo = True
+        yield
+        try:
+            # A chave é lida aqui, no servidor, e não é guardada no estado (que é sincronizado com o navegador).
+            resposta = api.requisitar(
+                "POST",
+                "XANO_TRIAGEM_API_URL",
+                "/totem/tickets",
+                json={"chave_dispositivo": os.getenv("TOTEM_CHAVE", ""), "tipo": tipo},
+            )
+        except (api.ConfiguracaoAusente, httpx.RequestError):
+            resposta = None
+        self.emitindo = False
+        # Sem nova tentativa automática: repetir poderia emitir dois tickets (design, riscos).
+        if resposta is None or not resposta.is_success:
+            self.erro = "Não foi possível emitir o ticket."
+            return
+        dados = resposta.json()
+        self.codigo = str(dados.get("codigo", ""))
+        self.tipo_emitido = str(dados.get("tipo", ""))
+
+    def concluir(self) -> None:
+        self.codigo = ""
+        self.tipo_emitido = ""
+        self.erro = ""
+
+
 class PacienteState(rx.State):
     """Estado efêmero; não persiste seleção clínica ou operacional."""
 
@@ -963,17 +1001,18 @@ def sessao_no_cabecalho() -> rx.Component:
     )
 
 
-def cabecalho(titulo: str, subtitulo: str) -> rx.Component:
+def cabecalho(titulo: str, subtitulo: str, com_sessao: bool = True) -> rx.Component:
     return rx.hstack(
         # Ícone Prioriza branco no lugar da sigla do perfil (Figma: Marca/Ícone Prioriza, versão branca).
         rx.image(src="/logo/icone-prioriza-branco.svg", alt="Prioriza", width="48px", height="48px", flex_shrink="0"),
         rx.vstack(
             rx.text(titulo, weight="bold", size="5", color="white"),
-            rx.text(subtitulo, size="2", color="#CCDEF0"),
+            *([rx.text(subtitulo, size="2", color="#CCDEF0")] if subtitulo else []),
             spacing="1",
         ),
         rx.spacer(),
-        sessao_no_cabecalho(),
+        # Telas públicas (Totem) não têm sessão da equipe.
+        *([sessao_no_cabecalho()] if com_sessao else []),
         rx.vstack(
             # Relógio do navegador, atualizado a cada segundo no fuso do PS.
             rx.moment(format="DD/MM/YYYY", interval=1000, tz="America/Sao_Paulo", color="#CCDEF0", font_size="14px", font_weight="500"),
@@ -1393,6 +1432,131 @@ def privacidade() -> rx.Component:
     )
 
 
+# Tipos de ticket do Totem (add-totem D5), na ordem e com as cores da tela 1 do Figma.
+TIPOS_TOTEM = [
+    ("PEDIATRICO", "C", "Pediátrico", "#6554C0", "Crianças de até 11 anos. Atendimento com prioridade maior na Recepção/Triagem."),
+    ("PREFERENCIAL", "P", "Preferencial", "#ED8B00", "Idosos (60+), gestantes e demais pessoas com direito a atendimento preferencial."),
+    ("NORMAL", "N", "Normal", COR_AZUL, "Demais pacientes. Chamados em ordem de chegada, alternando com os prioritários."),
+]
+NOME_TIPO_TOTEM = {tipo: nome for tipo, _, nome, _, _ in TIPOS_TOTEM}
+
+
+def cartao_tipo_totem(tipo: str, letra: str, nome: str, cor: str, descricao: str) -> rx.Component:
+    return rx.box(
+        rx.vstack(
+            rx.center(rx.text(letra, weight="bold", size="6", color=cor), width="64px", height="64px", border_radius="50%", background=f"{cor}1F"),
+            rx.text(nome, weight="bold", size="7", color=COR_TEXTO),
+            rx.text(descricao, size="3", color=COR_SECUNDARIA),
+            rx.spacer(),
+            rx.text(f"Código do ticket: {letra}-001, {letra}-002…", size="2", color=COR_SECUNDARIA),
+            rx.divider(color=COR_BORDA),
+            rx.text("Toque para retirar", weight="bold", size="3", color=cor),
+            spacing="3",
+            align="start",
+            height="100%",
+            padding="28px",
+        ),
+        on_click=TotemState.emitir(tipo),
+        cursor="pointer",
+        background="white",
+        border=f"1px solid {COR_BORDA}",
+        border_top=f"6px solid {cor}",
+        border_radius="12px",
+        box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
+        min_height="320px",
+        flex="1",
+        _hover={"box_shadow": "0 6px 16px rgba(18, 60, 107, 0.14)"},
+        aria_label=f"Retirar ticket {nome}",
+    )
+
+
+def aviso_totem() -> rx.Component:
+    """Estados da emissão por cima da escolha: emitindo (1a), emitido (1b) e falha (1c)."""
+    conteudo = rx.cond(
+        TotemState.emitindo,
+        rx.vstack(
+            rx.spinner(size="3"),
+            rx.text("Emitindo seu ticket…", weight="bold", size="6", color=COR_TEXTO),
+            rx.text("Aguarde um instante.", size="3", color=COR_SECUNDARIA),
+            align="center",
+            spacing="4",
+        ),
+        rx.cond(
+            TotemState.codigo != "",
+            rx.vstack(
+                rx.text("SEU TICKET", weight="medium", size="2", color=COR_SECUNDARIA),
+                rx.text(TotemState.codigo, weight="bold", font_size="88px", line_height="1", color=COR_MARINHO),
+                rx.match(TotemState.tipo_emitido, *[(t, rx.text(n, weight="medium", size="4", color=COR_TEXTO)) for t, n in NOME_TIPO_TOTEM.items()], rx.fragment()),
+                rx.text(
+                    "Aguarde a chamada da Recepção/Triagem e acompanhe o painel da sala de espera.",
+                    size="3",
+                    color=COR_SECUNDARIA,
+                    text_align="center",
+                ),
+                rx.button("Concluir", on_click=TotemState.concluir, size="4", background=COR_AZUL, width="100%"),
+                align="center",
+                spacing="4",
+            ),
+            rx.vstack(
+                rx.center(rx.text("!", weight="bold", size="7", color=COR_ERRO), width="72px", height="72px", border_radius="50%", background=f"{COR_ERRO}1F"),
+                rx.text(TotemState.erro, weight="bold", size="6", color=COR_TEXTO, text_align="center"),
+                rx.text("Toque em Voltar para tentar de novo ou procure a recepção.", size="3", color=COR_SECUNDARIA, text_align="center"),
+                rx.button("Voltar", on_click=TotemState.concluir, size="4", background=COR_AZUL, width="100%"),
+                align="center",
+                spacing="4",
+            ),
+        ),
+    )
+    return rx.cond(
+        TotemState.emitindo | (TotemState.codigo != "") | (TotemState.erro != ""),
+        rx.center(
+            rx.box(conteudo, background="white", border_radius="16px", padding="40px", width="min(100%, 480px)", box_shadow="0 8px 24px rgba(0, 0, 0, 0.18)"),
+            position="fixed",
+            inset="0",
+            background="rgba(0, 0, 0, 0.45)",
+            z_index="10",
+            padding="16px",
+        ),
+    )
+
+
+def totem() -> rx.Component:
+    # Tela 1 do Figma: pública, sem login e sem pedir dado pessoal (spec totem).
+    return rx.box(
+        cabecalho("TOTEM DE AUTOATENDIMENTO", "", com_sessao=False),
+        rx.vstack(
+            rx.text("Bem-vindo ao Pronto-Socorro", weight="bold", size="8", color=COR_TEXTO),
+            rx.text("Escolha o tipo de atendimento e toque para retirar seu ticket de chegada", size="3", color=COR_SECUNDARIA),
+            rx.box(height="12px"),
+            rx.flex(*[cartao_tipo_totem(*t) for t in TIPOS_TOTEM], gap="24px", width="100%", direction={"base": "column", "md": "row"}),
+            rx.text(
+                "A cor de prioridade (Vermelha, Amarela ou Azul) é definida depois, na Recepção/Triagem. Nenhum dado pessoal é solicitado aqui.",
+                size="2",
+                color=COR_SECUNDARIA,
+                text_align="center",
+                width="100%",
+                padding_top="16px",
+            ),
+            spacing="2",
+            padding="48px",
+            width="100%",
+            max_width="1280px",
+            margin="0 auto",
+        ),
+        rx.center(
+            rx.text("Em caso de dúvida, procure a recepção", size="2", color=COR_SECUNDARIA),
+            border_top=f"1px solid {COR_BORDA}",
+            padding="16px",
+            width="100%",
+        ),
+        aviso_totem(),
+        background=COR_FUNDO,
+        font_family="Inter, sans-serif",
+        min_height="100vh",
+        width="100%",
+    )
+
+
 def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Component) -> rx.Component:
     return protegido(
         perfil,
@@ -1451,7 +1615,7 @@ def linha_ticket(ticket: dict[str, Any]) -> rx.Component:
 
 def pagina_fila_tickets() -> rx.Component:
     return area_inicial(
-        "RECEPCAO_TRIAGEM", "FILA DE PRÉ-TRIAGEM", "R", "Recepção/Triagem",
+        "RECEPCAO_TRIAGEM", "FILA DE PRÉ-TRIAGEM", "Recepção/Triagem",
         rx.vstack(
             rx.hstack(rx.button("Chamar próximo", on_click=FilaTicketsState.proximo), rx.button("Atualizar", on_click=FilaTicketsState.carregar)),
             rx.text(FilaTicketsState.mensagem, color=rx.cond(FilaTicketsState.erro, "red", "green")),
@@ -1637,6 +1801,7 @@ app.add_page(senha_codigo, route="/senha/codigo", title="Redefinir senha", on_lo
 app.add_page(senha_nova, route="/senha/nova", title="Nova senha", on_load=SenhaState.exigir_codigo)
 app.add_page(senha_sucesso, route="/senha/sucesso", title="Senha redefinida")
 app.add_page(privacidade, route="/privacidade", title="Aviso de privacidade")
+app.add_page(totem, route="/totem", title="Totem de autoatendimento", on_load=TotemState.concluir)
 app.add_page(carregando, route="/sair/inatividade", title="Sessão encerrada", on_load=AuthState.sair_por_inatividade)
 app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=AuthState.verificar_sessao("RECEPCAO_TRIAGEM"))
 app.add_page(area_medico, route="/medico", title="Médico", on_load=AuthState.verificar_sessao("MEDICO"))

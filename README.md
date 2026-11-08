@@ -160,6 +160,16 @@ Não existe tela de cadastro aberta: o primeiro Administrador é criado à mão 
 
 As regras de tempo ficam em variáveis de ambiente do Xano (nunca no repositório): `TOKEN_TTL_SEGUNDOS` (validade da sessão, 12 h), `CODIGO_TTL_SEGUNDOS`, `CODIGO_REENVIO_SEGUNDOS` e `CODIGO_TENTATIVAS` (códigos por e-mail) e `INATIVIDADE_SEGUNDOS` (saída por inatividade, 1 h). O aviso de privacidade mostrado em `/privacidade` é o arquivo [docs/aviso-de-privacidade.md](docs/aviso-de-privacidade.md).
 
+### Totem
+
+O Totem fica em `http://localhost:3000/totem` e não pede login. Para emitir tickets, o servidor do Reflex usa uma chave de dispositivo:
+
+1. No Xano, a variável de ambiente `TOTEM_CHAVE` guarda a chave (uma sequência aleatória longa).
+2. No `frontend/.env`, `TOTEM_CHAVE=` recebe o **mesmo** valor. A chave nunca vai ao navegador nem ao repositório.
+3. Para trocar a chave, altere os dois lugares e reinicie o `reflex run`.
+
+Roteiro manual: abra `/totem`, toque em cada tipo e confira o código na tela (`C-001`, `P-001`, `N-001` no primeiro do dia), depois toque em **Concluir**. Com a chave errada no `.env`, a tela mostra "Não foi possível emitir o ticket." e nenhum ticket é criado. Os tickets emitidos aparecem na fila da Recepção/Triagem (`/recepcao/fila`).
+
 Para os testes de integração do login, coloque no `frontend/.env` (nunca no repositório) as credenciais `TEST_ADMIN_*`, `TEST_RECEPCAO_*` e `TEST_MEDICO_*` de usuários de teste de cada perfil. Sem elas, esses testes são ignorados.
 
 Detalhes do ambiente, do Xano e do fluxo de trabalho no [guia de contribuição](CONTRIBUTING.md).
