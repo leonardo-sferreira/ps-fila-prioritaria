@@ -24,6 +24,9 @@ class TestContratoAberturaFicha(unittest.TestCase):
             codigo,
         )
         self.assertIn('error = "FICHA_NAO_FINALIZADA_EXISTENTE"', codigo)
+        # Ficha ainda EM_TRIAGEM e sem ticket é reaberta, sem criar outra nem auditar novo cadastro.
+        self.assertIn('$ficha_nao_finalizada.status == "EM_TRIAGEM" && $input.ticket_id == null', codigo)
+        self.assertIn("ja_existente", codigo)
         self.assertNotIn('status != "ATENDIDO"', codigo)
         self.assertNotIn('status != "CANCELADO"', codigo)
         self.assertNotIn('"ATENDIDO", "DESISTENCIA", "CANCELADO"', codigo)

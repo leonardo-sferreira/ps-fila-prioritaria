@@ -2,10 +2,17 @@ query "sintomas" verb=GET {
   api_group = "Triagem"
   description = "Lista o catálogo ativo de sintomas com a pontuação acadêmica da triagem."
 
+  auth = "usuario"
+
   input {
   }
 
   stack {
+    // Catálogo só para a Recepção/Triagem autenticada (add-classificacao-prioridade, D7).
+    function.run "auth/verificar_acesso" {
+      input = {usuario_id: $auth.id, perfis_permitidos: ["RECEPCAO_TRIAGEM"]}
+    } as $usuario
+
     db.query "sintoma" {
       where = $db.sintoma.ativo == true
       sort = { nome: "asc" }

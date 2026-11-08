@@ -304,10 +304,10 @@ Passagem do paciente pelo PS, da triagem até o comparecimento, a desistência o
 ### Principais informações
 - paciente, ticket de origem (quando houver) e usuário que abriu a ficha;
 - horário de chegada (define a ordem de chegada);
-- sintomas (via Ficha_Sintoma) e observações da queixa;
+- sintomas do catálogo (via Ficha_Sintoma), sintomas digitados pela Recepção/Triagem com pontuação de 1 a 3 (valem só para a ficha, não entram no catálogo) e observações da queixa;
 - gestante (sim/não) e condição prioritária resultante (idoso/criança/gestante);
 - sinais vitais: PA sistólica, FC, FR, temperatura, glicemia capilar (com indicador de sinais de gravidade), SpO2;
-- escore total = soma da pontuação de todos os sintomas e dos pontos dos sinais vitais (incluindo glicemia quando medida), indicador de item clínico isolado com 3 pontos e classificação de risco (baixo/moderado/alto); não há máximo fixo de 18;
+- escore total = soma da pontuação de todos os sintomas (do catálogo e digitados) e dos pontos dos sinais vitais (incluindo glicemia quando medida), indicador de item clínico isolado com 3 pontos e classificação de risco (baixo/moderado/alto); não há máximo fixo;
 - classificação calculada, classificação atual e justificativa do ajuste manual;
 - especialidade sugerida e especialidade atribuída;
 - senha (`COR-ESP-NÚMERO`) e tentativas de chamada por oportunidade;
@@ -315,11 +315,13 @@ Passagem do paciente pelo PS, da triagem até o comparecimento, a desistência o
 - status (ver tabela de estados).
 
 ### Regras
-- Toda ficha precisa de ao menos um sintoma ou uma observação de queixa (RN04).
-- Escore de sintomas = soma dos pontos de todos os sintomas selecionados; escore fisiológico = soma dos pontos dos sinais vitais; escore total = escore de sintomas + escore fisiológico.
-- Os limiares iniciais configuráveis são moderado a partir de 3 e alto a partir de 6; qualquer item clínico isolado com 3 pontos pode elevar o risco a alto.
+- Toda ficha precisa de ao menos um sintoma (do catálogo ou digitado) ou uma observação de queixa (RN04).
+- Escore de sintomas = soma dos pontos de todos os sintomas distintos (do catálogo e digitados); escore fisiológico = soma dos pontos dos sinais vitais; escore total = escore de sintomas + escore fisiológico (Rev. 2.1, D06).
+- Escala experimental (simulação acadêmica, não protocolo clínico): Azul de 0 a 4, Amarela de 5 a 9, Vermelha a partir de 10; qualquer sintoma ou sinal vital com 3 pontos gera Vermelha. Limiares configuráveis.
 - Classificação final: baixo → Azul, moderado → Amarela, alto → Vermelha.
-- A condição prioritária reordena dentro da mesma classificação e não soma pontos (RN10, RN11).
+- O cálculo automático só vale para paciente com 16 anos ou mais, não gestante, com PA sistólica, FC, FR, temperatura e SpO2 informados. Dado ausente não vira zero: o cálculo fica bloqueado e a tela informa o motivo. Menores de 16 anos e gestantes têm os sinais registrados e a prioridade definida por classificação manual justificada.
+- Qualquer alteração de sintomas, observação, sinais vitais ou gestação recalcula a classificação e descarta o ajuste manual anterior (decisão do PO, 08/11/2026).
+- A condição prioritária reordena dentro da mesma classificação e não soma pontos (RN10, RN11). Precedência no registro: gestante, depois idoso, depois criança; a idade é calculada na data de chegada.
 - O ajuste manual exige justificativa e gera Histórico_Alteração (RN09).
 - A glicemia baixa recebe os pontos definidos na tabela da seção Faixas de sinais vitais.
 - A senha é gerada somente após o direcionamento (RN19).
@@ -371,14 +373,25 @@ Parâmetros configuráveis pelo Administrador e invariantes operacionais aprovad
 | Novas oportunidades após a primeira reentrada | 1 |
 | Tamanho da previsão do painel | 5 |
 | Especialidade padrão, se prevista pela spec de direcionamento | Clínica Geral |
-| Limiar de risco moderado | escore total ≥ 3 |
-| Limiar de risco alto | escore total ≥ 6, ou qualquer item clínico isolado com 3 pontos |
+| Limiar da cor Amarela | escore total a partir de 5 |
+| Limiar da cor Vermelha | escore total a partir de 10, ou qualquer item com 3 pontos |
+| Idade mínima para a tabela adulta de sinais vitais | 16 anos |
 
 O fuso do projeto é fixo em `America/Sao_Paulo`; não é parâmetro editável pelo Administrador.
 
 ## Faixas de sinais vitais
 
-Tabela configurável que dá de 0 a 3 pontos para cada parâmetro de sinal vital. Os valores iniciais dos sinais vitais permanecem definidos na spec funcional de classificação; para glicemia baixa, a regra-base é:
+Tabela configurável que dá de 0 a 3 pontos para cada parâmetro de sinal vital, com extremos inclusivos e temperatura com uma casa decimal. Vale só para pessoas com 16 anos ou mais e não gestantes (Rev. 2.1, §21). Os valores vêm da tabela adulta do NEWS2 usada como referência de pontuação para a simulação; o escore não é NEWS2 nem protocolo clínico.
+
+| Parâmetro | 0 ponto | 1 ponto | 2 pontos | 3 pontos |
+|---|---|---|---|---|
+| PA sistólica (mmHg) | 111–219 | 101–110 | 91–100 | ≤90 ou ≥220 |
+| FC (bpm) | 51–90 | 41–50 ou 91–110 | 111–130 | ≤40 ou ≥131 |
+| FR (irpm) | 12–20 | 9–11 | 21–24 | ≤8 ou ≥25 |
+| Temperatura (°C) | 36,1–38,0 | 35,1–36,0 ou 38,1–39,0 | ≥39,1 | ≤35,0 |
+| SpO2 (%) | ≥96 | 94–95 | 92–93 | ≤91 |
+
+A glicemia é opcional e segue a regra local:
 
 | Glicemia | Condição | Pontos |
 |---|---|---:|
@@ -386,3 +399,6 @@ Tabela configurável que dá de 0 a 3 pontos para cada parâmetro de sinal vital
 | `< 54 mg/dL` | Sem sinais de gravidade | 2 |
 | `54–59 mg/dL` | Com sinais de gravidade | 2 |
 | `54–59 mg/dL` | Sem sinais de gravidade | 1 |
+| `≥ 60 mg/dL` | Qualquer | 0 (convenção de simulação; não há regra de hiperglicemia) |
+
+Limites de digitação aceitos (validação, não pontuação): PA 40–300, FC 20–250, FR 4–80, temperatura 25,0–45,0, SpO2 50–100, glicemia 10–1500.

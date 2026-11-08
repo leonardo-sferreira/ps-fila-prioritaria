@@ -31,14 +31,24 @@ query "fichas" verb=POST {
           return = { type: "single" }
         } as $ficha_nao_finalizada
 
-        precondition ($ficha_nao_finalizada == null) {
-          error_type = "inputerror"
-          error = "FICHA_NAO_FINALIZADA_EXISTENTE"
-        }
-
         var $ficha { value = null }
+        var $ja_existente { value = false }
         conditional {
-          if ($input.ticket_id != null) {
+          // RN03: não cria segunda ficha. A ficha ainda EM_TRIAGEM é reaberta para continuar a triagem
+          // (decisão do PO, 08/11/2026); ficha já na fila (AGUARDANDO/CHAMADO) ou chegada com ticket é recusada.
+          if ($ficha_nao_finalizada != null) {
+            precondition ($ficha_nao_finalizada.status == "EM_TRIAGEM" && $input.ticket_id == null) {
+              error_type = "inputerror"
+              error = "FICHA_NAO_FINALIZADA_EXISTENTE"
+            }
+            var.update $ficha {
+              value = $ficha_nao_finalizada
+            }
+            var.update $ja_existente {
+              value = true
+            }
+          }
+          elseif ($input.ticket_id != null) {
             db.get ticket_pre_triagem {
               field_name = "id"
               field_value = $input.ticket_id
@@ -82,13 +92,17 @@ query "fichas" verb=POST {
             }
           }
         }
+        conditional {
+          if (!$ja_existente) {
         function.run "registrar_alteracao" {
           input = {usuario_id: $usuario.id, tipo_evento: "CADASTRO", entidade: "FICHA_ATENDIMENTO", registro_id: $ficha.id, valor_novo: {paciente_id: $input.paciente_id, ticket_id: $input.ticket_id, status: "EM_TRIAGEM", chegada_em: $ficha.chegada_em}}
         } as $auditoria_ficha
+          }
+        }
       }
     }
   }
 
-  response = $ficha
+  response = {id: $ficha.id, paciente_id: $ficha.paciente_id, ticket_id: $ficha.ticket_id, status: $ficha.status, chegada_em: $ficha.chegada_em, ja_existente: $ja_existente}
   guid = "7AzpsrORCc-N5u5PuR5rPmVraO8"
 }

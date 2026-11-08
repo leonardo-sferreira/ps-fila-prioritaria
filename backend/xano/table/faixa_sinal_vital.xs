@@ -8,8 +8,10 @@ table faixa_sinal_vital {
     enum parametro {
       values = ["PA_SISTOLICA", "FC", "FR", "TEMPERATURA", "SPO2", "GLICEMIA"]
     }
-    decimal minimo
-    decimal maximo
+    // null = sem limite inferior; extremos inclusivos (add-classificacao-prioridade, D1).
+    decimal? minimo?
+    // null = sem limite superior.
+    decimal? maximo?
     int pontos
     bool? condicao_gravidade?
   }

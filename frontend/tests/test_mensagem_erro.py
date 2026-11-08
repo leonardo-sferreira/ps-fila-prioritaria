@@ -17,3 +17,17 @@ class TestMensagemErro(unittest.TestCase):
     def test_429_do_nosso_backend_continua_igual(self):
         resposta = httpx.Response(429, json={"message": "Aguarde 30 segundos para pedir um novo código."})
         self.assertEqual(_mensagem_erro(resposta), "Aguarde 30 segundos para pedir um novo código.")
+
+
+class TestMensagensDaFicha(unittest.TestCase):
+    def test_ficha_ja_na_fila_tem_mensagem_clara(self):
+        resposta = httpx.Response(400, json={"code": "ERROR_CODE_INPUT_ERROR", "message": "FICHA_NAO_FINALIZADA_EXISTENTE"})
+        self.assertIn("já está na fila de atendimento", _mensagem_erro(resposta))
+
+    def test_sinal_vital_invalido_cita_o_campo(self):
+        resposta = httpx.Response(400, json={"message": "SINAL_VITAL_INVALIDO:spo2"})
+        self.assertEqual(_mensagem_erro(resposta), "Valor fora do aceito em SpO2. Confira o número digitado.")
+
+    def test_codigo_desconhecido_continua_aparecendo(self):
+        resposta = httpx.Response(400, json={"message": "OUTRO_ERRO"})
+        self.assertEqual(_mensagem_erro(resposta), "OUTRO_ERRO")
