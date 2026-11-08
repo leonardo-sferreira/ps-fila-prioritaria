@@ -51,6 +51,12 @@ O Totem oferece três tipos: `PEDIATRICO` (prefixo `C`), `PREFERENCIAL` (prefixo
 
 A criação/numeração do ticket passa a pertencer a esta change e a operação da fila a futura change própria. Compatibilidade ou migração de registros existentes deve ser verificada no workspace Xano durante a implementação, sem alterar schema físico nesta revisão documental.
 
+### D6. Decisões da implementação (08/11/2026)
+- **Endpoint:** `POST totem/tickets` no grupo Triagem (mesma URL `XANO_TRIAGEM_API_URL`), público, com a chave do dispositivo no corpo da chamada feita pelo servidor do Reflex e comparada com a variável `TOTEM_CHAVE` do Xano.
+- **Concorrência:** o próximo número é o maior do dia e tipo + 1; o índice único `(data, tipo, numero)` recusa a colisão e o endpoint tenta de novo até 5 vezes.
+- **Idempotência:** a tela não tenta de novo sozinha; em falha mostra o erro e o paciente decide tocar outra vez ou procurar a recepção.
+- **Impressão:** só exibição na tela (Rev. 2.1, §2.1, D11).
+
 ## Questões em aberto
 
 - Confirmar sprint, fatia do Trello e responsáveis na planning.
