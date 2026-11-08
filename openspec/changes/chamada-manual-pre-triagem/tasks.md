@@ -13,6 +13,7 @@ Decisão do PO em 08/11/2026: a chamada na pré-triagem passa a ser manual. Ver 
 - [x] 2.2 Em `api/triagem/tickets_acao_post.xs`, aplicar D1 e D2: intervalo por `tentativas`, `REPETIR` só com prazo vencido e abaixo do limite, `AUSENCIA` com prazo vencido em qualquer chamada (1ª oportunidade volta ao fim da fila, 2ª vira `NAO_COMPARECEU`) e `AVANCAR` recusada com `ACAO_INVALIDA`. Verificar com `xano_validate_xanoscript`
 - [x] 2.3 Em `api/triagem/tickets_get.xs`, devolver também `intervalo_repeticao_segundos` e `tentativas_maximas` (D3, D4; usados pela 3.1). Verificar com `xano_validate_xanoscript`
   - Evidência 2.1–2.3 (08/11/2026): `xano_validate_xanoscript` — 3 arquivos válidos, 0 avisos.
+  - Correção (08/11/2026): na primeira abertura da fila o PO recebeu "Unable to locate var: intervalo_repeticao.valor", porque `INTERVALO_REPETICAO_SEGUNDOS` só é criado no primeiro "Chamar próximo". `GET tickets` agora devolve 0 para qualquer parâmetro ausente, como previa a D3.
 - [x] 2.4 Publicar os três arquivos na `v1` (`--dry-run` antes, push restrito a eles) e conferir com `xano workspace pull` que o servidor ficou igual ao repositório
   - Evidência (08/11/2026): o `--dry-run` mostrou só as 3 atualizações esperadas (1 função, 2 endpoints), sem remoções; o PO rodou o push restrito na `v1` e o `xano workspace pull` confirmou `INTERVALO_REPETICAO_SEGUNDOS` nos três objetos, `tentativas_maximas` em `GET tickets` e nenhuma ocorrência de `AVANCAR` ou `TENTATIVAS_NAO_ESGOTADAS`.
 
