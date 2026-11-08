@@ -1320,6 +1320,9 @@ def login() -> rx.Component:
         mensagens_acesso(AuthState.mensagem),
         botao_principal("Entrar", AuthState.entrando),
         rx.link("Esqueci minha senha", href="/senha", size="2", color=COR_AZUL),
+        rx.divider(color=COR_BORDA),
+        # Só ida: o Totem é público e não tem caminho de volta ao login (decisão do PO, 08/11/2026).
+        rx.link("Abrir o Totem de autoatendimento →", href="/totem", size="2", color=COR_SECUNDARIA),
         on_submit=AuthState.entrar,
     )
 
