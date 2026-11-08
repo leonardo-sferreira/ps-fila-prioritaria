@@ -29,32 +29,6 @@ query "pacientes/{paciente_id}" verb=PATCH {
     db.get paciente {
       field_name = "id"
       field_value = $input.paciente_id
-      mock = {
-        "limpa telefone com null": {
-          id: 1,
-          cpf: "52998224725",
-          nome: "Paciente de teste",
-          data_nascimento: "1990-01-01",
-          telefone: "11999999999",
-          ativo: true
-        },
-        "limpa telefone com texto vazio": {
-          id: 1,
-          cpf: "52998224725",
-          nome: "Paciente de teste",
-          data_nascimento: "1990-01-01",
-          telefone: "11999999999",
-          ativo: true
-        },
-        "telefone vazio já está ausente": {
-          id: 1,
-          cpf: "52998224725",
-          nome: "Paciente de teste",
-          data_nascimento: "1990-01-01",
-          telefone: null,
-          ativo: true
-        }
-      }
     } as $paciente_atual
 
     precondition ($paciente_atual != null) {
@@ -85,14 +59,11 @@ query "pacientes/{paciente_id}" verb=PATCH {
     }
     conditional {
       if ($input.telefone != "__TELEFONE_AUSENTE__") {
-        // O formulário envia texto vazio ao apagar; no banco, telefone ausente é null.
-        var $telefone_normalizado { value = $input.telefone }
-        conditional {
-          if ($telefone_normalizado == "") {
-            var.update $telefone_normalizado { value = null }
-          }
-        }
-        var.update $atualizacoes { value = $atualizacoes|set:"telefone":$telefone_normalizado }
+        // O formulário envia texto vazio ao apagar; no banco, telefone ausente é null (regra testada na função).
+        function.run "pacientes/normalizar_telefone" {
+          input = {telefone: $input.telefone, atual: $paciente_atual.telefone}
+        } as $telefone
+        var.update $atualizacoes { value = $atualizacoes|set:"telefone":$telefone.valor }
       }
     }
 
@@ -127,7 +98,7 @@ query "pacientes/{paciente_id}" verb=PATCH {
     conditional {
       if ($input.telefone != "__TELEFONE_AUSENTE__") {
         conditional {
-          if ($atualizacoes.telefone != $paciente_atual.telefone) {
+          if ($telefone.alterado) {
             var.update $houve_alteracao { value = true }
             var.update $valor_anterior { value = $valor_anterior|set:"telefone":$paciente_atual.telefone }
           }
@@ -143,24 +114,6 @@ query "pacientes/{paciente_id}" verb=PATCH {
               field_name = "id"
               field_value = $paciente_atual.id
               data = $atualizacoes
-              mock = {
-                "limpa telefone com null": {
-                  id: 1,
-                  cpf: "52998224725",
-                  nome: "Paciente de teste",
-                  data_nascimento: "1990-01-01",
-                  telefone: null,
-                  ativo: true
-                },
-                "limpa telefone com texto vazio": {
-                  id: 1,
-                  cpf: "52998224725",
-                  nome: "Paciente de teste",
-                  data_nascimento: "1990-01-01",
-                  telefone: null,
-                  ativo: true
-                }
-              }
             } as $paciente_atualizado
 
             function.run "registrar_alteracao" {
@@ -190,22 +143,5 @@ query "pacientes/{paciente_id}" verb=PATCH {
     expect.to_throw
   }
 
-  test "limpa telefone com null" {
-    input = { paciente_id: 1, telefone: null }
-    expect.to_be_true ($response.alterado)
-    expect.to_be_null ($response.paciente.telefone)
-  }
-
-  test "limpa telefone com texto vazio" {
-    input = { paciente_id: 1, telefone: "" }
-    expect.to_be_true ($response.alterado)
-    expect.to_be_null ($response.paciente.telefone)
-  }
-
-  test "telefone vazio já está ausente" {
-    input = { paciente_id: 1, telefone: "" }
-    expect.to_be_false ($response.alterado)
-    expect.to_be_null ($response.paciente.telefone)
-  }
   guid = "Czt7H4l1idB6xF-IjV6_ujuuUAU"
 }

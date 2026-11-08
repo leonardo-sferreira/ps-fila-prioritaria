@@ -689,6 +689,11 @@ class PacienteState(rx.State):
         return rx.redirect(f"/recepcao/ficha/{ficha_id}")
 
 
+def _id_da_rota(caminho: str) -> str:
+    """Último trecho do caminho (/recepcao/ficha/12 → "12"); substitui o `router.page.params` obsoleto no Reflex 0.8."""
+    return str(caminho or "").rstrip("/").rsplit("/", 1)[-1]
+
+
 def _timestamp_segundos(valor: Any) -> float | None:
     """Aceita timestamps Xano em milissegundos ou datas ISO."""
     if isinstance(valor, (int, float)):
@@ -797,7 +802,7 @@ class FilaTicketsState(rx.State):
                 await asyncio.sleep(1)
                 async with self:
                     conexao = app.event_namespace
-                    if (self.router.page.path != "/recepcao/fila" or conexao is None
+                    if (self.router.url.path.rstrip("/") != "/recepcao/fila" or conexao is None
                             or self.router.session.client_token not in conexao.token_to_sid):
                         return
                     ciclos += 1
@@ -1067,7 +1072,7 @@ class FichaState(rx.State):
             self.carregando = False
 
     async def carregar_da_rota(self) -> None:
-        ficha_id = self.router.page.params.get("id", "")
+        ficha_id = _id_da_rota(self.router.url.path)
         await self.carregar(ficha_id)
 
     def set_observacao(self, valor: str) -> None:
@@ -1323,7 +1328,7 @@ class ComprovanteState(rx.State):
         return rx.call_script("setTimeout(function(){window.print()}, 300)")
 
     async def carregar_da_rota(self):
-        return await self.carregar(self.router.page.params.get("id", ""))
+        return await self.carregar(_id_da_rota(self.router.url.path))
 
 
 class SeletorSintomasState(rx.State):
