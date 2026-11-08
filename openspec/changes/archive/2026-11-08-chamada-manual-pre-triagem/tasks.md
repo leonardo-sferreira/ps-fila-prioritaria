@@ -26,4 +26,5 @@ Decisão do PO em 08/11/2026: a chamada na pré-triagem passa a ser manual. Ver 
 
 ## 4. Verificação ponta a ponta
 
-- [ ] 4.1 Com um ticket de teste e um usuário da Recepção: chamar, conferir botões bloqueados nos primeiros 30 s; chamar novamente e conferir 10 s; terceira chamada e conferir que só resta "Não compareceu"; registrar não comparecimento e ver o ticket no fim da fila como 2ª oportunidade; repetir até `NAO_COMPARECEU`; conferir que, sem clique, o ticket fica parado em CHAMADO. Pedidos fora do prazo, quarta chamada e `AVANCAR` devem ser recusados pela API sem alterar o ticket (roteiro manual, pois o login exige código por e-mail)
+- [x] 4.1 Com um ticket de teste e um usuário da Recepção: chamar, conferir botões bloqueados nos primeiros 30 s; chamar novamente e conferir 10 s; terceira chamada e conferir que só resta "Não compareceu"; registrar não comparecimento e ver o ticket no fim da fila como 2ª oportunidade; repetir até `NAO_COMPARECEU`; conferir que, sem clique, o ticket fica parado em CHAMADO. Pedidos fora do prazo, quarta chamada e `AVANCAR` devem ser recusados pela API sem alterar o ticket (roteiro manual, pois o login exige código por e-mail)
+  - Evidência (08/11/2026): conferência manual feita pelo PO, logado como Recepção/Triagem, com resultado conforme o roteiro desta tarefa.

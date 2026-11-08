@@ -29,4 +29,5 @@ Revisada em 08/11/2026 (Rev. 2.1 e decisões do PO). Ver `proposal.md` e `design
 
 ## 5. Verificação ponta a ponta
 
-- [ ] 5.1 Logado como Recepção/Triagem: ficha de adulto com "Dor ou pressão no peito" e cor Amarela → confirmar → `A-CAR-001` no comprovante sem nome/CPF; ficha com "Palpitações" e "Convulsão em atividade" → Neurologia; paciente de 11 anos → Pediatria; ficha só com observação → Clínica Geral; ficha sem cor → confirmação recusada; reimpressão com a mesma senha. Roteiro manual, pois o login exige código por e-mail
+- [x] 5.1 Logado como Recepção/Triagem: ficha de adulto com "Dor ou pressão no peito" e cor Amarela → confirmar → `A-CAR-001` no comprovante sem nome/CPF; ficha com "Palpitações" e "Convulsão em atividade" → Neurologia; paciente de 11 anos → Pediatria; ficha só com observação → Clínica Geral; ficha sem cor → confirmação recusada; reimpressão com a mesma senha. Roteiro manual, pois o login exige código por e-mail
+  - Evidência (08/11/2026): conferência manual feita pelo PO, logado como Recepção/Triagem, com resultado conforme o roteiro desta tarefa.

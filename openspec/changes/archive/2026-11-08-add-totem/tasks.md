@@ -13,8 +13,9 @@
 
 ## 2. Reflex — experiência pública do Totem
 
-- [ ] 2.1 Criar a página pública do Totem com escolha do tipo (Pediátrico, Preferencial, Normal), ação de emissão e apresentação do código retornado; verificar manualmente a emissão de cada tipo, o prefixo exibido e a instrução para aguardar Recepção/Triagem
-  - Parcial: página `/totem` igual à tela 1 do Figma (captura), com os três tipos e o código em destaque no cartão de "ticket emitido"; `test_totem_state.py` cobre emissão e Concluir. Falta o PO tocar em cada tipo no navegador (o navegador automático não toca na tela).
+- [x] 2.1 Criar a página pública do Totem com escolha do tipo (Pediátrico, Preferencial, Normal), ação de emissão e apresentação do código retornado; verificar manualmente a emissão de cada tipo, o prefixo exibido e a instrução para aguardar Recepção/Triagem
+  - Parcial (antes): página `/totem` igual à tela 1 do Figma (captura), com os três tipos e o código em destaque no cartão de "ticket emitido"; `test_totem_state.py` cobre emissão e Concluir. Falta o PO tocar em cada tipo no navegador (o navegador automático não toca na tela).
+  - Evidência (08/11/2026): conferência manual feita pelo PO, logado como Recepção/Triagem, com resultado conforme o roteiro desta tarefa.
 - [x] 2.2 Encaminhar a credencial exclusivamente pela chamada server-side; verificar no navegador/rede que segredo não está no HTML, JavaScript, URL ou payload acessível ao paciente
   - Evidência: `TotemState.emitir` lê `TOTEM_CHAVE` no servidor e não guarda a chave no estado; conferido que a chave não aparece no HTML da página nem em nenhum arquivo do frontend gerado (`.web`).
 - [x] 2.3 Verificar estados de carregamento e falha de emissão, sem retry automático que possa produzir tickets duplicados
@@ -28,7 +29,8 @@
 
 ## 3. Integração e documentação
 
-- [ ] 3.1 Verificar ponta a ponta, quando a futura change de operação da fila existir, que o ticket emitido pelo Totem é consumido com a mesma identidade, tipo e número
-  - Parcial: a emissão grava `AGUARDANDO` com `emitido_em`, que é o que `tickets/proximo` (PR #18) usa para ordenar. Falta chamar pela tela da Recepção um ticket emitido no Totem, o que exige login com código por e-mail.
+- [x] 3.1 Verificar ponta a ponta, quando a futura change de operação da fila existir, que o ticket emitido pelo Totem é consumido com a mesma identidade, tipo e número
+  - Parcial (antes): a emissão grava `AGUARDANDO` com `emitido_em`, que é o que `tickets/proximo` (PR #18) usa para ordenar. Falta chamar pela tela da Recepção um ticket emitido no Totem, o que exige login com código por e-mail.
+  - Evidência (08/11/2026): conferência manual feita pelo PO, logado como Recepção/Triagem, com resultado conforme o roteiro desta tarefa.
 - [x] 3.2 Documentar configuração segura da credencial e roteiro manual de emissão; verificar instruções sem incluir valor real de segredo
   - Evidência: README (seção "Totem", com configuração da chave e roteiro manual) e `frontend/.env.example` (`TOTEM_CHAVE` sem valor).
