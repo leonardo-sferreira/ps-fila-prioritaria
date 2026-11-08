@@ -56,6 +56,9 @@ class EstadoFichaFalso:
         self.mensagem = ""
         self.erro = False
 
+    async def get_state(self, estado):
+        return type("Auth", (), {"token": "token-teste"})()
+
     def _url(self, caminho: str) -> str:
         return f"https://xano.test{caminho}"
 
@@ -68,8 +71,9 @@ async def _executar_salvamento(estado: EstadoFichaFalso) -> None:
 def test_carrega_catalogo_e_ficha_para_edicao() -> None:
     estado = EstadoFichaFalso()
     respostas = deque([Resposta(200, FICHA), Resposta(200, CATALOGO)])
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.get", side_effect=lambda *args, **kwargs: respostas.popleft()):
-        estado.carregar("10")
+    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.get", side_effect=lambda *args, **kwargs: respostas.popleft()) as get_http:
+        asyncio.run(estado.carregar("10"))
+    assert all(chamada.kwargs["headers"] == {"Authorization": "Bearer token-teste"} for chamada in get_http.call_args_list)
 
     assert estado.ficha_id == 10
     assert estado.paciente["id"] == 7

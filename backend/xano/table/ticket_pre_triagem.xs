@@ -13,9 +13,13 @@ table ticket_pre_triagem {
     int numero
     timestamp emitido_em
     enum status {
-      values = ["AGUARDANDO", "CHAMADO", "ATENDIDO", "NAO_COMPARECEU"]
+      values = ["AGUARDANDO", "CHAMADO", "ATENDIDO", "NAO_COMPARECEU", "DESISTENCIA"]
     }
   
+    int oportunidade?=1
+    int tentativas?=0
+    bool presente?=false
+    timestamp? fila_em?
     int? chamado_por? {
       table = "usuario"
     }
