@@ -23,6 +23,9 @@
 - [x] 2.4 [Reflex] Na tela de login, link "Abrir o Totem de autoatendimento" para `/totem`; o Totem não tem link de volta ao login (decisão do PO em 08/11/2026). Verificar por captura que o link aparece no login e que a tela do Totem não tem nenhum caminho para o login
   - Evidência (08/11/2026): captura do login com "Abrir o Totem de autoatendimento →" abaixo de "Esqueci minha senha"; o HTML de `/totem` não tem nenhum link (só a folha de estilo).
 
+- [x] 2.5 [Reflex] Reorganizar a fila de pré-triagem (`/recepcao/fila`) para que o ticket emitido no Totem seja fácil de achar: tickets chamados no topo, contagem dos que aguardam por tipo, tabela "Aguardando chamada" com ordem, código, chip do tipo (cores do Totem) e horário de retirada em Brasília, e o horário da última atualização (pedido do PO em 08/11/2026). Só apresentação: a ordem de chamada continua no Xano (`tickets/proximo`)
+  - Evidência (08/11/2026): no banco havia 26 tickets ativos do dia, todos `AGUARDANDO`/`CHAMADO` e retornados por `GET tickets`; o do Totem existia, mas ficava no fim de uma lista de texto sem tipo nem horário. `test_fila_tickets_state.py` cobre tipo, cor, hora de Brasília e tipo desconhecido; suíte unitária com 126 passando; `reflex export` compila. Falta o PO conferir a tela logado.
+
 ## 3. Integração e documentação
 
 - [ ] 3.1 Verificar ponta a ponta, quando a futura change de operação da fila existir, que o ticket emitido pelo Totem é consumido com a mesma identidade, tipo e número
