@@ -21,7 +21,7 @@ query "tickets/{ticket_id}/acao" verb=POST {
           error_type = "inputerror"
           error = "TICKET_INDISPONIVEL"
         }
-        precondition ($input.acao == "REPETIR" || $input.acao == "AUSENCIA" || $input.acao == "DESISTENCIA" || $input.acao == "PRESENTE" || $input.acao == "AVANCAR") {
+        precondition ($input.acao == "REPETIR" || $input.acao == "AUSENCIA" || $input.acao == "DESISTENCIA" || $input.acao == "PRESENTE") {
           error_type = "inputerror"
           error = "ACAO_INVALIDA"
         }
@@ -48,9 +48,13 @@ query "tickets/{ticket_id}/acao" verb=POST {
             } as $intervalo
             db.get parametro {
               field_name = "chave"
+              field_value = "INTERVALO_REPETICAO_SEGUNDOS"
+            } as $intervalo_repeticao
+            db.get parametro {
+              field_name = "chave"
               field_value = "TENTATIVAS_CHAMADA"
             } as $limite
-            precondition ($intervalo != null && $limite != null && ($intervalo.valor|to_int) > 0 && ($limite.valor|to_int) > 0) {
+            precondition ($intervalo != null && $intervalo_repeticao != null && $limite != null && ($intervalo.valor|to_int) > 0 && ($intervalo_repeticao.valor|to_int) > 0 && ($limite.valor|to_int) > 0) {
               error_type = "inputerror"
               error = "PARAMETROS_NAO_CONFIGURADOS"
             }
@@ -58,14 +62,21 @@ query "tickets/{ticket_id}/acao" verb=POST {
               error_type = "inputerror"
               error = "TICKET_NAO_CHAMADO"
             }
-            var $proxima_chamada { value = $ticket.chamado_em|add_secs_to_timestamp:($intervalo.valor|to_int) }
+            // Chamada manual (chamada-manual-pre-triagem, D1): 30 s depois da 1ª chamada, 10 s depois das seguintes.
+            var $segundos_espera { value = $intervalo.valor|to_int }
+            conditional {
+              if ($ticket.tentativas > 1) {
+                var.update $segundos_espera { value = $intervalo_repeticao.valor|to_int }
+              }
+            }
+            var $proxima_chamada { value = $ticket.chamado_em|add_secs_to_timestamp:$segundos_espera }
             var $agora_ms { value = now|to_ms }
             precondition ($agora_ms >= $proxima_chamada) {
               error_type = "inputerror"
               error = "AGUARDE_INTERVALO"
             }
             conditional {
-              if ($input.acao == "REPETIR" || ($input.acao == "AVANCAR" && $ticket.tentativas < ($limite.valor|to_int))) {
+              if ($input.acao == "REPETIR") {
                 precondition ($ticket.tentativas < ($limite.valor|to_int)) {
                   error_type = "inputerror"
                   error = "LIMITE_DE_CHAMADAS"
@@ -73,10 +84,7 @@ query "tickets/{ticket_id}/acao" verb=POST {
                 var.update $dados { value = {tentativas: $ticket.tentativas + 1, chamado_em: now, chamado_por: $usuario.id} }
               }
               else {
-                precondition ($ticket.tentativas == ($limite.valor|to_int)) {
-                  error_type = "inputerror"
-                  error = "TENTATIVAS_NAO_ESGOTADAS"
-                }
+                // AUSENCIA ("Não compareceu"): liberada depois do intervalo de qualquer chamada (D2).
                 conditional {
                   if ($ticket.oportunidade == 1) {
                     var.update $dados { value = {status: "AGUARDANDO", oportunidade: 2, tentativas: 0, fila_em: now} }

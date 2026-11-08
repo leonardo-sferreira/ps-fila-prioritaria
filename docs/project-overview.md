@@ -38,11 +38,11 @@ Paciente → Totem → Ticket na fila de Recepção/Triagem → Triagem e classi
 ```
 
 1. O paciente usa o **Totem**, parte do escopo do projeto, para gerar um ticket sem dados pessoais e registrá-lo na fila de Recepção/Triagem. A implementação terá uma change funcional própria.
-2. A fila de Recepção/Triagem usa tickets numéricos sequenciais por tipo, com precedência pediátrica e ciclo configurável inicial de dois prioritários para um normal; dentro do tipo, segue a ordem efetiva da fila. Após a Recepção iniciar a chamada, cada senha recebe até 3 tentativas automáticas por oportunidade, separadas pelo intervalo configurável inicial de 30 segundos; decorrido mais um intervalo, a oportunidade é encerrada automaticamente se não houver confirmação de presença. Esgotada a primeira oportunidade sem comparecimento, o ticket volta ao fim da fila uma única vez; desistência explícita o remove da fila ativa.
+2. A fila de Recepção/Triagem usa tickets numéricos sequenciais por tipo, com precedência pediátrica e ciclo configurável inicial de dois prioritários para um normal; dentro do tipo, segue a ordem efetiva da fila. Toda chamada é feita pela Recepção, sem nada automático: até 3 chamadas por oportunidade; depois da 1ª chamada espera-se o intervalo configurável inicial de 30 segundos e, depois da 2ª e da 3ª, o intervalo de repetição configurável inicial de 10 segundos. Terminado o intervalo, a Recepção chama novamente (se ainda houver chamada na oportunidade) ou registra "Não compareceu". O primeiro "Não compareceu" devolve o ticket ao fim da fila uma única vez; o segundo o encerra como não comparecido. Desistência explícita o remove da fila ativa.
 3. A **Recepção/Triagem** identifica o paciente pelo CPF, abre a ficha, registra sintomas e sinais vitais e confirma ou ajusta a classificação.
 4. O sistema soma os pontos de todos os sintomas selecionados aos pontos dos sinais vitais, classifica o risco e direciona a ficha à especialidade indicada pelos sintomas. A ficha recebe uma senha de atendimento e entra na fila dessa especialidade.
 5. O sistema distribui a ficha a um médico elegível conforme disponibilidade, status operacional e regras da fila. A especialidade cadastral do médico não restringe o atendimento nem altera a especialidade da ficha.
-6. O médico chama o próximo paciente atribuído. A mesma regra de 30 segundos, 3 tentativas por oportunidade e uma reentrada ao fim da fila vale para a chamada médica. O painel público apresenta a senha e a sala, sem dados pessoais do paciente.
+6. O médico chama o próximo paciente atribuído. A chamada médica segue a regra de 30 segundos entre chamadas, 3 tentativas por oportunidade e uma reentrada ao fim da fila. O painel público apresenta a senha e a sala, sem dados pessoais do paciente.
 
 ### Fora do escopo
 
@@ -63,7 +63,7 @@ Paciente → Totem → Ticket na fila de Recepção/Triagem → Triagem e classi
 - Direcionamento automático à especialidade indicada pelos sintomas; qualquer médico elegível pode atender essa fila.
 - Geração, impressão e reimpressão de senha.
 - Fila priorizada por especialidade, com seleção automática do próximo paciente.
-- Chamada pela Recepção/Triagem e pelo Médico, com intervalo de 30 segundos, até 3 tentativas por oportunidade e uma única reentrada ao fim da fila; desistência explícita remove a senha da fila ativa.
+- Chamada manual pela Recepção/Triagem (30 segundos após a 1ª chamada e 10 segundos após as seguintes) e pelo Médico (30 segundos entre chamadas), até 3 tentativas por oportunidade e uma única reentrada ao fim da fila; desistência explícita remove a senha da fila ativa.
 - Pausar e retomar o recebimento de atribuições pelo Médico; encerrar o plantão explicitamente apenas com a fila atribuída zerada.
 - Painel público com senha, sala e previsão das próximas 5, sem nome nem CPF.
 - Cadastros do administrador e disponibilidade diária dos médicos.
@@ -76,7 +76,7 @@ Paciente → Totem → Ticket na fila de Recepção/Triagem → Triagem e classi
 - **Escore clínico:** soma os pontos de todos os sintomas aos pontos dos sinais vitais, incluindo glicemia quando medida. Os limiares iniciais são moderado a partir de 3 e alto a partir de 6; qualquer item clínico isolado com 3 pontos pode elevar o risco a alto. Não há máximo fixo de 18 para o escore total.
 - **Classificação:** baixo → Azul, moderado → Amarela e alto → Vermelha. Idoso, criança e gestante reordenam dentro da mesma classificação, sem somar pontos nem alterar a classificação.
 - **Direcionamento e médico:** os sintomas definem automaticamente a especialidade da ficha. Um médico elegível pode atender qualquer fila; sua especialidade de referência é apenas dado cadastral.
-- **Chamadas:** intervalo mínimo de 30 segundos entre chamadas da mesma senha; até 3 tentativas em cada oportunidade; após a primeira oportunidade sem comparecimento, uma reentrada ao fim da mesma fila. A regra vale para Recepção/Triagem e Médico.
+- **Chamadas:** sempre feitas por uma pessoa, sem repetição nem encerramento automáticos; até 3 tentativas em cada oportunidade; após a primeira oportunidade sem comparecimento, uma reentrada ao fim da mesma fila. Na Recepção/Triagem, 30 segundos depois da 1ª chamada e 10 segundos depois das seguintes até liberar "Chamar novamente" e "Não compareceu"; no Médico, 30 segundos entre chamadas.
 - **Médico:** PAUSA e AUSENTE impedem novas atribuições sem remover itens já atribuídos. Retomar volta a DISPONIVEL se houver plantão vigente. Encerrar plantão é ação explícita e exige fila atribuída zerada.
 - **Painel público:** pode exibir senha e sala; nunca exibe CPF nem nome completo.
 - **Privacidade nas telas internas (decisão do PO, 26/10/2026):** o CPF aparece mascarado (`***.456.789-**`) onde não precisa ser lido inteiro; os campos de digitação mostram o CPF completo. A sessão é encerrada após 1 hora sem uso (configurável, `INATIVIDADE_SEGUNDOS`), além da expiração de 12 h.

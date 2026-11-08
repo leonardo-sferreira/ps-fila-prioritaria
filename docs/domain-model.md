@@ -278,9 +278,9 @@ Ticket simples emitido pelo Totem na chegada, antes da triagem.
 - Não guarda dados pessoais.
 - A ordem de chamada pela Recepção/Triagem pertence à futura change de operação da fila pré-triagem; a emissão por tipo pertence à change `add-totem`.
 - Divergência pendente: o documento formal (Confluence) ainda descreve o ticket sem prioridade; deve ser atualizado pelo PO.
-- A Recepção inicia a chamada e confirma a presença. As tentativas seguintes e o encerramento da oportunidade são automáticos após cada intervalo configurável, inicialmente 30 segundos; a confirmação de presença interrompe as tentativas e permite identificar o paciente e abrir a ficha. A automação depende de uma tela autorizada da fila aberta e conectada.
-- Esgotada a primeira oportunidade sem comparecimento, o ticket volta ao fim da fila uma única vez, sem novo número e sem perder sua identidade.
-- Após a segunda oportunidade encerrada sem atendimento, o ticket recebe `NAO_COMPARECEU` e sai da fila ativa.
+- A Recepção faz cada chamada e decide cada passo; nada acontece automaticamente. Depois da 1ª chamada da oportunidade espera-se o intervalo configurável (inicialmente 30 segundos) e depois da 2ª e da 3ª o intervalo de repetição configurável (inicialmente 10 segundos). Terminado o intervalo, a Recepção pode chamar novamente (até 3 chamadas por oportunidade) ou registrar "Não compareceu". A confirmação de presença encerra as chamadas e permite identificar o paciente e abrir a ficha.
+- O primeiro "Não compareceu" devolve o ticket ao fim da fila uma única vez, sem novo número e sem perder sua identidade, com a contagem de chamadas zerada.
+- O "Não compareceu" na segunda oportunidade dá ao ticket `NAO_COMPARECEU` e o retira da fila ativa.
 - Desistência explícita altera o ticket para `DESISTENCIA`, estado final que o remove da fila ativa sem alterar Fichas.
 
 ### Máquina de estados
@@ -290,10 +290,10 @@ AGUARDANDO
    ↓ chamar
 CHAMADO
    ├─ compareceu → ATENDIDO (final)
-   ├─ nova tentativa dentro do limite → CHAMADO
-   └─ primeira oportunidade esgotada → AGUARDANDO (fim da fila)
+   ├─ chamar novamente (após o intervalo, até 3 chamadas) → CHAMADO
+   └─ não compareceu na 1ª oportunidade (após o intervalo) → AGUARDANDO (fim da fila)
 
-segunda oportunidade encerrada sem atendimento → NAO_COMPARECEU (final)
+não compareceu na 2ª oportunidade → NAO_COMPARECEU (final)
 desistência explícita → removido da fila ativa
 ```
 
@@ -365,7 +365,8 @@ Parâmetros configuráveis pelo Administrador e invariantes operacionais aprovad
 | Idade máxima para criança | 11 anos (menor de 12) |
 | Ciclo de chamada sem vermelhos | 2 amarelas : 1 azul |
 | Ciclo da fila pré-triagem (tickets do Totem) | 2 prioritários (Pediátrico antes de Preferencial) : 1 normal |
-| Intervalo entre chamadas da mesma senha | 30 segundos |
+| Intervalo entre chamadas da mesma senha (Médico) e após a 1ª chamada do ticket (Recepção/Triagem) | 30 segundos |
+| Intervalo após a 2ª e a 3ª chamada do ticket (Recepção/Triagem) | 10 segundos |
 | Tentativas por oportunidade | 3 |
 | Novas oportunidades após a primeira reentrada | 1 |
 | Tamanho da previsão do painel | 5 |

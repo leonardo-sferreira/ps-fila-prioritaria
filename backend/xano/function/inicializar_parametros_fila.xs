@@ -1,7 +1,7 @@
 function "inicializar_parametros_fila" {
   input {}
   stack {
-    foreach ([{chave: "CICLO_PRE_TRIAGEM_PRIORITARIOS", valor: "2"}, {chave: "CICLO_PRE_TRIAGEM_NORMAIS", valor: "1"}, {chave: "POSICAO_CICLO_PRE_TRIAGEM", valor: "0"}, {chave: "INTERVALO_CHAMADA_SEGUNDOS", valor: "30"}, {chave: "TENTATIVAS_CHAMADA", valor: "3"}]) {
+    foreach ([{chave: "CICLO_PRE_TRIAGEM_PRIORITARIOS", valor: "2"}, {chave: "CICLO_PRE_TRIAGEM_NORMAIS", valor: "1"}, {chave: "POSICAO_CICLO_PRE_TRIAGEM", valor: "0"}, {chave: "INTERVALO_CHAMADA_SEGUNDOS", valor: "30"}, {chave: "TENTATIVAS_CHAMADA", valor: "3"}, {chave: "INTERVALO_REPETICAO_SEGUNDOS", valor: "10"}]) {
       each as $padrao {
         db.get parametro {
           field_name = "chave"
