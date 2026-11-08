@@ -1,6 +1,8 @@
 query "fichas/{ficha_id}" verb=PATCH {
   api_group = "Triagem"
-  description = "Atualiza parcialmente a observação geral e a coleção final de sintomas, validando RN04 no estado resultante."
+  description = "Atualiza observação, sintomas do catálogo, sintomas digitados e sinais vitais da ficha EM_TRIAGEM, valida RN04, recalcula a classificação (descartando o ajuste manual) e audita."
+
+  auth = "usuario"
 
   input {
     int ficha_id
@@ -9,9 +11,18 @@ query "fichas/{ficha_id}" verb=PATCH {
     // aquele componente da ficha.
     text observacao? = "__OMITTED__"
     json sintoma_ids? = "__OMITTED__"
+    // Conjunto final: pa_sistolica, fc, fr, temperatura, spo2, glicemia,
+    // glicemia_sinais_gravidade e gestante. Campo ausente ou vazio = não medido (add-classificacao-prioridade, D5).
+    json sinais_vitais? = "__OMITTED__"
+    // Lista final de {descricao, pontuacao} digitados pela Recepção/Triagem (D9).
+    json sintomas_livres? = "__OMITTED__"
   }
 
   stack {
+    function.run "auth/verificar_acesso" {
+      input = {usuario_id: $auth.id, perfis_permitidos: ["RECEPCAO_TRIAGEM"]}
+    } as $usuario
+
     var $altera_observacao {
       value = $input.observacao != "__OMITTED__"
     }
@@ -20,13 +31,25 @@ query "fichas/{ficha_id}" verb=PATCH {
       value = $input.sintoma_ids != "__OMITTED__"
     }
 
-    precondition ($altera_observacao || $altera_sintomas) {
+    var $altera_sinais {
+      value = $input.sinais_vitais != "__OMITTED__"
+    }
+
+    var $altera_livres {
+      value = $input.sintomas_livres != "__OMITTED__"
+    }
+
+    precondition ($altera_observacao || $altera_sintomas || $altera_sinais || $altera_livres) {
       error_type = "inputerror"
       error = "NENHUM_CAMPO_ATUALIZAVEL_INFORMADO"
     }
 
     db.transaction {
       stack {
+        function.run "classificacao/inicializar_classificacao" {
+          input = {}
+        } as $classificacao_inicializada
+
         db.get ficha_atendimento {
           field_name = "id"
           field_value = $input.ficha_id
@@ -35,6 +58,11 @@ query "fichas/{ficha_id}" verb=PATCH {
         precondition ($ficha != null) {
           error_type = "notfound"
           error = "FICHA_NAO_ENCONTRADA"
+        }
+
+        precondition ($ficha.status == "EM_TRIAGEM") {
+          error_type = "inputerror"
+          error = "FICHA_FORA_DA_TRIAGEM"
         }
 
         db.query ficha_sintoma {
@@ -82,6 +110,175 @@ query "fichas/{ficha_id}" verb=PATCH {
           }
         }
 
+        // Sintomas digitados (D9): só valem para esta ficha.
+        db.query ficha_sintoma_livre {
+          where = $db.ficha_sintoma_livre.ficha_id == $ficha.id
+          sort = {id: "asc"}
+          return = {type: "list"}
+        } as $livres_atuais
+
+        var $livres_anteriores {
+          value = $livres_atuais|map:{descricao: $$.descricao, pontuacao: $$.pontuacao}
+        }
+
+        var $livres_resultantes {
+          value = $livres_anteriores
+        }
+
+        conditional {
+          if ($altera_livres) {
+            precondition ($input.sintomas_livres|is_array) {
+              error_type = "inputerror"
+              error = "SINTOMAS_LIVRES_INVALIDO"
+            }
+
+            precondition (($input.sintomas_livres|count) <= 10) {
+              error_type = "inputerror"
+              error = "SINTOMAS_LIVRES_LIMITE"
+            }
+
+            db.query sintoma {
+              return = {type: "list"}
+            } as $catalogo
+
+            var $nomes_catalogo {
+              value = $catalogo|map:(($$.nome ?? "")|trim|to_lower|unaccent)
+            }
+
+            var $normalizados { value = [] }
+            var.update $livres_resultantes { value = [] }
+
+            foreach ($input.sintomas_livres) {
+              each as $item {
+                var $descricao {
+                  value = (($item|get:"descricao":"") ?? "")|to_text|trim
+                }
+
+                precondition (($descricao|strlen) >= 3 && ($descricao|strlen) <= 80) {
+                  error_type = "inputerror"
+                  error = "SINTOMA_LIVRE_DESCRICAO_INVALIDA"
+                }
+
+                var $pontuacao {
+                  value = $item|get:"pontuacao":null
+                }
+
+                precondition ($pontuacao != null && ([1, 2, 3]|in:$pontuacao)) {
+                  error_type = "inputerror"
+                  error = "SINTOMA_LIVRE_PONTUACAO_INVALIDA"
+                }
+
+                var $normalizado {
+                  value = $descricao|to_lower|unaccent
+                }
+
+                precondition (!($normalizados|in:$normalizado)) {
+                  error_type = "inputerror"
+                  error = "SINTOMA_LIVRE_DUPLICADO"
+                }
+
+                precondition (!($nomes_catalogo|in:$normalizado)) {
+                  error_type = "inputerror"
+                  error = "SINTOMA_LIVRE_EXISTE_NO_CATALOGO"
+                }
+
+                var.update $normalizados {
+                  value = $normalizados|push:$normalizado
+                }
+
+                var.update $livres_resultantes {
+                  value = $livres_resultantes|push:{descricao: $descricao, pontuacao: $pontuacao|to_int}
+                }
+              }
+            }
+          }
+        }
+
+        // Sinais vitais (D5): conjunto final, com limites de digitação (não são faixas de pontuação).
+        var $sinais_anteriores {
+          value = {
+            pa_sistolica             : $ficha.pa_sistolica
+            fc                       : $ficha.fc
+            fr                       : $ficha.fr
+            temperatura              : $ficha.temperatura
+            spo2                     : $ficha.spo2
+            glicemia                 : $ficha.glicemia
+            glicemia_sinais_gravidade: $ficha.glicemia_sinais_gravidade == true
+            gestante                 : $ficha.gestante == true
+          }
+        }
+
+        var $sinais_resultantes {
+          value = $sinais_anteriores
+        }
+
+        conditional {
+          if ($altera_sinais) {
+            precondition ($input.sinais_vitais != null && !($input.sinais_vitais|is_array)) {
+              error_type = "inputerror"
+              error = "SINAIS_VITAIS_INVALIDO"
+            }
+
+            var.update $sinais_resultantes {
+              value = {
+                glicemia_sinais_gravidade: ($input.sinais_vitais|get:"glicemia_sinais_gravidade":false) == true
+                gestante                 : ($input.sinais_vitais|get:"gestante":false) == true
+              }
+            }
+
+            foreach ([{campo: "pa_sistolica", minimo: 40, maximo: 300, decimal: false}, {campo: "fc", minimo: 20, maximo: 250, decimal: false}, {campo: "fr", minimo: 4, maximo: 80, decimal: false}, {campo: "temperatura", minimo: 25, maximo: 45, decimal: true}, {campo: "spo2", minimo: 50, maximo: 100, decimal: false}, {campo: "glicemia", minimo: 10, maximo: 1500, decimal: false}]) {
+              each as $regra {
+                var $bruto {
+                  value = $input.sinais_vitais|get:$regra.campo:null
+                }
+
+                var $valor { value = null }
+
+                conditional {
+                  if ($bruto != null && $bruto != "") {
+                    var $numero {
+                      value = $bruto|to_decimal
+                    }
+
+                    precondition ($numero >= $regra.minimo && $numero <= $regra.maximo) {
+                      error_type = "inputerror"
+                      error = "SINAL_VITAL_INVALIDO:" ~ $regra.campo
+                    }
+
+                    conditional {
+                      if ($regra.decimal) {
+                        // Temperatura com no máximo uma casa decimal.
+                        precondition (((($numero * 10) - (($numero * 10)|round:0))|abs) < 0.001) {
+                          error_type = "inputerror"
+                          error = "SINAL_VITAL_INVALIDO:" ~ $regra.campo
+                        }
+
+                        var.update $valor {
+                          value = ($numero|round:1)
+                        }
+                      }
+                      else {
+                        precondition (($numero|floor) == $numero) {
+                          error_type = "inputerror"
+                          error = "SINAL_VITAL_INVALIDO:" ~ $regra.campo
+                        }
+
+                        var.update $valor {
+                          value = $numero|to_int
+                        }
+                      }
+                    }
+                  }
+                }
+
+                var.update $sinais_resultantes {
+                  value = $sinais_resultantes|set:$regra.campo:$valor
+                }
+              }
+            }
+          }
+        }
+
         var $observacao_resultante {
           value = $ficha.observacao ?? ""
         }
@@ -94,7 +291,8 @@ query "fichas/{ficha_id}" verb=PATCH {
           }
         }
 
-        precondition ((($ids_resultantes|count) > 0) || (($observacao_resultante|strlen) > 0)) {
+        // RN04: sintoma do catálogo, sintoma digitado ou observação.
+        precondition ((($ids_resultantes|count) > 0) || (($livres_resultantes|count) > 0) || (($observacao_resultante|strlen) > 0)) {
           error_type = "inputerror"
           error = "FICHA_SEM_SINTOMA_OU_OBSERVACAO"
         }
@@ -136,14 +334,103 @@ query "fichas/{ficha_id}" verb=PATCH {
             }
           }
         }
+
+        conditional {
+          if ($altera_livres) {
+            conditional {
+              if (($livres_atuais|count) > 0) {
+                db.bulk.delete ficha_sintoma_livre {
+                  where = $db.ficha_sintoma_livre.ficha_id == $ficha.id
+                } as $livres_removidos
+              }
+            }
+
+            foreach ($livres_resultantes) {
+              each as $livre {
+                db.add ficha_sintoma_livre {
+                  data = {ficha_id: $ficha.id, descricao: $livre.descricao, pontuacao: $livre.pontuacao, criado_por: $usuario.id}
+                } as $livre_criado
+              }
+            }
+          }
+        }
+
+        conditional {
+          if ($altera_sinais) {
+            db.patch ficha_atendimento {
+              field_name = "id"
+              field_value = $ficha.id
+              data = $sinais_resultantes
+            } as $ficha_com_sinais
+          }
+        }
+
+        // Recálculo: a prioridade atual volta a ser a calculada e o ajuste manual é descartado (decisão do PO, 08/11/2026).
+        function.run "classificacao/avaliar_ficha" {
+          input = {ficha_id: $ficha.id}
+        } as $avaliacao
+
+        var $prioridade_calculada {
+          value = $avaliacao.classificacao.prioridade_calculada
+        }
+
+        var $classificacao_risco { value = null }
+
+        conditional {
+          if ($prioridade_calculada == "VERMELHA") {
+            var.update $classificacao_risco { value = "ALTO" }
+          }
+          elseif ($prioridade_calculada == "AMARELA") {
+            var.update $classificacao_risco { value = "MODERADO" }
+          }
+          elseif ($prioridade_calculada == "AZUL") {
+            var.update $classificacao_risco { value = "BAIXO" }
+          }
+        }
+
+        db.patch ficha_atendimento {
+          field_name = "id"
+          field_value = $ficha.id
+          data = {
+            escore_risco        : $avaliacao.classificacao.escore_total
+            parametro_critico   : $avaliacao.classificacao.item_critico
+            classificacao_risco : $classificacao_risco
+            prioridade_calculada: $prioridade_calculada
+            prioridade_atual    : $prioridade_calculada
+            justificativa_ajuste: null
+            condicao_prioritaria: $avaliacao.classificacao.condicao_prioritaria
+          }
+        } as $ficha_recalculada
+
+        var $tipo_evento { value = "SINAIS_VITAIS_ALTERADOS" }
+
+        conditional {
+          if ($altera_sintomas || $altera_livres || $altera_observacao) {
+            var.update $tipo_evento { value = "SINTOMAS_ALTERADOS" }
+          }
+        }
+
+        function.run "registrar_alteracao" {
+          input = {
+            usuario_id    : $usuario.id
+            tipo_evento   : $tipo_evento
+            entidade      : "FICHA_ATENDIMENTO"
+            registro_id   : $ficha.id
+            valor_anterior: {observacao: $ficha.observacao, sintoma_ids: $ids_atuais, sintomas_livres: $livres_anteriores, sinais_vitais: $sinais_anteriores, prioridade_calculada: $ficha.prioridade_calculada, prioridade_atual: $ficha.prioridade_atual, justificativa_ajuste: $ficha.justificativa_ajuste}
+            valor_novo    : {observacao: $observacao_resultante, sintoma_ids: $ids_resultantes, sintomas_livres: $livres_resultantes, sinais_vitais: $sinais_resultantes, prioridade_calculada: $prioridade_calculada, prioridade_atual: $prioridade_calculada}
+          }
+        } as $auditoria
       }
     }
   }
 
   response = {
-    id         : $input.ficha_id
-    observacao : $observacao_resultante
-    sintoma_ids: $ids_resultantes
+    id             : $input.ficha_id
+    observacao     : $observacao_resultante
+    sintoma_ids    : $ids_resultantes
+    sintomas_livres: $livres_resultantes
+    sinais_vitais  : $sinais_resultantes
+    classificacao  : $avaliacao.classificacao
   }
 
   guid = "XJ6U5MqK_6-Cg2920GUm4eZWp80"

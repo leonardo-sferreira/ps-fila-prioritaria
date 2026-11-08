@@ -2,6 +2,7 @@
 
 import asyncio
 import os
+import unicodedata
 from datetime import datetime, timedelta, timezone
 from collections.abc import AsyncIterator
 from pathlib import Path
@@ -27,7 +28,20 @@ def carregar_variaveis_ambiente() -> None:
 carregar_variaveis_ambiente()
 
 
-MENSAGEM_LIMITE_XANO = "O sistema recebeu muitos acessos ao mesmo tempo. Aguarde alguns segundos e tente novamente."
+# Códigos da API da ficha e da classificação traduzidos para a Recepção/Triagem.
+MENSAGENS_ERRO_API = {
+    "FICHA_NAO_FINALIZADA_EXISTENTE": "Este paciente já está na fila de atendimento (ficha aguardando ou chamada). Não é possível abrir outra ficha.",
+    "FICHA_FORA_DA_TRIAGEM": "Esta ficha já saiu da triagem e não pode mais ser alterada aqui.",
+    "SINTOMA_LIVRE_DESCRICAO_INVALIDA": "Descreva o sintoma não listado com 3 a 80 caracteres.",
+    "SINTOMA_LIVRE_PONTUACAO_INVALIDA": "Escolha a gravidade do sintoma não listado: 1, 2 ou 3.",
+    "SINTOMA_LIVRE_DUPLICADO": "Há sintomas não listados repetidos.",
+    "SINTOMA_LIVRE_EXISTE_NO_CATALOGO": "Um sintoma digitado já existe na lista: selecione-o na pesquisa.",
+    "SINTOMAS_LIVRES_LIMITE": "Limite de 10 sintomas não listados por ficha.",
+    "JUSTIFICATIVA_OBRIGATORIA": "A justificativa é obrigatória.",
+    "PRIORIDADE_IGUAL_A_CALCULADA": "Essa já é a prioridade calculada. Escolha outra cor.",
+    "PRIORIDADE_INVALIDA": "Escolha a prioridade.",
+}
+MENSAGEM_LIMITE_XANO ="O sistema recebeu muitos acessos ao mesmo tempo. Aguarde alguns segundos e tente novamente."
 
 
 def _mensagem_erro(resposta: httpx.Response) -> str:
@@ -47,6 +61,11 @@ def _mensagem_erro(resposta: httpx.Response) -> str:
             return "Já existe paciente com este CPF (CPF_DUPLICADO). Pesquise novamente para carregar o cadastro."
         if mensagem == "FICHA_SEM_SINTOMA_OU_OBSERVACAO":
             return "Informe ao menos um sintoma ou uma observação."
+        if isinstance(mensagem, str) and mensagem.startswith("SINAL_VITAL_INVALIDO:"):
+            campo = mensagem.split(":", 1)[1]
+            return f"Valor fora do aceito em {NOME_SINAL_VITAL.get(campo, campo)}. Confira o número digitado."
+        if isinstance(mensagem, str) and mensagem in MENSAGENS_ERRO_API:
+            return MENSAGENS_ERRO_API[mensagem]
         if isinstance(mensagem, str):
             return mensagem
     return "Não foi possível concluir a solicitação."
@@ -825,90 +844,199 @@ class FilaTicketsState(rx.State):
         return rx.redirect("/recepcao/pacientes")
 
 
+# Sinais vitais da ficha (add-classificacao-prioridade). A pontuação e a cor são calculadas no Xano.
+CAMPOS_SINAIS_VITAIS = ["pa_sistolica", "fc", "fr", "temperatura", "spo2", "glicemia"]
+NOME_SINAL_VITAL = {
+    "pa_sistolica": "PA sistólica",
+    "fc": "frequência cardíaca",
+    "fr": "frequência respiratória",
+    "temperatura": "temperatura",
+    "spo2": "SpO2",
+    "glicemia": "glicemia",
+}
+NOME_CONDICAO = {"NENHUMA": "Nenhuma", "IDOSO": "Idoso", "CRIANCA": "Criança", "GESTANTE": "Gestante"}
+LIMITE_SINTOMAS_LIVRES = 10
+_PENDENCIA_SINAL = {
+    "PA_SISTOLICA_NAO_INFORMADO": "Informe a PA sistólica.",
+    "FC_NAO_INFORMADO": "Informe a frequência cardíaca.",
+    "FR_NAO_INFORMADO": "Informe a frequência respiratória.",
+    "TEMPERATURA_NAO_INFORMADO": "Informe a temperatura.",
+    "SPO2_NAO_INFORMADO": "Informe a SpO2.",
+    "TABELA_ADULTA_NAO_APLICAVEL": "Menor de 16 anos ou gestante: a tabela adulta não se aplica. Defina a prioridade manualmente, com justificativa.",
+    "SEM_SINTOMA_OU_OBSERVACAO": "Informe ao menos um sintoma ou uma observação.",
+    "PARAMETRO_NAO_CONFIGURADO": "Os parâmetros da classificação não estão configurados.",
+}
+
+
+def _texto_pendencia(codigo: str) -> str:
+    if codigo.startswith("FAIXA_NAO_CONFIGURADA:"):
+        return f"Faixa de pontuação não configurada para {codigo.split(':', 1)[1]}."
+    return _PENDENCIA_SINAL.get(codigo, codigo)
+
+
+def _texto_sinal(valor: Any) -> str:
+    """Mostra o número salvo no campo, com vírgula decimal; null vira campo vazio."""
+    if valor is None or valor == "":
+        return ""
+    if isinstance(valor, float) and valor.is_integer():
+        valor = int(valor)
+    return str(valor).replace(".", ",")
+
+
+def _normalizar_texto(texto: str) -> str:
+    """Compara nomes de sintomas sem diferenciar maiúsculas, acentos e espaços extras (como o Xano)."""
+    sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
+    return " ".join(sem_acento.casefold().split())
+
+
 class FichaState(rx.State):
-    """Estado da ficha de triagem, separado do cadastro de Paciente."""
+    """Estado da ficha de triagem, separado do cadastro de Paciente.
+
+    A regra clínica (escore, cor, pendências) é calculada no Xano; aqui só ficam os valores digitados,
+    o envio e a exibição do resultado (add-classificacao-prioridade, D7 e D8).
+    """
 
     ficha_id: int = 0
+    ficha: dict[str, Any] = {}
     paciente: dict[str, Any] = {}
     catalogo_sintomas: list[dict[str, Any]] = []
     sintoma_ids_selecionados: list[int] = []
     observacao: str = ""
+    # Sintomas digitados pela Recepção/Triagem: [{descricao, pontuacao}] (D9).
+    sintomas_livres: list[dict[str, Any]] = []
+    # Sinais vitais como texto dos campos; vazio = não medido.
+    sinais: dict[str, str] = {campo: "" for campo in CAMPOS_SINAIS_VITAIS}
+    glicemia_gravidade: bool = False
+    gestante: bool = False
+    classificacao: dict[str, Any] = {}
     sintomas_alterados: bool = False
     observacao_alterada: bool = False
+    livres_alterados: bool = False
+    sinais_alterados: bool = False
     carregando: bool = False
     salvando: bool = False
     mensagem: str = ""
     erro: bool = False
+    # Ajuste manual da prioridade (D6).
+    ajuste_aberto: bool = False
+    ajuste_prioridade: str = ""
+    ajuste_justificativa: str = ""
+    ajuste_erro: str = ""
+    ajustando: bool = False
 
     @rx.var
     def cpf_exibido(self) -> str:
         return mascarar_cpf(self.paciente.get("cpf"))
 
-    def _url(self, caminho: str) -> str | None:
-        base_url = os.getenv("XANO_TRIAGEM_API_URL", "").strip().rstrip("/")
-        if not base_url:
-            self.mensagem = "Configure XANO_TRIAGEM_API_URL para conectar a ficha à API do PS."
-            self.erro = True
-            return None
-        return f"{base_url}{caminho}"
+    @rx.var
+    def prioridade_exibida(self) -> str:
+        """Prioridade atual gravada ou, sem ajuste salvo, a calculada agora pelo Xano."""
+        return str(self.classificacao.get("prioridade_atual") or self.classificacao.get("prioridade_calculada") or "")
+
+    @rx.var
+    def prioridade_calculada(self) -> str:
+        return str(self.classificacao.get("prioridade_calculada") or "")
+
+    @rx.var
+    def ajustada_manualmente(self) -> bool:
+        return bool(self.classificacao.get("justificativa_ajuste"))
+
+    @rx.var
+    def resumo_escore(self) -> str:
+        total = self.classificacao.get("escore_total")
+        sintomas = self.classificacao.get("escore_sintomas")
+        sinais = self.classificacao.get("escore_sinais")
+        if total is None:
+            return f"Escore incompleto (sintomas {sintomas or 0})"
+        critico = " · item isolado de 3 pontos → Vermelha" if self.classificacao.get("item_critico") else ""
+        return f"Escore total {total} (sintomas {sintomas or 0} · sinais vitais {sinais or 0}){critico}"
+
+    @rx.var
+    def pendencias_texto(self) -> list[str]:
+        return [_texto_pendencia(str(p)) for p in (self.classificacao.get("pendencias") or [])]
+
+    @rx.var
+    def condicao_texto(self) -> str:
+        return NOME_CONDICAO.get(str(self.classificacao.get("condicao_prioritaria") or "NENHUMA"), "Nenhuma")
+
+    @rx.var
+    def idade_texto(self) -> str:
+        idade = self.paciente.get("idade")
+        return f"{idade} anos" if idade is not None else "Idade não informada"
 
     def _limpar_feedback(self) -> None:
         self.mensagem = ""
         self.erro = False
 
+    async def _requisitar(self, metodo: str, caminho: str, **kwargs: Any) -> httpx.Response | None:
+        """Chama o grupo Triagem com o token da sessão; 401 encerra a sessão local (D7)."""
+        auth = await self.get_state(AuthState)
+        try:
+            resposta = api.requisitar(metodo, "XANO_TRIAGEM_API_URL", caminho, token=auth.token, **kwargs)
+        except api.ConfiguracaoAusente:
+            self.mensagem = "Configure XANO_TRIAGEM_API_URL para conectar a ficha à API do PS."
+            self.erro = True
+            return None
+        except httpx.RequestError:
+            self.mensagem = "Não foi possível conectar à API de Fichas."
+            self.erro = True
+            return None
+        if resposta.status_code == 401:
+            auth._encerrar_sessao_local("Sua sessão expirou. Faça login novamente.")
+        if not resposta.is_success:
+            self.mensagem = _mensagem_erro(resposta)
+            self.erro = True
+            return None
+        return resposta
+
     def _carregar_resposta_ficha(self, dados: dict[str, Any]) -> None:
         ficha = dados.get("ficha") or {}
+        self.ficha = dict(ficha)
         self.ficha_id = int(ficha.get("id", self.ficha_id))
         self.paciente = dict(dados.get("paciente") or {})
         self.observacao = str(ficha.get("observacao") or "")
         self.sintoma_ids_selecionados = sorted(int(sintoma["id"]) for sintoma in (dados.get("sintomas") or []))
+        self.sintomas_livres = [
+            {"descricao": str(livre.get("descricao") or ""), "pontuacao": int(livre.get("pontuacao") or 0)}
+            for livre in (dados.get("sintomas_livres") or [])
+        ]
+        self.sinais = {campo: _texto_sinal(ficha.get(campo)) for campo in CAMPOS_SINAIS_VITAIS}
+        self.glicemia_gravidade = bool(ficha.get("glicemia_sinais_gravidade"))
+        self.gestante = bool(ficha.get("gestante"))
+        self.classificacao = dict(dados.get("classificacao") or {})
+        self.sintomas_alterados = False
+        self.observacao_alterada = False
+        self.livres_alterados = False
+        self.sinais_alterados = False
 
-    async def carregar(self, ficha_id: str | int) -> None:
-        """Recupera catálogo ativo e estado persistido para edição da ficha."""
-        try:
-            ficha_id_int = int(ficha_id)
-        except (TypeError, ValueError):
-            self.mensagem = "Ficha inválida."
-            self.erro = True
-            return
-
-        url_ficha = self._url(f"/fichas/{ficha_id_int}")
-        url_sintomas = self._url("/sintomas")
-        if not url_ficha or not url_sintomas:
-            return
-
-        auth = await self.get_state(AuthState)
-        cabecalhos = {"Authorization": f"Bearer {auth.token}"}
-        self.carregando = True
-        self._limpar_feedback()
-        try:
-            resposta_ficha = httpx.get(url_ficha, headers=cabecalhos, timeout=10)
-            resposta_sintomas = httpx.get(url_sintomas, headers=cabecalhos, timeout=10)
-        except httpx.RequestError:
-            self.mensagem = "Não foi possível conectar à API de Fichas."
-            self.erro = True
-            self.carregando = False
-            return
-
-        if not resposta_ficha.is_success:
-            self.mensagem = _mensagem_erro(resposta_ficha)
-            self.erro = True
-            self.carregando = False
-            return
-        if not resposta_sintomas.is_success:
-            self.mensagem = _mensagem_erro(resposta_sintomas)
-            self.erro = True
-            self.carregando = False
-            return
-
+    async def _recarregar(self) -> bool:
+        resposta_ficha = await self._requisitar("GET", f"/fichas/{self.ficha_id}")
+        if resposta_ficha is None:
+            return False
+        resposta_sintomas = await self._requisitar("GET", "/sintomas")
+        if resposta_sintomas is None:
+            return False
         self._carregar_resposta_ficha(resposta_ficha.json())
         self.catalogo_sintomas = sorted(
             list(resposta_sintomas.json() or []),
             key=lambda sintoma: str(sintoma["nome"]).casefold(),
         )
-        self.sintomas_alterados = False
-        self.observacao_alterada = False
-        self.carregando = False
+        return True
+
+    async def carregar(self, ficha_id: str | int) -> None:
+        """Recupera catálogo ativo e estado persistido para edição da ficha."""
+        try:
+            self.ficha_id = int(ficha_id)
+        except (TypeError, ValueError):
+            self.mensagem = "Ficha inválida."
+            self.erro = True
+            return
+        self.carregando = True
+        self._limpar_feedback()
+        try:
+            await self._recarregar()
+        finally:
+            self.carregando = False
 
     async def carregar_da_rota(self) -> None:
         ficha_id = self.router.page.params.get("id", "")
@@ -927,30 +1055,83 @@ class FichaState(rx.State):
         self.sintoma_ids_selecionados = sorted(selecionados)
         self.sintomas_alterados = True
 
+    def set_sinal(self, campo: str, valor: str) -> None:
+        if campo in CAMPOS_SINAIS_VITAIS:
+            self.sinais = {**self.sinais, campo: valor}
+            self.sinais_alterados = True
+
+    def set_glicemia_gravidade(self, marcado: bool) -> None:
+        self.glicemia_gravidade = bool(marcado)
+        self.sinais_alterados = True
+
+    def set_gestante(self, marcado: bool) -> None:
+        self.gestante = bool(marcado)
+        self.sinais_alterados = True
+
+    def adicionar_sintoma_livre(self, descricao: str, pontuacao: int) -> None:
+        """Valida na tela o que o Xano também valida, para avisar antes de salvar (D9)."""
+        texto = " ".join(str(descricao or "").split())
+        if not 3 <= len(texto) <= 80:
+            self.mensagem = "Descreva o sintoma com 3 a 80 caracteres."
+            self.erro = True
+            return
+        if int(pontuacao) not in (1, 2, 3):
+            self.mensagem = "Escolha a gravidade do sintoma: 1, 2 ou 3."
+            self.erro = True
+            return
+        chave = _normalizar_texto(texto)
+        if any(_normalizar_texto(str(s.get("nome"))) == chave for s in self.catalogo_sintomas):
+            self.mensagem = f"\"{texto}\" já está na lista de sintomas: selecione-o na pesquisa."
+            self.erro = True
+            return
+        if any(_normalizar_texto(str(s.get("descricao"))) == chave for s in self.sintomas_livres):
+            self.mensagem = f"\"{texto}\" já foi adicionado."
+            self.erro = True
+            return
+        if len(self.sintomas_livres) >= LIMITE_SINTOMAS_LIVRES:
+            self.mensagem = f"Limite de {LIMITE_SINTOMAS_LIVRES} sintomas não listados por ficha."
+            self.erro = True
+            return
+        self.sintomas_livres = [*self.sintomas_livres, {"descricao": texto, "pontuacao": int(pontuacao)}]
+        self.livres_alterados = True
+        self._limpar_feedback()
+
+    def remover_sintoma_livre(self, descricao: str) -> None:
+        self.sintomas_livres = [s for s in self.sintomas_livres if s.get("descricao") != descricao]
+        self.livres_alterados = True
+
+    def _sinais_para_envio(self) -> dict[str, Any] | None:
+        """Converte os campos em números; vazio vira null. Retorna None e avisa se algum não for número."""
+        dados: dict[str, Any] = {"glicemia_sinais_gravidade": self.glicemia_gravidade, "gestante": self.gestante}
+        for campo in CAMPOS_SINAIS_VITAIS:
+            texto = str(self.sinais.get(campo) or "").strip().replace(",", ".")
+            if not texto:
+                dados[campo] = None
+                continue
+            try:
+                numero = float(texto)
+            except ValueError:
+                self.mensagem = f"Valor inválido em {NOME_SINAL_VITAL[campo]}."
+                self.erro = True
+                return None
+            dados[campo] = numero if campo == "temperatura" else (int(numero) if numero.is_integer() else numero)
+        return dados
+
     async def salvar(self) -> AsyncIterator[None]:
-        """Envia o estado final da coleção e a observação geral para validação do backend."""
+        """Envia o estado final de sintomas, observação e sinais vitais; o Xano valida e recalcula a cor."""
         if self.salvando:
             return
 
         if not self.ficha_id:
             self.mensagem = "Nenhuma ficha foi carregada para salvar."
             self.erro = True
-            self.salvando = False
             return
 
-        if not self.sintoma_ids_selecionados and not self.observacao.strip():
+        if not self.sintoma_ids_selecionados and not self.sintomas_livres and not self.observacao.strip():
             self.mensagem = "Informe ao menos um sintoma ou uma observação/queixa."
             self.erro = True
-            self.salvando = False
             return
 
-        url_ficha = self._url(f"/fichas/{self.ficha_id}")
-        url_sintomas = self._url("/sintomas")
-        if not url_ficha or not url_sintomas:
-            self.salvando = False
-            return
-
-        self.salvando = True
         self._limpar_feedback()
         dados: dict[str, Any] = {}
         if self.sintomas_alterados:
@@ -958,53 +1139,83 @@ class FichaState(rx.State):
             dados["sintoma_ids"] = self.sintoma_ids_selecionados
         if self.observacao_alterada:
             dados["observacao"] = self.observacao
+        if self.livres_alterados:
+            dados["sintomas_livres"] = self.sintomas_livres
+        if self.sinais_alterados:
+            sinais = self._sinais_para_envio()
+            if sinais is None:
+                return
+            dados["sinais_vitais"] = sinais
         if not dados:
-            self.salvando = False
             self.mensagem = "Nenhuma alteração para salvar."
-            self.erro = False
             return
 
-        auth = await self.get_state(AuthState)
-        cabecalhos = {"Authorization": f"Bearer {auth.token}"}
-
+        self.salvando = True
         # Entrega o loading antes das requisições de PATCH e GET.
         yield
         try:
-            try:
-                resposta = httpx.patch(url_ficha, json=dados, headers=cabecalhos, timeout=10)
-            except httpx.RequestError:
-                self.mensagem = "Não foi possível conectar à API de Fichas."
-                self.erro = True
-            else:
-                if not resposta.is_success:
-                    self.mensagem = _mensagem_erro(resposta)
+            resposta = await self._requisitar("PATCH", f"/fichas/{self.ficha_id}", json=dados)
+            if resposta is not None:
+                if await self._recarregar():
+                    self.mensagem = "Ficha salva. A prioridade foi recalculada."
+                    self.erro = False
+                elif not self.mensagem:
+                    self.mensagem = "A ficha foi salva, mas não foi possível recarregá-la."
                     self.erro = True
-                else:
-                    try:
-                        resposta_ficha = httpx.get(url_ficha, headers=cabecalhos, timeout=10)
-                        resposta_sintomas = httpx.get(url_sintomas, headers=cabecalhos, timeout=10)
-                    except httpx.RequestError:
-                        self.mensagem = "A ficha foi salva, mas não foi possível recarregá-la."
-                        self.erro = True
-                    else:
-                        if not resposta_ficha.is_success:
-                            self.mensagem = _mensagem_erro(resposta_ficha)
-                            self.erro = True
-                        elif not resposta_sintomas.is_success:
-                            self.mensagem = _mensagem_erro(resposta_sintomas)
-                            self.erro = True
-                        else:
-                            self._carregar_resposta_ficha(resposta_ficha.json())
-                            self.catalogo_sintomas = sorted(
-                                list(resposta_sintomas.json() or []),
-                                key=lambda sintoma: str(sintoma["nome"]).casefold(),
-                            )
-                            self.sintomas_alterados = False
-                            self.observacao_alterada = False
-                            self.mensagem = "Ficha salva com sucesso."
-                            self.erro = False
         finally:
             self.salvando = False
+
+    def abrir_ajuste(self) -> None:
+        self.ajuste_prioridade = ""
+        self.ajuste_justificativa = ""
+        self.ajuste_erro = ""
+        self.ajuste_aberto = True
+
+    def fechar_ajuste(self) -> None:
+        self.ajuste_aberto = False
+
+    def set_ajuste_aberto(self, aberto: bool) -> None:
+        self.ajuste_aberto = bool(aberto)
+
+    def set_ajuste_prioridade(self, valor: str) -> None:
+        self.ajuste_prioridade = valor
+
+    def set_ajuste_justificativa(self, valor: str) -> None:
+        self.ajuste_justificativa = valor
+
+    async def confirmar_ajuste(self) -> None:
+        """Ajuste manual ou classificação manual excepcional, sempre com justificativa (D6)."""
+        if self.ajuste_prioridade not in ("VERMELHA", "AMARELA", "AZUL"):
+            self.ajuste_erro = "Escolha a prioridade."
+            return
+        if not self.ajuste_justificativa.strip():
+            self.ajuste_erro = "A justificativa é obrigatória."
+            return
+        if self.prioridade_calculada and self.ajuste_prioridade == self.prioridade_calculada:
+            self.ajuste_erro = "Essa já é a prioridade calculada. Escolha outra cor."
+            return
+        if self.sintomas_alterados or self.observacao_alterada or self.livres_alterados or self.sinais_alterados:
+            self.ajuste_erro = "Salve a ficha antes de ajustar a prioridade: salvar recalcula a cor e descarta ajustes."
+            return
+        self.ajuste_erro = ""
+        self._limpar_feedback()
+        self.ajustando = True
+        try:
+            resposta = await self._requisitar(
+                "POST",
+                f"/fichas/{self.ficha_id}/prioridade",
+                json={"prioridade": self.ajuste_prioridade, "justificativa": self.ajuste_justificativa.strip()},
+            )
+            if resposta is None:
+                self.ajuste_erro = self.mensagem
+                self._limpar_feedback()
+                return
+            self.ajuste_aberto = False
+            if await self._recarregar():
+                self.mensagem = "Prioridade ajustada. A justificativa ficou registrada na auditoria."
+                self.erro = False
+        finally:
+            self.ajustando = False
 
 
 class SeletorSintomasState(rx.State):
@@ -1658,13 +1869,13 @@ def chip_tipo_ticket(ticket: dict[str, Any]) -> rx.Component:
 
 
 def cartao_painel(*filhos: rx.Component, **props: Any) -> rx.Component:
+    props.setdefault("width", "100%")
     return rx.box(
         *filhos,
         background="white",
         border=f"1px solid {COR_BORDA}",
         border_radius="12px",
         box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
-        width="100%",
         **props,
     )
 
@@ -1888,109 +2099,345 @@ def sintoma_selecionado(sintoma: dict[str, Any]) -> rx.Component:
     )
 
 
-def recepcao_ficha() -> rx.Component:
-    return rx.center(
-        rx.card(
+# Cores e textos das prioridades, como na tela 4 do Figma.
+CORES_PRIORIDADE = [
+    ("VERMELHA", "Vermelha", "Risco de morte", "#C62828"),
+    ("AMARELA", "Amarela", "Urgente", "#ED8B00"),
+    ("AZUL", "Azul", "Não urgente", "#1565C0"),
+]
+
+
+def rotulo_secao(texto: str) -> rx.Component:
+    return rx.text(texto, size="1", weight="bold", color=COR_SECUNDARIA, letter_spacing="0.02em")
+
+
+def campo_sinal(rotulo: str, campo: str, exemplo: str) -> rx.Component:
+    return campo_rotulado(
+        rotulo,
+        rx.input(
+            value=FichaState.sinais[campo],
+            on_change=lambda valor: FichaState.set_sinal(campo, valor),
+            placeholder=exemplo,
+            input_mode="decimal",
+            size="3",
+            width="100%",
+        ),
+    )
+
+
+def sinais_vitais_ficha() -> rx.Component:
+    return rx.vstack(
+        rotulo_secao("SINAIS VITAIS"),
+        rx.grid(
+            campo_sinal("PA SISTÓLICA (mmHg)", "pa_sistolica", "Ex.: 150"),
+            campo_sinal("FREQUÊNCIA CARDÍACA (bpm)", "fc", "Ex.: 112"),
+            campo_sinal("FREQUÊNCIA RESPIRATÓRIA (irpm)", "fr", "Ex.: 24"),
+            campo_sinal("TEMPERATURA (°C)", "temperatura", "Ex.: 37,1"),
+            campo_sinal("SpO2 (%)", "spo2", "Ex.: 96"),
             rx.vstack(
-                rx.heading("Ficha de atendimento", size="7"),
-                rx.cond(
-                    FichaState.paciente != {},
-                    rx.vstack(
-                        rx.text("Paciente: ", FichaState.paciente["nome"], weight="medium"),
-                        rx.text("CPF: ", FichaState.cpf_exibido, size="2", color_scheme="gray"),
-                        spacing="1",
-                        align="start",
+                campo_sinal("GLICEMIA (OPCIONAL, mg/dL)", "glicemia", "Ex.: 110"),
+                rx.checkbox(
+                    "glicemia com sinais de gravidade",
+                    checked=FichaState.glicemia_gravidade,
+                    on_change=FichaState.set_glicemia_gravidade,
+                    size="2",
+                ),
+                spacing="2",
+                width="100%",
+            ),
+            columns=rx.breakpoints(initial="1", sm="2", md="3"),
+            spacing="4",
+            width="100%",
+        ),
+        spacing="2",
+        width="100%",
+    )
+
+
+def sintoma_livre_selecionado(livre: dict[str, Any]) -> rx.Component:
+    return rx.hstack(
+        rx.text(livre["descricao"], min_width="0", white_space="normal", line_height="1.35"),
+        rx.badge("não listado · ", livre["pontuacao"], " pt(s)", color_scheme="gray", variant="soft"),
+        rx.spacer(),
+        rx.button(
+            "×",
+            on_click=FichaState.remover_sintoma_livre(livre["descricao"]),
+            aria_label="Remover sintoma não listado",
+            variant="ghost",
+            color_scheme="gray",
+            size="2",
+            flex_shrink="0",
+        ),
+        align="center",
+        spacing="2",
+        border="1px dashed var(--gray-6)",
+        border_radius="0.375rem",
+        padding="0.35rem 0.5rem",
+        width="100%",
+    )
+
+
+def adicionar_nao_listado() -> rx.Component:
+    """Sintoma digitado (D9): a Recepção/Triagem escolhe a gravidade; vale só para esta ficha."""
+    busca = SeletorSintomasState.busca.strip()
+    return rx.cond(
+        busca.length() >= 3,
+        rx.vstack(
+            rx.divider(),
+            rx.text("Não encontrou? Adicionar \"", busca, "\" como sintoma não listado:", size="2", color=COR_SECUNDARIA),
+            rx.hstack(
+                *[
+                    rx.button(
+                        nome,
+                        on_click=[FichaState.adicionar_sintoma_livre(busca, pontos), SeletorSintomasState.limpar_busca],
+                        variant="outline",
+                        color_scheme="gray",
+                        size="2",
+                    )
+                    for pontos, nome in ((1, "Leve · 1 pt"), (2, "Moderado · 2 pts"), (3, "Grave · 3 pts"))
+                ],
+                spacing="2",
+                wrap="wrap",
+            ),
+            spacing="2",
+            width="100%",
+        ),
+    )
+
+
+def sintomas_ficha() -> rx.Component:
+    return rx.vstack(
+        rotulo_secao("SINTOMAS (DA LISTA OU NÃO LISTADOS) E OBSERVAÇÃO"),
+        rx.popover.root(
+            rx.popover.trigger(
+                rx.button("+ Pesquisar ou adicionar sintoma...", variant="soft", color_scheme="gray", justify="between", width="100%")
+            ),
+            rx.popover.content(
+                rx.vstack(
+                    rx.input(
+                        placeholder="Pesquisar por nome...",
+                        value=SeletorSintomasState.busca,
+                        on_change=SeletorSintomasState.set_busca,
+                        width="100%",
+                        auto_focus=True,
                     ),
-                ),
-                rx.cond(
-                    FichaState.mensagem != "",
-                    rx.callout(FichaState.mensagem, color_scheme=rx.cond(FichaState.erro, "red", "blue")),
-                ),
-                rx.heading("Sintomas", size="5"),
-                rx.text("Selecione um ou mais sintomas, ou informe a queixa geral abaixo.", size="2", color_scheme="gray"),
-                rx.cond(
-                    FichaState.carregando,
-                    rx.spinner(),
-                    rx.vstack(
-                        rx.text("Adicionar sintoma", size="2", weight="medium"),
-                        rx.popover.root(
-                            rx.popover.trigger(
-                                rx.button(
-                                    "Pesquisar ou selecionar sintoma...",
-                                    variant="soft",
-                                    color_scheme="gray",
-                                    justify="between",
-                                    width="100%",
-                                )
-                            ),
-                            rx.popover.content(
-                                rx.vstack(
-                                    rx.input(
-                                        placeholder="Pesquisar por nome...",
-                                        value=SeletorSintomasState.busca,
-                                        on_change=SeletorSintomasState.set_busca,
-                                        width="100%",
-                                        auto_focus=True,
-                                    ),
-                                    rx.box(
-                                        rx.vstack(
-                                            rx.foreach(
-                                                FichaState.catalogo_sintomas,
-                                                lambda sintoma: rx.cond(
-                                                    (~FichaState.sintoma_ids_selecionados.contains(sintoma["id"].to(int)))
-                                                    & sintoma["nome"].to(str).lower().contains(
-                                                        SeletorSintomasState.busca.strip().lower()
-                                                    ),
-                                                    opcao_sintoma(sintoma),
-                                                ),
-                                            ),
-                                            spacing="1",
-                                            align="stretch",
-                                            width="100%",
-                                        ),
-                                        max_height="15rem",
-                                        overflow_y="auto",
-                                        width="100%",
-                                    ),
-                                    spacing="2",
-                                    align="stretch",
-                                    width="100%",
+                    rx.box(
+                        rx.vstack(
+                            rx.foreach(
+                                FichaState.catalogo_sintomas,
+                                lambda sintoma: rx.cond(
+                                    (~FichaState.sintoma_ids_selecionados.contains(sintoma["id"].to(int)))
+                                    & sintoma["nome"].to(str).lower().contains(SeletorSintomasState.busca.strip().lower()),
+                                    opcao_sintoma(sintoma),
                                 ),
-                                width="min(34rem, calc(100vw - 3rem))",
                             ),
+                            spacing="1",
+                            align="stretch",
+                            width="100%",
                         ),
-                        rx.text("Sintomas selecionados", size="2", weight="medium", margin_top="2"),
-                        rx.cond(
-                            FichaState.sintoma_ids_selecionados.length() > 0,
-                            rx.vstack(
-                                rx.foreach(FichaState.catalogo_sintomas, sintoma_selecionado),
-                                spacing="1",
-                                align="stretch",
-                                width="100%",
-                            ),
-                            rx.text("Nenhum sintoma selecionado.", size="2", color_scheme="gray"),
-                        ),
-                        spacing="2",
-                        align="stretch",
+                        max_height="15rem",
+                        overflow_y="auto",
                         width="100%",
                     ),
-                ),
-                rx.heading("Observação / queixa geral", size="5"),
-                rx.text_area(
-                    value=FichaState.observacao,
-                    on_change=FichaState.set_observacao,
-                    placeholder="Descreva a queixa geral do paciente (opcional se houver sintoma).",
+                    adicionar_nao_listado(),
+                    spacing="2",
+                    align="stretch",
                     width="100%",
                 ),
-                rx.button("Salvar ficha", on_click=FichaState.salvar, loading=FichaState.salvando),
-                spacing="4",
-                width="100%",
-                align="stretch",
+                width="min(34rem, calc(100vw - 3rem))",
             ),
-            width="100%",
-            max_width="96rem",
         ),
-        padding="2rem",
+        rx.cond(
+            (FichaState.sintoma_ids_selecionados.length() > 0) | (FichaState.sintomas_livres.length() > 0),
+            rx.vstack(
+                rx.foreach(FichaState.catalogo_sintomas, sintoma_selecionado),
+                rx.foreach(FichaState.sintomas_livres, sintoma_livre_selecionado),
+                spacing="1",
+                align="stretch",
+                width="100%",
+            ),
+            rx.text("Nenhum sintoma selecionado.", size="2", color=COR_SECUNDARIA),
+        ),
+        rx.text_area(
+            value=FichaState.observacao,
+            on_change=FichaState.set_observacao,
+            placeholder="Observação / queixa geral (opcional se houver sintoma).",
+            width="100%",
+        ),
+        spacing="2",
+        align="stretch",
+        width="100%",
+    )
+
+
+def cartao_prioridade(codigo: str, nome: str, descricao: str, cor: str) -> rx.Component:
+    atual = FichaState.prioridade_exibida == codigo
+    calculada_diferente = FichaState.ajustada_manualmente & (FichaState.prioridade_calculada == codigo)
+    return rx.box(
+        rx.text(nome, weight="bold", size="4", color=rx.cond(atual, cor, COR_TEXTO)),
+        rx.text(descricao, size="2", color=COR_SECUNDARIA),
+        rx.cond(atual & FichaState.ajustada_manualmente, rx.badge("ajuste manual", color_scheme="gray", margin_top="4px")),
+        rx.cond(calculada_diferente, rx.badge("calculada", color_scheme="gray", variant="outline", margin_top="4px")),
+        border=rx.cond(atual, f"2px solid {cor}", f"1px solid {COR_BORDA}"),
+        border_left=f"6px solid {cor}",
+        background=rx.cond(atual, f"{cor}14", "white"),
+        border_radius="8px",
+        padding="12px 16px",
+        flex="1",
+        min_width="140px",
+    )
+
+
+def classificacao_ficha() -> rx.Component:
+    return rx.vstack(
+        rotulo_secao("CLASSIFICAÇÃO"),
+        rx.text(FichaState.resumo_escore, size="2", weight="medium", color=COR_TEXTO),
+        rx.hstack(*[cartao_prioridade(*cor) for cor in CORES_PRIORIDADE], spacing="3", wrap="wrap", width="100%"),
+        rx.cond(
+            FichaState.ajustada_manualmente,
+            rx.text("Justificativa do ajuste: ", FichaState.classificacao["justificativa_ajuste"], size="2", color=COR_SECUNDARIA),
+        ),
+        rx.cond(
+            FichaState.pendencias_texto.length() > 0,
+            rx.callout(
+                rx.vstack(
+                    rx.text("Classificação automática pendente:", weight="medium"),
+                    rx.foreach(FichaState.pendencias_texto, lambda texto: rx.text("• ", texto, size="2")),
+                    spacing="1",
+                ),
+                color_scheme="amber",
+                width="100%",
+            ),
+        ),
+        rx.checkbox(
+            "Gestante — idoso e criança são identificados automaticamente pela data de nascimento",
+            checked=FichaState.gestante,
+            on_change=FichaState.set_gestante,
+            size="2",
+        ),
+        rx.text(
+            "Escala de simulação acadêmica (Azul 0–4, Amarela 5–9, Vermelha 10 ou mais; item de 3 pontos gera Vermelha). Não é protocolo clínico.",
+            size="1",
+            color=COR_SECUNDARIA,
+        ),
+        spacing="2",
+        width="100%",
+    )
+
+
+def dialogo_ajuste_prioridade() -> rx.Component:
+    return rx.dialog.root(
+        rx.dialog.content(
+            rx.dialog.title("Ajustar prioridade"),
+            rx.dialog.description(
+                "A justificativa é obrigatória e fica na auditoria. Se sintomas ou sinais vitais mudarem depois, o ajuste é descartado e a cor é recalculada.",
+                size="2",
+            ),
+            rx.vstack(
+                rx.radio_group(
+                    ["VERMELHA", "AMARELA", "AZUL"],
+                    value=FichaState.ajuste_prioridade,
+                    on_change=FichaState.set_ajuste_prioridade,
+                    direction="row",
+                    spacing="4",
+                ),
+                rx.text_area(
+                    value=FichaState.ajuste_justificativa,
+                    on_change=FichaState.set_ajuste_justificativa,
+                    placeholder="Justificativa (obrigatória)",
+                    width="100%",
+                ),
+                rx.cond(FichaState.ajuste_erro != "", rx.text(FichaState.ajuste_erro, size="2", color=COR_ERRO)),
+                rx.hstack(
+                    rx.dialog.close(botao_secundario("Cancelar")),
+                    rx.button("Confirmar ajuste", on_click=FichaState.confirmar_ajuste, loading=FichaState.ajustando, size="3", background=COR_AZUL),
+                    justify="end",
+                    spacing="3",
+                    width="100%",
+                ),
+                spacing="3",
+                margin_top="12px",
+                width="100%",
+            ),
+            max_width="480px",
+        ),
+        open=FichaState.ajuste_aberto,
+        on_open_change=FichaState.set_ajuste_aberto,
+    )
+
+
+def cartao_paciente_ficha() -> rx.Component:
+    return cartao_painel(
+        rx.vstack(
+            rotulo_secao("FICHA"),
+            rx.badge(FichaState.ficha["status"], color_scheme="gray", size="2"),
+            rx.divider(),
+            rotulo_secao("NOME"),
+            rx.text(FichaState.paciente["nome"], size="3", color=COR_TEXTO),
+            rotulo_secao("CPF"),
+            rx.text(FichaState.cpf_exibido, size="3", color=COR_TEXTO),
+            rotulo_secao("IDADE · CONDIÇÃO PRIORITÁRIA"),
+            rx.text(FichaState.idade_texto, " · ", FichaState.condicao_texto, size="3", color=COR_TEXTO),
+            rx.text("A condição prioritária reordena dentro da mesma cor; não soma pontos.", size="1", color=COR_SECUNDARIA),
+            spacing="2",
+            align="start",
+            width="100%",
+        ),
+        padding="24px",
+        width=rx.breakpoints(initial="100%", md="320px"),
+        flex_shrink="0",
+    )
+
+
+def recepcao_ficha() -> rx.Component:
+    return rx.box(
+        cabecalho("RECEPÇÃO/TRIAGEM — FICHA DE ATENDIMENTO", "Registre sintomas e sinais vitais — a cor é recalculada ao salvar"),
+        rx.center(
+            rx.cond(
+                FichaState.carregando,
+                rx.spinner(size="3"),
+                rx.flex(
+                    cartao_paciente_ficha(),
+                    cartao_painel(
+                        rx.vstack(
+                            rx.text("Ficha de atendimento", weight="bold", size="5", color=COR_TEXTO),
+                            rx.cond(
+                                FichaState.mensagem != "",
+                                rx.callout(FichaState.mensagem, color_scheme=rx.cond(FichaState.erro, "red", "green"), width="100%"),
+                            ),
+                            sinais_vitais_ficha(),
+                            sintomas_ficha(),
+                            classificacao_ficha(),
+                            rx.divider(),
+                            rx.flex(
+                                botao_secundario("Ajustar prioridade (justificativa obrigatória)", on_click=FichaState.abrir_ajuste),
+                                rx.button("Salvar ficha", on_click=FichaState.salvar, loading=FichaState.salvando, size="3", background=COR_AZUL, min_width="200px"),
+                                justify="between",
+                                gap="12px",
+                                wrap="wrap",
+                                width="100%",
+                            ),
+                            rx.link("← Voltar para a área inicial", href="/recepcao", size="2", color=COR_AZUL),
+                            spacing="4",
+                            width="100%",
+                        ),
+                        padding="28px",
+                        flex="1",
+                        min_width="0",
+                    ),
+                    direction=rx.breakpoints(initial="column", md="row"),
+                    gap="24px",
+                    align="start",
+                    width="min(100%, 1184px)",
+                ),
+            ),
+            padding="28px 16px 40px",
+            width="100%",
+        ),
+        dialogo_ajuste_prioridade(),
+        background=COR_FUNDO,
+        font_family="Inter, sans-serif",
+        min_height="100vh",
         width="100%",
     )
 

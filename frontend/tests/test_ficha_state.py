@@ -1,4 +1,4 @@
-"""Regressões do estado Reflex da ficha de atendimento."""
+"""Regressões do estado Reflex da ficha de atendimento (sintomas, observação, sinais vitais e classificação)."""
 
 import asyncio
 from collections import deque
@@ -8,6 +8,8 @@ from unittest.mock import patch
 import httpx
 
 from ps_fila_prioritaria.ps_fila_prioritaria import FichaState, sintomas_disponiveis
+
+REQUISITAR = "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar"
 
 
 class Resposta:
@@ -23,10 +25,27 @@ class Resposta:
         return self._corpo
 
 
+CLASSIFICACAO = {
+    "pontos_sinais": {"PA_SISTOLICA": 0, "FC": 0, "FR": 0, "TEMPERATURA": 0, "SPO2": 0, "GLICEMIA": None},
+    "escore_sintomas": 1,
+    "escore_sinais": 0,
+    "escore_total": 1,
+    "item_critico": False,
+    "tabela_adulta": True,
+    "pendencias": [],
+    "condicao_prioritaria": "IDOSO",
+    "prioridade_calculada": "AZUL",
+    "prioridade_atual": "AZUL",
+    "justificativa_ajuste": None,
+}
 FICHA = {
-    "ficha": {"id": 10, "paciente_id": 7, "status": "EM_TRIAGEM", "observacao": "Queixa inicial"},
-    "paciente": {"id": 7, "nome": "Paciente da Ficha", "cpf": "52998224725"},
+    "ficha": {"id": 10, "paciente_id": 7, "status": "EM_TRIAGEM", "observacao": "Queixa inicial", "gestante": False,
+              "pa_sistolica": 120, "fc": 80, "fr": 16, "temperatura": 36.5, "spo2": 98, "glicemia": None,
+              "glicemia_sinais_gravidade": False},
+    "paciente": {"id": 7, "nome": "Paciente da Ficha", "cpf": "52998224725", "idade": 68},
     "sintomas": [{"id": 1, "nome": "Febre", "grupo": "GERAL", "pontuacao": 1}],
+    "sintomas_livres": [],
+    "classificacao": CLASSIFICACAO,
 }
 CATALOGO = [
     {"id": 2, "nome": "Mal-estar", "descricao": None, "grupo": "GERAL", "pontuacao": 1},
@@ -34,33 +53,73 @@ CATALOGO = [
 ]
 
 
+class AuthFalso:
+    token = "token-teste"
+
+    def __init__(self) -> None:
+        self.encerrada = False
+
+    def _encerrar_sessao_local(self, mensagem: str = "") -> None:
+        self.encerrada = True
+
+
 class EstadoFichaFalso:
-    _url = FichaState._url
     _limpar_feedback = FichaState._limpar_feedback
+    _requisitar = FichaState._requisitar
     _carregar_resposta_ficha = FichaState._carregar_resposta_ficha
+    _recarregar = FichaState._recarregar
+    _sinais_para_envio = FichaState._sinais_para_envio
     carregar = FichaState.carregar.fn
     set_observacao = FichaState.set_observacao.fn
     alternar_sintoma = FichaState.alternar_sintoma.fn
+    set_sinal = FichaState.set_sinal.fn
+    set_gestante = FichaState.set_gestante.fn
+    adicionar_sintoma_livre = FichaState.adicionar_sintoma_livre.fn
+    remover_sintoma_livre = FichaState.remover_sintoma_livre.fn
     salvar = FichaState.salvar.fn
+    abrir_ajuste = FichaState.abrir_ajuste.fn
+    confirmar_ajuste = FichaState.confirmar_ajuste.fn
+    prioridade_calculada = property(lambda self: str(self.classificacao.get("prioridade_calculada") or ""))
 
     def __init__(self) -> None:
         self.ficha_id = 0
+        self.ficha = {}
         self.paciente = {}
         self.catalogo_sintomas = []
         self.sintoma_ids_selecionados = []
         self.observacao = ""
+        self.sintomas_livres = []
+        self.sinais = {campo: "" for campo in ["pa_sistolica", "fc", "fr", "temperatura", "spo2", "glicemia"]}
+        self.glicemia_gravidade = False
+        self.gestante = False
+        self.classificacao = {}
         self.sintomas_alterados = False
         self.observacao_alterada = False
+        self.livres_alterados = False
+        self.sinais_alterados = False
         self.carregando = False
         self.salvando = False
         self.mensagem = ""
         self.erro = False
+        self.ajuste_aberto = False
+        self.ajuste_prioridade = ""
+        self.ajuste_justificativa = ""
+        self.ajuste_erro = ""
+        self.ajustando = False
+        self.auth = AuthFalso()
 
     async def get_state(self, estado):
-        return type("Auth", (), {"token": "token-teste"})()
+        return self.auth
 
-    def _url(self, caminho: str) -> str:
-        return f"https://xano.test{caminho}"
+
+def _api(*respostas: Resposta):
+    """Simula api.requisitar devolvendo as respostas em ordem e guardando as chamadas."""
+    fila = deque(respostas)
+    return patch(REQUISITAR, side_effect=lambda *args, **kwargs: fila.popleft())
+
+
+def _recarga(**ficha) -> list[Resposta]:
+    return [Resposta(200, {**FICHA, "ficha": {**FICHA["ficha"], **ficha}}), Resposta(200, CATALOGO)]
 
 
 async def _executar_salvamento(estado: EstadoFichaFalso) -> None:
@@ -68,255 +127,249 @@ async def _executar_salvamento(estado: EstadoFichaFalso) -> None:
         pass
 
 
-def test_carrega_catalogo_e_ficha_para_edicao() -> None:
+def _estado_carregado() -> EstadoFichaFalso:
     estado = EstadoFichaFalso()
-    respostas = deque([Resposta(200, FICHA), Resposta(200, CATALOGO)])
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.get", side_effect=lambda *args, **kwargs: respostas.popleft()) as get_http:
+    with _api(*_recarga()):
         asyncio.run(estado.carregar("10"))
-    assert all(chamada.kwargs["headers"] == {"Authorization": "Bearer token-teste"} for chamada in get_http.call_args_list)
-
-    assert estado.ficha_id == 10
-    assert estado.paciente["id"] == 7
-    assert estado.observacao == "Queixa inicial"
-    assert estado.sintoma_ids_selecionados == [1]
-    assert [sintoma["nome"] for sintoma in estado.catalogo_sintomas] == ["Febre", "Mal-estar"]
+    return estado
 
 
-def test_selecao_nao_duplica_e_desmarcacao_remove() -> None:
-    estado = EstadoFichaFalso()
-    estado.alternar_sintoma(2, True)
-    estado.alternar_sintoma(2, True)
-    estado.alternar_sintoma(1, True)
-    estado.alternar_sintoma(2, False)
-    assert estado.sintoma_ids_selecionados == [1]
-    assert estado.sintomas_alterados
+class TestCarregamento(unittest.TestCase):
+    def test_carrega_ficha_catalogo_sinais_e_classificacao_com_token(self) -> None:
+        estado = EstadoFichaFalso()
+        with _api(*_recarga()) as requisitar:
+            asyncio.run(estado.carregar("10"))
+        self.assertEqual([c.args[:3] for c in requisitar.call_args_list],
+                         [("GET", "XANO_TRIAGEM_API_URL", "/fichas/10"), ("GET", "XANO_TRIAGEM_API_URL", "/sintomas")])
+        self.assertTrue(all(c.kwargs["token"] == "token-teste" for c in requisitar.call_args_list))
+        self.assertEqual(estado.ficha_id, 10)
+        self.assertEqual(estado.observacao, "Queixa inicial")
+        self.assertEqual(estado.sintoma_ids_selecionados, [1])
+        self.assertEqual([s["nome"] for s in estado.catalogo_sintomas], ["Febre", "Mal-estar"])
+        self.assertEqual(estado.sinais["temperatura"], "36,5")
+        self.assertEqual(estado.sinais["glicemia"], "")
+        self.assertEqual(estado.classificacao["prioridade_calculada"], "AZUL")
+        self.assertFalse(estado.carregando)
+
+    def test_sessao_expirada_encerra_a_sessao(self) -> None:
+        estado = EstadoFichaFalso()
+        with _api(Resposta(401, {"message": "Sessão inválida."})):
+            asyncio.run(estado.carregar("10"))
+        self.assertTrue(estado.auth.encerrada)
+        self.assertTrue(estado.erro)
+
+    def test_erro_de_conexao(self) -> None:
+        estado = EstadoFichaFalso()
+        with patch(REQUISITAR, side_effect=httpx.RequestError("falha de rede")):
+            asyncio.run(estado.carregar("10"))
+        self.assertEqual(estado.mensagem, "Não foi possível conectar à API de Fichas.")
 
 
-def test_edicao_de_observacao_marca_intencao_de_patch() -> None:
-    estado = EstadoFichaFalso()
-    estado.set_observacao("Nova queixa")
-    assert estado.observacao == "Nova queixa"
-    assert estado.observacao_alterada
+class TestSintomas(unittest.TestCase):
+    def test_selecao_nao_duplica_e_desmarcacao_remove(self) -> None:
+        estado = EstadoFichaFalso()
+        for sintoma_id, marcado in ((2, True), (2, True), (1, True), (2, False)):
+            estado.alternar_sintoma(sintoma_id, marcado)
+        self.assertEqual(estado.sintoma_ids_selecionados, [1])
+        self.assertTrue(estado.sintomas_alterados)
+
+    def test_disponiveis_excluem_selecionados_e_respeitam_busca(self) -> None:
+        self.assertEqual([s["id"] for s in sintomas_disponiveis(CATALOGO, [1], "")], [2])
+        self.assertEqual([s["id"] for s in sintomas_disponiveis(CATALOGO, [1], "mal")], [2])
+        self.assertEqual(sintomas_disponiveis(CATALOGO, [1], "feb"), [])
+
+    def test_adiciona_e_remove_sintoma_digitado(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.catalogo_sintomas = CATALOGO
+        estado.adicionar_sintoma_livre("  Dor   no joelho ", 2)
+        self.assertEqual(estado.sintomas_livres, [{"descricao": "Dor no joelho", "pontuacao": 2}])
+        self.assertTrue(estado.livres_alterados)
+        estado.remover_sintoma_livre("Dor no joelho")
+        self.assertEqual(estado.sintomas_livres, [])
+
+    def test_sintoma_digitado_invalido_e_recusado_na_tela(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.catalogo_sintomas = CATALOGO
+        for descricao, pontuacao in (("ab", 2), ("Dor nas costas", 0), ("Dor nas costas", 4), ("FÉBRE", 1), ("febre", 2)):
+            estado.adicionar_sintoma_livre(descricao, pontuacao)
+            self.assertTrue(estado.erro, descricao)
+        estado.adicionar_sintoma_livre("Dor no joelho", 2)
+        estado.adicionar_sintoma_livre("dor no JOELHO", 3)
+        self.assertEqual(len(estado.sintomas_livres), 1)
+        self.assertTrue(estado.erro)
+
+    def test_limite_de_dez_sintomas_digitados(self) -> None:
+        estado = EstadoFichaFalso()
+        for indice in range(11):
+            estado.adicionar_sintoma_livre(f"Sintoma digitado {indice}", 1)
+        self.assertEqual(len(estado.sintomas_livres), 10)
+        self.assertTrue(estado.erro)
 
 
-def test_disponiveis_excluem_selecionados_e_respeitam_busca() -> None:
-    assert [sintoma["id"] for sintoma in sintomas_disponiveis(CATALOGO, [1], "")] == [2]
-    assert [sintoma["id"] for sintoma in sintomas_disponiveis(CATALOGO, [1], "mal")] == [2]
-    assert sintomas_disponiveis(CATALOGO, [1], "feb") == []
-
-
-def test_adicionar_e_remover_atualizam_opcoes_sem_persistir() -> None:
-    estado = EstadoFichaFalso()
-    estado.catalogo_sintomas = CATALOGO
-    estado.alternar_sintoma(2, True)
-    estado.alternar_sintoma(2, True)
-    assert estado.sintoma_ids_selecionados == [2]
-    assert [sintoma["id"] for sintoma in sintomas_disponiveis(CATALOGO, estado.sintoma_ids_selecionados, "")] == [1]
-
-    estado.alternar_sintoma(2, False)
-    assert estado.sintoma_ids_selecionados == []
-    assert [sintoma["id"] for sintoma in sintomas_disponiveis(CATALOGO, estado.sintoma_ids_selecionados, "")] == [1, 2]
-
-
-def test_salvar_recusa_rn04_antes_da_requisicao() -> None:
-    estado = EstadoFichaFalso()
-    estado.ficha_id = 10
-    estado.observacao = "   "
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch") as patch_http:
-        asyncio.run(_executar_salvamento(estado))
-    patch_http.assert_not_called()
-    assert estado.erro
-
-
-def test_salvar_entrega_loading_antes_do_patch() -> None:
-    async def executar() -> None:
+class TestSalvar(unittest.TestCase):
+    def test_rn04_recusada_antes_da_requisicao(self) -> None:
         estado = EstadoFichaFalso()
         estado.ficha_id = 10
-        estado.sintoma_ids_selecionados = [1]
-        estado.sintomas_alterados = True
-        salvamento = estado.salvar()
-        with patch(
-            "ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch",
-            return_value=Resposta(400, {"code": "FICHA_SEM_SINTOMA_OU_OBSERVACAO"}),
-        ) as patch_http:
-            await anext(salvamento)
-            assert estado.salvando
-            patch_http.assert_not_called()
-            try:
+        estado.observacao = "   "
+        with patch(REQUISITAR) as requisitar:
+            asyncio.run(_executar_salvamento(estado))
+        requisitar.assert_not_called()
+        self.assertTrue(estado.erro)
+
+    def test_sintoma_digitado_atende_a_rn04(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.ficha_id = 10
+        estado.adicionar_sintoma_livre("Dor no joelho", 2)
+        with _api(Resposta(200, {}), *_recarga()) as requisitar:
+            asyncio.run(_executar_salvamento(estado))
+        self.assertEqual(requisitar.call_args_list[0].kwargs["json"], {"sintomas_livres": [{"descricao": "Dor no joelho", "pontuacao": 2}]})
+
+    def test_salvar_entrega_loading_antes_do_patch(self) -> None:
+        async def executar() -> None:
+            estado = EstadoFichaFalso()
+            estado.ficha_id = 10
+            estado.alternar_sintoma(1, True)
+            salvamento = estado.salvar()
+            with _api(Resposta(400, {"code": "FICHA_SEM_SINTOMA_OU_OBSERVACAO"})) as requisitar:
                 await anext(salvamento)
-            except StopAsyncIteration:
-                pass
-        assert not estado.salvando
+                self.assertTrue(estado.salvando)
+                requisitar.assert_not_called()
+                with self.assertRaises(StopAsyncIteration):
+                    await anext(salvamento)
+            self.assertFalse(estado.salvando)
 
-    asyncio.run(executar())
+        asyncio.run(executar())
 
+    def test_segunda_invocacao_e_ignorada(self) -> None:
+        async def executar() -> None:
+            estado = EstadoFichaFalso()
+            estado.ficha_id = 10
+            estado.alternar_sintoma(1, True)
+            primeiro = estado.salvar()
+            with _api(Resposta(200, {}), *_recarga()) as requisitar:
+                await anext(primeiro)
+                async for _ in estado.salvar():
+                    pass
+                requisitar.assert_not_called()
+                with self.assertRaises(StopAsyncIteration):
+                    await anext(primeiro)
+            self.assertEqual(requisitar.call_args_list[0].args[0], "PATCH")
+            self.assertFalse(estado.salvando)
 
-def test_salvar_ignora_segunda_invocacao_enquanto_esta_em_andamento() -> None:
-    async def executar() -> None:
+        asyncio.run(executar())
+
+    def test_somente_sintomas_envia_patch_parcial_e_recarrega(self) -> None:
         estado = EstadoFichaFalso()
         estado.ficha_id = 10
-        estado.sintoma_ids_selecionados = [1]
+        estado.alternar_sintoma(1, True)
+        estado.alternar_sintoma(2, True)
+        with _api(Resposta(200, {}), *_recarga()) as requisitar:
+            asyncio.run(_executar_salvamento(estado))
+        patch_chamada = requisitar.call_args_list[0]
+        self.assertEqual(patch_chamada.args[:3], ("PATCH", "XANO_TRIAGEM_API_URL", "/fichas/10"))
+        self.assertEqual(patch_chamada.kwargs["json"], {"sintoma_ids": [1, 2]})
+        self.assertEqual(estado.mensagem, "Ficha salva. A prioridade foi recalculada.")
+        self.assertFalse(estado.sintomas_alterados)
+
+    def test_sintomas_e_observacao_vazia_preservam_colecao_final(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.ficha_id = 10
         estado.sintomas_alterados = True
-        primeiro_salvamento = estado.salvar()
-        respostas_get = _respostas_recarga([CATALOGO[1]], "")
-        with patch(
-            "ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch",
-            return_value=Resposta(200, {"id": 10}),
-        ) as patch_http, patch(
-            "ps_fila_prioritaria.ps_fila_prioritaria.httpx.get",
-            side_effect=lambda *args, **kwargs: respostas_get.popleft(),
-        ):
-            await anext(primeiro_salvamento)
-            assert estado.salvando
-            async for _ in estado.salvar():
-                pass
-            patch_http.assert_not_called()
-            try:
-                await anext(primeiro_salvamento)
-            except StopAsyncIteration:
-                pass
-        patch_http.assert_called_once()
-        assert not estado.salvando
+        estado.set_observacao("Queixa geral")
+        with _api(Resposta(200, {}), *_recarga()) as requisitar:
+            asyncio.run(_executar_salvamento(estado))
+        self.assertEqual(requisitar.call_args_list[0].kwargs["json"], {"sintoma_ids": [], "observacao": "Queixa geral"})
 
-    asyncio.run(executar())
+    def test_sinais_vitais_enviados_como_conjunto_final(self) -> None:
+        estado = _estado_carregado()
+        estado.set_sinal("temperatura", "38,6")
+        estado.set_sinal("fc", "")
+        estado.set_gestante(True)
+        with _api(Resposta(200, {}), *_recarga()) as requisitar:
+            asyncio.run(_executar_salvamento(estado))
+        self.assertEqual(requisitar.call_args_list[0].kwargs["json"], {"sinais_vitais": {
+            "glicemia_sinais_gravidade": False, "gestante": True, "pa_sistolica": 120, "fc": None, "fr": 16,
+            "temperatura": 38.6, "spo2": 98, "glicemia": None}})
 
+    def test_sinal_vital_nao_numerico_e_recusado_na_tela(self) -> None:
+        estado = _estado_carregado()
+        estado.set_sinal("spo2", "noventa")
+        with patch(REQUISITAR) as requisitar:
+            asyncio.run(_executar_salvamento(estado))
+        requisitar.assert_not_called()
+        self.assertEqual(estado.mensagem, "Valor inválido em SpO2.")
 
-def _respostas_recarga(sintomas: list[dict[str, object]], observacao: str) -> deque[Resposta]:
-    return deque(
-        [
-            Resposta(200, {**FICHA, "ficha": {**FICHA["ficha"], "observacao": observacao}, "sintomas": sintomas}),
-            Resposta(200, CATALOGO),
-        ]
-    )
+    def test_pendencias_da_classificacao_sao_lidas(self) -> None:
+        estado = EstadoFichaFalso()
+        bloqueada = {**CLASSIFICACAO, "escore_total": None, "prioridade_calculada": None, "prioridade_atual": None,
+                     "pendencias": ["SPO2_NAO_INFORMADO"]}
+        with _api(Resposta(200, {**FICHA, "classificacao": bloqueada}), Resposta(200, CATALOGO)):
+            asyncio.run(estado.carregar("10"))
+        self.assertEqual(estado.classificacao["pendencias"], ["SPO2_NAO_INFORMADO"])
+        self.assertIsNone(estado.classificacao["prioridade_calculada"])
 
-
-def test_salvar_somente_sintomas_envia_patch_parcial_e_recarrega() -> None:
-    estado = EstadoFichaFalso()
-    estado.ficha_id = 10
-    estado.sintoma_ids_selecionados = [1, 2]
-    estado.observacao = "Queixa persistida"
-    estado.sintomas_alterados = True
-    respostas_get = _respostas_recarga(CATALOGO, "Queixa persistida")
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch", return_value=Resposta(200, {"id": 10})) as patch_http, patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.get", side_effect=lambda *args, **kwargs: respostas_get.popleft()
-    ), patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.post") as post_http:
-        asyncio.run(_executar_salvamento(estado))
-
-    assert patch_http.call_args.args[0] == "https://xano.test/fichas/10"
-    assert patch_http.call_args.kwargs["json"] == {"sintoma_ids": [1, 2]}
-    post_http.assert_not_called()
-    assert estado.sintoma_ids_selecionados == [1, 2]
-    assert estado.observacao == "Queixa persistida"
-    assert estado.mensagem == "Ficha salva com sucesso."
-    assert not estado.erro
-    assert not estado.salvando
-    assert not estado.sintomas_alterados
+    def test_erro_do_backend_libera_loading(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.ficha_id = 10
+        estado.alternar_sintoma(1, True)
+        with _api(Resposta(400, {"code": "FICHA_SEM_SINTOMA_OU_OBSERVACAO"})):
+            asyncio.run(_executar_salvamento(estado))
+        self.assertTrue(estado.erro)
+        self.assertEqual(estado.mensagem, "Informe ao menos um sintoma ou uma observação.")
+        self.assertFalse(estado.salvando)
 
 
-def test_salvar_somente_observacao_envia_patch_parcial() -> None:
-    estado = EstadoFichaFalso()
-    estado.ficha_id = 10
-    estado.sintoma_ids_selecionados = [1]
-    estado.observacao = "Dor iniciada pela manhã"
-    estado.observacao_alterada = True
-    respostas_get = _respostas_recarga([CATALOGO[1]], "Dor iniciada pela manhã")
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch", return_value=Resposta(200, {"id": 10})) as patch_http, patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.get", side_effect=lambda *args, **kwargs: respostas_get.popleft()
-    ):
-        asyncio.run(_executar_salvamento(estado))
+class TestAjustePrioridade(unittest.TestCase):
+    def test_ajuste_envia_cor_e_justificativa_e_recarrega(self) -> None:
+        estado = _estado_carregado()
+        estado.abrir_ajuste()
+        estado.ajuste_prioridade = "AMARELA"
+        estado.ajuste_justificativa = "  Dor intensa relatada  "
+        with _api(Resposta(200, {}), *_recarga()) as requisitar:
+            asyncio.run(estado.confirmar_ajuste())
+        chamada = requisitar.call_args_list[0]
+        self.assertEqual(chamada.args[:3], ("POST", "XANO_TRIAGEM_API_URL", "/fichas/10/prioridade"))
+        self.assertEqual(chamada.kwargs["json"], {"prioridade": "AMARELA", "justificativa": "Dor intensa relatada"})
+        self.assertFalse(estado.ajuste_aberto)
+        self.assertEqual(estado.mensagem, "Prioridade ajustada. A justificativa ficou registrada na auditoria.")
 
-    assert patch_http.call_args.kwargs["json"] == {"observacao": "Dor iniciada pela manhã"}
-    assert estado.observacao == "Dor iniciada pela manhã"
-    assert not estado.observacao_alterada
+    def test_justificativa_vazia_e_bloqueada_na_tela(self) -> None:
+        estado = _estado_carregado()
+        estado.abrir_ajuste()
+        estado.ajuste_prioridade = "AMARELA"
+        estado.ajuste_justificativa = "   "
+        with patch(REQUISITAR) as requisitar:
+            asyncio.run(estado.confirmar_ajuste())
+        requisitar.assert_not_called()
+        self.assertEqual(estado.ajuste_erro, "A justificativa é obrigatória.")
 
+    def test_cor_igual_a_calculada_e_bloqueada(self) -> None:
+        estado = _estado_carregado()
+        estado.abrir_ajuste()
+        estado.ajuste_prioridade = "AZUL"
+        estado.ajuste_justificativa = "Sem motivo"
+        with patch(REQUISITAR) as requisitar:
+            asyncio.run(estado.confirmar_ajuste())
+        requisitar.assert_not_called()
+        self.assertTrue(estado.ajuste_erro)
 
-def test_salvar_sintomas_e_observacao_envia_ambos_e_preserva_colecao_final() -> None:
-    estado = EstadoFichaFalso()
-    estado.ficha_id = 10
-    estado.sintoma_ids_selecionados = []
-    estado.observacao = "Queixa geral"
-    estado.sintomas_alterados = True
-    estado.observacao_alterada = True
-    respostas_get = _respostas_recarga([], "Queixa geral")
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch", return_value=Resposta(200, {"id": 10})) as patch_http, patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.get", side_effect=lambda *args, **kwargs: respostas_get.popleft()
-    ):
-        asyncio.run(_executar_salvamento(estado))
+    def test_alteracao_nao_salva_bloqueia_o_ajuste(self) -> None:
+        estado = _estado_carregado()
+        estado.set_sinal("fc", "120")
+        estado.abrir_ajuste()
+        estado.ajuste_prioridade = "AMARELA"
+        estado.ajuste_justificativa = "Dor intensa"
+        with patch(REQUISITAR) as requisitar:
+            asyncio.run(estado.confirmar_ajuste())
+        requisitar.assert_not_called()
+        self.assertIn("Salve a ficha", estado.ajuste_erro)
 
-    assert patch_http.call_args.kwargs["json"] == {"sintoma_ids": [], "observacao": "Queixa geral"}
-    assert estado.sintoma_ids_selecionados == []
-    assert estado.observacao == "Queixa geral"
-
-
-def test_salvar_erro_exibe_feedback_e_libera_loading() -> None:
-    estado = EstadoFichaFalso()
-    estado.ficha_id = 10
-    estado.sintoma_ids_selecionados = [1]
-    estado.sintomas_alterados = True
-    with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch",
-        return_value=Resposta(400, {"code": "FICHA_SEM_SINTOMA_OU_OBSERVACAO"}),
-    ), patch("ps_fila_prioritaria.ps_fila_prioritaria.httpx.get") as get_http:
-        asyncio.run(_executar_salvamento(estado))
-
-    get_http.assert_not_called()
-    assert estado.erro
-    assert estado.mensagem == "Informe ao menos um sintoma ou uma observação."
-    assert not estado.salvando
-
-
-def test_salvar_erro_de_conexao_exibe_feedback_e_libera_loading() -> None:
-    estado = EstadoFichaFalso()
-    estado.ficha_id = 10
-    estado.sintoma_ids_selecionados = [1]
-    estado.sintomas_alterados = True
-    with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.httpx.patch",
-        side_effect=httpx.RequestError("falha de rede"),
-    ):
-        asyncio.run(_executar_salvamento(estado))
-
-    assert estado.erro
-    assert estado.mensagem == "Não foi possível conectar à API de Fichas."
-    assert not estado.salvando
-
-
-class TestFichaState(unittest.TestCase):
-    def test_carregamento(self) -> None:
-        test_carrega_catalogo_e_ficha_para_edicao()
-
-    def test_selecao(self) -> None:
-        test_selecao_nao_duplica_e_desmarcacao_remove()
-
-    def test_edicao_de_observacao(self) -> None:
-        test_edicao_de_observacao_marca_intencao_de_patch()
-
-    def test_disponiveis(self) -> None:
-        test_disponiveis_excluem_selecionados_e_respeitam_busca()
-
-    def test_adicionar_e_remover(self) -> None:
-        test_adicionar_e_remover_atualizam_opcoes_sem_persistir()
-
-    def test_rn04(self) -> None:
-        test_salvar_recusa_rn04_antes_da_requisicao()
-
-    def test_salvar_entrega_loading(self) -> None:
-        test_salvar_entrega_loading_antes_do_patch()
-
-    def test_salvar_ignora_segunda_invocacao(self) -> None:
-        test_salvar_ignora_segunda_invocacao_enquanto_esta_em_andamento()
-
-    def test_salvar_somente_sintomas(self) -> None:
-        test_salvar_somente_sintomas_envia_patch_parcial_e_recarrega()
-
-    def test_salvar_somente_observacao(self) -> None:
-        test_salvar_somente_observacao_envia_patch_parcial()
-
-    def test_salvar_ambos(self) -> None:
-        test_salvar_sintomas_e_observacao_envia_ambos_e_preserva_colecao_final()
-
-    def test_salvar_erro(self) -> None:
-        test_salvar_erro_exibe_feedback_e_libera_loading()
-
-    def test_salvar_erro_de_conexao(self) -> None:
-        test_salvar_erro_de_conexao_exibe_feedback_e_libera_loading()
+    def test_erro_do_backend_fica_no_dialogo(self) -> None:
+        estado = _estado_carregado()
+        estado.abrir_ajuste()
+        estado.ajuste_prioridade = "AMARELA"
+        estado.ajuste_justificativa = "Dor intensa"
+        with _api(Resposta(400, {"message": "FICHA_FORA_DA_TRIAGEM"})):
+            asyncio.run(estado.confirmar_ajuste())
+        self.assertEqual(estado.ajuste_erro, "Esta ficha já saiu da triagem e não pode mais ser alterada aqui.")
+        self.assertTrue(estado.ajuste_aberto)

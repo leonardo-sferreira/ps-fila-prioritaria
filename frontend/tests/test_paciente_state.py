@@ -221,6 +221,21 @@ def test_continuar_cria_ficha_para_paciente_identificado() -> None:
     assert not estado.abrindo_ficha
 
 
+def test_continuar_reabre_ficha_em_triagem_existente() -> None:
+    estado = EstadoFalso()
+    estado.paciente_id = PACIENTE_A["id"]
+
+    with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}, clear=False), patch(
+        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        return_value=Resposta(200, {"id": 33, "paciente_id": PACIENTE_A["id"], "status": "EM_TRIAGEM", "ja_existente": True}),
+    ):
+        redirecionamento = asyncio.run(estado.continuar_atendimento())
+
+    assert redirecionamento is not None
+    assert "/recepcao/ficha/33" in str(redirecionamento)
+    assert not estado.erro
+
+
 def test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes() -> None:
     estado = EstadoFalso()
     estado.paciente_id = PACIENTE_A["id"]
