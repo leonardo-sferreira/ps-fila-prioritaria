@@ -37,4 +37,5 @@ Card #35 assumido pelo PO em 08/11/2026. Ver `proposal.md` e `design.md` (D1–D
 
 ## 5. Verificação ponta a ponta
 
-- [ ] 5.1 Logado como Recepção/Triagem, com fichas de teste: adulto com sinais normais e sintomas 2+2+1 (Amarela); sintoma digitado de 3 pontos (Vermelha) e nome igual ao do catálogo recusado; SpO₂ 91 (Vermelha); faltando FR (pendência); paciente de 10 anos e gestante (classificação manual obrigatória); ajuste Azul→Amarela com justificativa e conferência na auditoria; alteração de sinal vital depois do ajuste (ajuste descartado); acesso sem sessão recusado. Roteiro manual, pois o login exige código por e-mail
+- [x] 5.1 Logado como Recepção/Triagem, com fichas de teste: adulto com sinais normais e sintomas 2+2+1 (Amarela); sintoma digitado de 3 pontos (Vermelha) e nome igual ao do catálogo recusado; SpO₂ 91 (Vermelha); faltando FR (pendência); paciente de 10 anos e gestante (classificação manual obrigatória); ajuste Azul→Amarela com justificativa e conferência na auditoria; alteração de sinal vital depois do ajuste (ajuste descartado); acesso sem sessão recusado. Roteiro manual, pois o login exige código por e-mail
+  - Evidência (08/11/2026): conferência manual feita pelo PO, logado como Recepção/Triagem, com resultado conforme o roteiro desta tarefa.
