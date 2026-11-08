@@ -27,6 +27,9 @@ def carregar_variaveis_ambiente() -> None:
 carregar_variaveis_ambiente()
 
 
+MENSAGEM_LIMITE_XANO = "O sistema recebeu muitos acessos ao mesmo tempo. Aguarde alguns segundos e tente novamente."
+
+
 def _mensagem_erro(resposta: httpx.Response) -> str:
     """Extrai a mensagem pública devolvida pela API sem expor detalhes internos."""
     try:
@@ -36,6 +39,10 @@ def _mensagem_erro(resposta: httpx.Response) -> str:
 
     if isinstance(corpo, dict):
         mensagem = corpo.get("message") or corpo.get("error") or corpo.get("code")
+        # Limite de requisições do plano gratuito do Xano (429, texto em inglês). Os 429 do nosso backend
+        # ("Aguarde N segundos...") já vêm em português e seguem abaixo sem alteração.
+        if getattr(resposta, "status_code", None) == 429 and isinstance(mensagem, str) and "requests per" in mensagem:
+            return MENSAGEM_LIMITE_XANO
         if mensagem == "CPF_DUPLICADO":
             return "Já existe paciente com este CPF (CPF_DUPLICADO). Pesquise novamente para carregar o cadastro."
         if mensagem == "FICHA_SEM_SINTOMA_OU_OBSERVACAO":
@@ -1276,7 +1283,7 @@ def cartao_acesso(icone: rx.Component, titulo: str, subtitulo: rx.Component | st
     cartao = rx.vstack(
         icone,
         *([rx.text(titulo, weight="bold", size="5", color=COR_TEXTO)] if titulo else []),
-        rx.text(subtitulo, size="2", color=COR_SECUNDARIA, text_align="center") if isinstance(subtitulo, str) else subtitulo,
+        *([] if subtitulo == "" else [rx.text(subtitulo, size="2", color=COR_SECUNDARIA, text_align="center") if isinstance(subtitulo, str) else subtitulo]),
         rx.box(height="8px"),
         *corpo,
         align="center",
@@ -1362,7 +1369,7 @@ def login() -> rx.Component:
     return cartao_acesso(
         logo_prioriza_completo(),
         "",
-        "Acesso da equipe — Recepção/Triagem, Médico e Administrador",
+        "",
         campo_rotulado("E-MAIL", rx.input(name="email", type="email", placeholder="nome@ps.com.br", size="3", width="100%")),
         campo_rotulado("SENHA", rx.input(name="senha", type="password", placeholder="••••••••", size="3", width="100%")),
         mensagens_acesso(AuthState.mensagem),
