@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import httpx
 
-from ps_fila_prioritaria.ps_fila_prioritaria import FichaState, sintomas_disponiveis
+from ps_fila_prioritaria.ps_fila_prioritaria import ComprovanteState, FichaState, sintomas_disponiveis
 
 REQUISITAR = "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar"
 
@@ -79,6 +79,8 @@ class EstadoFichaFalso:
     salvar = FichaState.salvar.fn
     abrir_ajuste = FichaState.abrir_ajuste.fn
     confirmar_ajuste = FichaState.confirmar_ajuste.fn
+    confirmar_triagem = FichaState.confirmar_triagem.fn
+    reimprimir = FichaState.reimprimir.fn
     prioridade_calculada = property(lambda self: str(self.classificacao.get("prioridade_calculada") or ""))
 
     def __init__(self) -> None:
@@ -106,6 +108,8 @@ class EstadoFichaFalso:
         self.ajuste_justificativa = ""
         self.ajuste_erro = ""
         self.ajustando = False
+        self.destino_previsto = {}
+        self.confirmando = False
         self.auth = AuthFalso()
 
     async def get_state(self, estado):
@@ -373,3 +377,88 @@ class TestAjustePrioridade(unittest.TestCase):
             asyncio.run(estado.confirmar_ajuste())
         self.assertEqual(estado.ajuste_erro, "Esta ficha já saiu da triagem e não pode mais ser alterada aqui.")
         self.assertTrue(estado.ajuste_aberto)
+
+
+FICHA_DESTINO = {**FICHA, "destino_previsto": {"especialidade": {"id": 1, "nome": "Cardiologia", "sigla": "CAR"}, "motivo": "SINTOMAS"}}
+
+
+class TestConfirmacaoTriagem(unittest.TestCase):
+    def _estado(self, ficha=FICHA_DESTINO) -> EstadoFichaFalso:
+        estado = EstadoFichaFalso()
+        with _api(Resposta(200, ficha), Resposta(200, CATALOGO)):
+            asyncio.run(estado.carregar("10"))
+        return estado
+
+    def test_le_o_destino_previsto(self) -> None:
+        estado = self._estado()
+        self.assertEqual(estado.destino_previsto["especialidade"]["sigla"], "CAR")
+
+    def test_confirmacao_envia_post_e_abre_o_comprovante(self) -> None:
+        estado = self._estado()
+        with _api(Resposta(200, {"id": 10, "senha": "B-CAR-001"})) as requisitar:
+            redirecionamento = asyncio.run(estado.confirmar_triagem())
+        self.assertEqual(requisitar.call_args.args[:3], ("POST", "XANO_TRIAGEM_API_URL", "/fichas/10/confirmar-triagem"))
+        self.assertIn("/recepcao/comprovante/10", str(redirecionamento))
+        self.assertFalse(estado.confirmando)
+
+    def test_sem_cor_nao_confirma(self) -> None:
+        estado = self._estado({**FICHA_DESTINO, "classificacao": {**CLASSIFICACAO, "prioridade_atual": None, "prioridade_calculada": None}})
+        with patch(REQUISITAR) as requisitar:
+            self.assertIsNone(asyncio.run(estado.confirmar_triagem()))
+        requisitar.assert_not_called()
+        self.assertIn("Defina a cor", estado.mensagem)
+
+    def test_alteracao_nao_salva_nao_confirma(self) -> None:
+        estado = self._estado()
+        estado.set_sinal("fc", "130")
+        with patch(REQUISITAR) as requisitar:
+            asyncio.run(estado.confirmar_triagem())
+        requisitar.assert_not_called()
+        self.assertEqual(estado.mensagem, "Salve a ficha antes de confirmar.")
+
+    def test_recusa_do_backend_fica_na_ficha(self) -> None:
+        estado = self._estado()
+        with _api(Resposta(400, {"message": "FICHA_FORA_DA_TRIAGEM"})):
+            self.assertIsNone(asyncio.run(estado.confirmar_triagem()))
+        self.assertTrue(estado.erro)
+
+    def test_reimprimir_abre_o_comprovante(self) -> None:
+        estado = self._estado()
+        self.assertIn("/recepcao/comprovante/10", str(estado.reimprimir()))
+
+
+class ComprovanteFalso:
+    carregar = ComprovanteState.carregar.fn
+
+    def __init__(self) -> None:
+        self.ficha_id = 0
+        self.senha = ""
+        self.prioridade = ""
+        self.especialidade = ""
+        self.entrada = ""
+        self.carregando = False
+        self.mensagem = ""
+        self.auth = AuthFalso()
+
+    async def get_state(self, estado):
+        return self.auth
+
+
+class TestComprovante(unittest.TestCase):
+    def test_carrega_so_os_campos_do_comprovante(self) -> None:
+        estado = ComprovanteFalso()
+        corpo = {"senha": "A-CAR-001", "prioridade": "AMARELA", "especialidade": {"nome": "Cardiologia", "sigla": "CAR"},
+                 "chegada_em": 1794155580000}
+        with _api(Resposta(200, corpo)) as requisitar:
+            asyncio.run(estado.carregar("10"))
+        self.assertEqual(requisitar.call_args.args[:3], ("GET", "XANO_TRIAGEM_API_URL", "/fichas/10/comprovante"))
+        self.assertEqual((estado.senha, estado.prioridade, estado.especialidade), ("A-CAR-001", "Amarela", "Cardiologia"))
+        self.assertEqual(estado.entrada, "08/11/2026 13:33")
+        self.assertFalse(hasattr(estado, "nome") or hasattr(estado, "cpf"))
+
+    def test_ficha_sem_senha_ativa_mostra_mensagem(self) -> None:
+        estado = ComprovanteFalso()
+        with _api(Resposta(400, {"message": "SENHA_NAO_ATIVA"})):
+            asyncio.run(estado.carregar("10"))
+        self.assertTrue(estado.mensagem)
+        self.assertEqual(estado.senha, "")

@@ -159,7 +159,7 @@ Local de atendimento que pode estar relacionado ao Médico atual.
 Destino clínico indicado pelos sintomas (ex.: Clínica Geral — `CLI`); as fichas são organizadas em filas por especialidade.
 
 ### Principais informações
-- nome, descrição e sigla usada na senha (única, 3 letras);
+- nome, descrição e sigla usada na senha (única, 3 letras): Cardiologia `CAR`, Clínica Geral `CLI`, Neurologia `NEU`, Ortopedia `ORT` e Pediatria `PED`;
 - situação (ativa/inativa).
 
 ### Relacionamentos
@@ -167,7 +167,9 @@ Destino clínico indicado pelos sintomas (ex.: Clínica Geral — `CLI`); as fic
 
 ### Regras
 - A disponibilidade de médicos e a especialidade cadastrada no Médico não alteram o destino clínico da ficha.
-- A regra de desempate quando sintomas apontam para especialidades diferentes pertence à spec funcional de direcionamento.
+- Destino da ficha (Rev. 2.1, §6, §14.2 e D09): paciente com até `idade_maxima_crianca` vai para Pediatria antes de qualquer cálculo. Para os demais, cada especialidade ligada a um sintoma do catálogo da ficha é candidata, e vence 1º a de maior pontuação individual de sintoma, 2º a de maior soma de pontos ligados, 3º a com menos fichas AGUARDANDO, 4º a de menor ID (transitório enquanto não houver estimativa de horário).
+- Ficha sem sintoma do catálogo (só sintomas digitados ou só observação) vai para a especialidade padrão (Clínica Geral). Sintomas digitados contam no escore, mas não no destino.
+- Sem fallback por falta de médico (RF19 supersedido, D10).
 
 ## Disponibilidade_Médico
 
@@ -324,7 +326,8 @@ Passagem do paciente pelo PS, da triagem até o comparecimento, a desistência o
 - A condição prioritária reordena dentro da mesma classificação e não soma pontos (RN10, RN11). Precedência no registro: gestante, depois idoso, depois criança; a idade é calculada na data de chegada.
 - O ajuste manual exige justificativa e gera Histórico_Alteração (RN09).
 - A glicemia baixa recebe os pontos definidos na tabela da seção Faixas de sinais vitais.
-- A senha é gerada somente após o direcionamento (RN19).
+- A senha é gerada somente após o direcionamento (RN19), na confirmação da triagem, que exige cor definida (calculada ou ajustada manualmente) e leva a ficha de EM_TRIAGEM a AGUARDANDO.
+- Senha `COR-ESP-NNN`: V/A/B pela cor, sigla da especialidade e número diário por especialidade (fuso `America/Sao_Paulo`), compartilhado entre cores. O comprovante de 80 mm não traz nome, CPF, data de nascimento, sintomas nem sinais vitais; a reimpressão usa a mesma senha.
 
 ## Ficha_Sintoma
 
@@ -372,7 +375,7 @@ Parâmetros configuráveis pelo Administrador e invariantes operacionais aprovad
 | Tentativas por oportunidade | 3 |
 | Novas oportunidades após a primeira reentrada | 1 |
 | Tamanho da previsão do painel | 5 |
-| Especialidade padrão, se prevista pela spec de direcionamento | Clínica Geral |
+| Especialidade padrão (ficha sem sintoma do catálogo) | Clínica Geral |
 | Limiar da cor Amarela | escore total a partir de 5 |
 | Limiar da cor Vermelha | escore total a partir de 10, ou qualquer item com 3 pontos |
 | Idade mínima para a tabela adulta de sinais vitais | 16 anos |

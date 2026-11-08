@@ -1,6 +1,6 @@
 query "fichas/{ficha_id}" verb=GET {
   api_group = "Triagem"
-  description = "Retorna a ficha para edição e classificação: paciente com idade, sintomas do catálogo e digitados, sinais vitais e resultado da classificação."
+  description = "Retorna a ficha para edição, classificação e destino: paciente com idade, sintomas do catálogo e digitados, sinais vitais e resultado da classificação."
 
   auth = "usuario"
 
@@ -12,11 +12,18 @@ query "fichas/{ficha_id}" verb=GET {
     } as $usuario
 
     // Só leitura: sem faixas ou parâmetros carregados, a classificação volta com pendências.
-    function.run "classificacao/avaliar_ficha" {
+    // destino_da_ficha também calcula o destino previsto (add-direcionamento-senha, D7).
+    function.run "direcionamento/destino_da_ficha" {
       input = {ficha_id: $input.ficha_id}
-    } as $avaliacao
+    } as $destino
 
+    var $avaliacao { value = $destino.avaliacao }
     var $ficha { value = $avaliacao.ficha }
+
+    db.get especialidade {
+      field_name = "id"
+      field_value = $ficha.especialidade_atribuida_id ?? 0
+    } as $especialidade_atribuida
     var $paciente { value = $avaliacao.paciente }
   }
 
@@ -36,7 +43,10 @@ query "fichas/{ficha_id}" verb=GET {
       spo2                     : $ficha.spo2
       glicemia                 : $ficha.glicemia
       glicemia_sinais_gravidade: $ficha.glicemia_sinais_gravidade == true
+      senha                    : $ficha.senha
+      especialidade            : ($especialidade_atribuida == null) ? null : {id: $especialidade_atribuida.id, nome: $especialidade_atribuida.nome, sigla: $especialidade_atribuida.sigla}
     }
+    destino_previsto: ($ficha.status == "EM_TRIAGEM") ? {especialidade: $destino.especialidade, motivo: $destino.motivo} : null
     paciente: {id: $paciente.id, cpf: $paciente.cpf, nome: $paciente.nome, data_nascimento: $paciente.data_nascimento, idade: $avaliacao.idade}
     sintomas: $avaliacao.sintomas|map:{id: $$.id, nome: $$.nome, descricao: $$.descricao, grupo: $$.grupo, pontuacao: $$.pontuacao}
     sintomas_livres: $avaliacao.sintomas_livres|map:{id: $$.id, descricao: $$.descricao, pontuacao: $$.pontuacao}

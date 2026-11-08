@@ -1,30 +1,32 @@
 # Tarefas
 
-## 1. Xano — direcionamento e senha
+Revisada em 08/11/2026 (Rev. 2.1 e decisões do PO). Ver `proposal.md` e `design.md` (D1–D7).
 
-- [ ] 1.1 [Xano] Acrescentar à `ficha_atendimento` os campos `especialidade_sugerida_id`, `especialidade_atribuida_id`, `senha`, `senha_numero` e `sem_medico_no_direcionamento`; verificar no painel
-- [ ] 1.2 [Xano] Criar a função `direcionar_ficha` (D2) e um endpoint de simulação `POST triagem/simular-direcionamento` (RECEPCAO_TRIAGEM e ADMINISTRADOR); verificar com os testes 1.5
-- [ ] 1.3 [Xano] Criar a tabela `contador_senha` e a função `gerar_senha` (D3); verificar com os testes 1.5
-- [ ] 1.4 [Xano] Criar `POST fichas/{id}/confirmar-triagem` (D4) e `GET fichas/{id}/comprovante`; verificar com os testes 1.5
-- [ ] 1.5 Escrever `tests/api/test_direcionamento.py` e `tests/api/test_senha.py` cobrindo direcionamento pelo conjunto de sintomas, pontuação e casos de conflito de destinos conforme decisão de produto, ficha sem sintomas direcionáveis conforme regra-base, nenhuma fila, confirmação de ficha incompleta, 403 do Médico, formato e numeração da senha, reinício diário em `America/Sao_Paulo`, número 1000, 10 confirmações paralelas sem repetição, comprovante sem nome/CPF, Sala distinta da especialidade, reimpressão sem novo número e comprovante de ficha finalizada; verificar que passam
+## 1. Documentos de domínio
 
-## 2. Xano — redirecionamento
+- [x] 1.1 Atualizar `docs/domain-model.md` (Especialidade: siglas CAR/CLI/NEU/ORT/PED; regras de destino com o desempate da §14.2 e a especialidade padrão; Ficha: confirmação exige cor; parâmetro "Especialidade padrão" deixa de ser condicional) e `docs/project-overview.md` (fluxo da triagem até a senha). Verificar com busca por "pertence à spec funcional de direcionamento" e "se prevista pela spec" que as pendências antigas saíram
 
-- [ ] 2.1 [Xano] Acrescentar o gancho de redirecionamento e troca de senha em `PATCH fichas/{id}` e em `ajustar-prioridade` para fichas AGUARDANDO (D5); verificar com os testes 2.4
-- [ ] 2.2 [Xano] Criar `redirecionar_especialidade` e chamá-la nos endpoints de disponibilidade e de ativação de médico e usuário (D5); verificar com os testes 2.4
-- [ ] 2.3 [Xano] Criar `POST admin/redirecionar` (ADMINISTRADOR); verificar com os testes 2.4
-- [ ] 2.4 Escrever `tests/api/test_redirecionamento.py` cobrindo alteração dos sintomas que muda o destino (chegada preservada e auditoria de origem e destino), alteração do escore/classificação sem atribuição de cor direta a sintomas, ausência de destino segundo decisão documentada, ficha CHAMADO não redirecionada e reavaliação sob demanda; verificar que passam e que `pytest tests/api` passa por completo
-- [ ] 2.5 Exportar o XanoScript das seções 1 e 2 para `backend/xano/` e verificar que os arquivos estão no repositório
+## 2. Xano — dados e regra de destino
 
-## 3. Reflex — confirmação e comprovante
+- [x] 2.1 Criar `function/direcionamento/inicializar_direcionamento.xs` (D1; usada pela 3.1) com as 5 especialidades, as ligações do catálogo e `ESPECIALIDADE_PADRAO`, idempotente. Verificar com `xano_validate_xanoscript`
+- [x] 2.2 Criar `function/direcionamento/escolher_destino.xs`, função pura (D2; usada pela 2.3), com blocos `test`: um sintoma; maior pontuação vence; empate na maior decidido pela soma; empate decidido pela fila; empate total pelo menor ID; 11 anos → Pediatria; 12 anos segue os sintomas; sem sintoma ligado → padrão. Verificar com `xano_validate_xanoscript`
+- [x] 2.3 Criar `function/direcionamento/destino_da_ficha.xs` (D3; usada pela 3.1 e 3.3). Verificar com `xano_validate_xanoscript`
+- [x] 2.4 Criar `function/direcionamento/gerar_senha.xs` (D4; usada pela 3.1) com teste de formatação (`V-CLI-001`, `B-CLI-1000`). Verificar com `xano_validate_xanoscript`
 
-- [ ] 3.1 [Reflex] Acrescentar à tela de triagem a prévia do destino clínico determinado pelos sintomas e o botão "Confirmar e gerar senha"; não condicionar o destino à disponibilidade ou à especialidade de referência do Médico; verificar os caminhos especificados
-- [ ] 3.2 [Reflex] Criar `/recepcao/comprovante/{id}` com o layout de 80 mm e impressão automática (D6), e o botão "Reimprimir" na ficha; verificar manualmente pela visualização de impressão do navegador que não aparecem nome nem CPF
-- [ ] 3.3 [Reflex] Mostrar o aviso "Senha alterada: reimprima o comprovante" quando a senha de uma ficha AGUARDANDO mudar; verificar manualmente com um ajuste de prioridade
-- [ ] 3.4 [Reflex] Acrescentar "Reavaliar direcionamento" para alterações clínicas/sintomas pertinentes em `/admin/disponibilidade`, sem redirecionar fichas só por mudança na disponibilidade ou especialidade de referência do Médico; verificar manualmente
-- [ ] 3.5 Adicionar ao README o roteiro manual da seção 3 e a configuração da impressora térmica; verificar executando-o
+## 3. Xano — endpoints
 
-## 4. Integração e documentação
+- [x] 3.1 Criar `api/triagem/fichas_id_confirmar_triagem_post.xs` (D5) com as recusas de ficha fora de `EM_TRIAGEM`, sem prioridade, sem sintoma/observação, especialidade padrão ausente e perfil sem permissão, e auditoria `TRIAGEM_CONFIRMADA`. Verificar com `xano_validate_xanoscript`
+- [x] 3.2 Criar `api/triagem/fichas_id_comprovante_get.xs` (D6) só com os campos permitidos e recusa para fichas sem senha ativa. Verificar com `xano_validate_xanoscript`
+- [x] 3.3 Em `api/triagem/fichas_id_get.xs`, devolver `destino_previsto` para `EM_TRIAGEM` e `senha`/`especialidade` para as demais (D7). Verificar com `xano_validate_xanoscript`
+- [x] 3.4 Publicar na `v1` os arquivos das tarefas 2.1–3.3 (`--dry-run` antes, push restrito, sem tabelas); rodar os testes unitários das funções no Xano; conferir com `xano workspace pull`
+  - Evidência (08/11/2026): `--dry-run` com 5 funções novas, 2 endpoints novos e `fichas/{ficha_id}` GET alterado, sem tabelas; push feito pelo PO. A primeira rodada de `xano unit_test run_all` mostrou 4 falhas em `escolher_destino` com duas ou mais candidatas (`Unable to locate var: atual.soma`: dentro de objeto literal, `get:$chave:0, soma:` engolia a chave seguinte); corrigido calculando os valores em variáveis próprias, também em `destino_da_ficha`, e republicado. Rodada final: os 12 testes do direcionamento passam (9 de `escolher_destino`, 3 de `formatar_senha`); os 3 que falham são de `pacientes/{paciente_id}` (telefone), anteriores. `xano workspace pull` confirmou as funções, `comprovante` GET, `confirmar-triagem` POST e `destino_previsto` no GET da ficha. Suíte do Reflex com 143 passando; `reflex export` compila.
 
-- [ ] 4.1 Verificação ponta a ponta: selecionar sintomas do catálogo que direcionem a Cardiologia e confirmar uma ficha, validando especialidade clínica, senha e comprovante; conferir que a disponibilidade/especialidade cadastral de Médicos não altera o destino da ficha
-- [ ] 4.2 Conferir `docs/domain-model.md` (Ficha_Atendimento: especialidades, senha e estados EM_TRIAGEM → AGUARDANDO) com a implementação e ajustar o que divergir
+## 4. Reflex
+
+- [x] 4.1 No `FichaState`: ler `destino_previsto`, `senha` e `especialidade`; criar `confirmar_triagem` (bloqueado sem cor ou com alteração não salva; redireciona para o comprovante) e `reimprimir`. Testes de estado: envio, bloqueios, redirecionamento e leitura dos campos. Verificar que a suíte unitária passa
+- [x] 4.2 Criar `ComprovanteState` e a página `/recepcao/comprovante/[id]` em 80 mm com impressão automática e "Voltar" (D6), sem dados pessoais. Teste de estado da carga do comprovante. Verificar que `reflex export` compila
+- [x] 4.3 Na tela da ficha: "Destino previsto", botão "Confirmar e gerar senha" e, fora de `EM_TRIAGEM`, modo leitura com senha, especialidade e "Reimprimir" (D7). Verificar que `reflex export` compila
+
+## 5. Verificação ponta a ponta
+
+- [ ] 5.1 Logado como Recepção/Triagem: ficha de adulto com "Dor ou pressão no peito" e cor Amarela → confirmar → `A-CAR-001` no comprovante sem nome/CPF; ficha com "Palpitações" e "Convulsão em atividade" → Neurologia; paciente de 11 anos → Pediatria; ficha só com observação → Clínica Geral; ficha sem cor → confirmação recusada; reimpressão com a mesma senha. Roteiro manual, pois o login exige código por e-mail
