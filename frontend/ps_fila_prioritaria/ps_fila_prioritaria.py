@@ -719,11 +719,19 @@ class FilaTicketsState(rx.State):
             corpo = resposta.json() or {}
             self.tickets = corpo.get("tickets", []) if isinstance(corpo, dict) else corpo
             agora = _timestamp_segundos(corpo.get("agora")) if isinstance(corpo, dict) else None
-            intervalo = int(corpo.get("intervalo_segundos") or 0) if isinstance(corpo, dict) else 0
+            parametros = corpo if isinstance(corpo, dict) else {}
+            intervalo = int(parametros.get("intervalo_segundos") or 0)
+            intervalo_repeticao = int(parametros.get("intervalo_repeticao_segundos") or 0)
+            tentativas_maximas = int(parametros.get("tentativas_maximas") or 0)
             for ticket in self.tickets:
                 ticket.setdefault("presente", False)
+                tentativas = int(ticket.get("tentativas") or 0)
+                # Chamada manual (chamada-manual-pre-triagem, D1): 30 s depois da 1ª chamada, 10 s depois das seguintes.
+                espera = intervalo if tentativas <= 1 else intervalo_repeticao
                 chamado = _timestamp_segundos(ticket.get("chamado_em"))
-                ticket["segundos_restantes"] = max(0, int(chamado + intervalo - agora + 0.999)) if chamado is not None and agora is not None and intervalo > 0 else -1
+                ticket["segundos_restantes"] = max(0, int(chamado + espera - agora + 0.999)) if chamado is not None and agora is not None and espera > 0 else -1
+                # Sem o limite configurado, a tela oferece o botão e o Xano decide (LIMITE_DE_CHAMADAS).
+                ticket["pode_chamar_novamente"] = tentativas_maximas <= 0 or tentativas < tentativas_maximas
                 prefixo = {"PEDIATRICO": "C", "PREFERENCIAL": "P", "NORMAL": "N"}.get(ticket.get("tipo"), "?")
                 ticket["senha_exibida"] = f"{prefixo}-{int(ticket.get('numero') or 0):03d}"
                 ticket["nome_tipo"], ticket["cor_tipo"] = APARENCIA_TIPO_TICKET.get(ticket.get("tipo"), ("—", COR_SECUNDARIA_FILA))
@@ -746,16 +754,9 @@ class FilaTicketsState(rx.State):
             for tipo, (nome, cor) in APARENCIA_TIPO_TICKET.items()
         ]
 
-    async def atualizar_automaticamente(self):
-        for ticket in self.tickets:
-            if (ticket.get("status") == "CHAMADO" and not ticket.get("presente")
-                    and ticket.get("segundos_restantes") == 0):
-                ticket["segundos_restantes"] = -1  # Evita insistir em caso de erro; a próxima sincronização recupera.
-                await self.acao(ticket["id"], "AVANCAR")
-                break
-
     @rx.event(background=True)
     async def monitorar(self):
+        """Só atualiza a tela: recarrega do Xano a cada 10 s e desconta a contagem a cada 1 s. Nunca envia ação."""
         async with self:
             if self.monitorando:
                 return
@@ -780,7 +781,6 @@ class FilaTicketsState(rx.State):
                                 if restante > 0:
                                     ticket["segundos_restantes"] = restante - 1
                         self.tickets = tickets
-                    await self.atualizar_automaticamente()
         finally:
             async with self:
                 self.monitorando = False
@@ -800,6 +800,16 @@ class FilaTicketsState(rx.State):
         if resposta is not None:
             self.mensagem = "Operação registrada."
             await self.carregar()
+
+    async def chamar_novamente(self, ticket_id: int) -> None:
+        await self.acao(ticket_id, "REPETIR")
+        if not self.erro:
+            self.mensagem = "Ticket chamado novamente."
+
+    async def nao_compareceu(self, ticket_id: int) -> None:
+        await self.acao(ticket_id, "AUSENCIA")
+        if not self.erro:
+            self.mensagem = "Não comparecimento registrado."
 
     async def identificar(self, ticket_id: int):
         paciente = await self.get_state(PacienteState)
@@ -1653,8 +1663,11 @@ def cartao_painel(*filhos: rx.Component, **props: Any) -> rx.Component:
 
 
 def cartao_chamado(ticket: dict[str, Any]) -> rx.Component:
-    """Ticket em chamada: código grande, tentativa, contagem até a próxima etapa e ações da Recepção."""
+    """Ticket em chamada: código grande, chamada atual, contagem e ações da Recepção (chamada manual, sem avanço automático)."""
     presente = ticket["presente"].to(bool)
+    # Contagem em zero (ou desconhecida, -1) libera os botões; o Xano valida o prazo de qualquer forma.
+    aguardando_intervalo = ticket["segundos_restantes"].to(int) > 0
+    pode_chamar_novamente = ticket["pode_chamar_novamente"].to(bool)
     return cartao_painel(
         rx.hstack(
             rx.vstack(
@@ -1665,8 +1678,9 @@ def cartao_chamado(ticket: dict[str, Any]) -> rx.Component:
                     chip_tipo_ticket(ticket),
                     rx.text(ticket["tentativas"], "ª chamada", size="2", color=COR_TEXTO),
                     rx.cond(ticket["oportunidade"].to(int) > 1, rx.text("· 2ª oportunidade", size="2", color=COR_SECUNDARIA)),
-                    rx.cond(~presente & (ticket["segundos_restantes"].to(int) >= 0),
-                            rx.text("· próxima etapa em ", ticket["segundos_restantes"], " s", size="2", color=COR_SECUNDARIA)),
+                    rx.cond(~presente & aguardando_intervalo,
+                            rx.text("· ", rx.cond(pode_chamar_novamente, "Chamar novamente e Não compareceu liberam", "Não compareceu libera"),
+                                    " em ", ticket["segundos_restantes"], " s", size="2", color=COR_SECUNDARIA)),
                     align="center",
                     spacing="2",
                     wrap="wrap",
@@ -1677,6 +1691,18 @@ def cartao_chamado(ticket: dict[str, Any]) -> rx.Component:
             rx.spacer(),
             rx.hstack(
                 botao_secundario("Desistência", on_click=FilaTicketsState.acao(ticket["id"], "DESISTENCIA")),
+                rx.cond(
+                    ~presente,
+                    rx.hstack(
+                        rx.cond(
+                            pode_chamar_novamente,
+                            botao_secundario("Chamar novamente", on_click=FilaTicketsState.chamar_novamente(ticket["id"]), disabled=aguardando_intervalo),
+                        ),
+                        botao_secundario("Não compareceu", on_click=FilaTicketsState.nao_compareceu(ticket["id"]), disabled=aguardando_intervalo),
+                        spacing="3",
+                        wrap="wrap",
+                    ),
+                ),
                 rx.cond(
                     presente,
                     rx.button("Identificar paciente", on_click=FilaTicketsState.identificar(ticket["id"]), size="3", background=COR_AZUL),

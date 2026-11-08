@@ -7,9 +7,9 @@ context: |
   - Tech stack: Frontend Reflex (Python); backend e banco Xano (XanoScript). Regras,
     persistência e autorização ficam no Xano; Reflex apresenta e envia dados.
   - Domain invariants: escore clínico = pontos de todos os sintomas + pontos dos sinais vitais;
-    a especialidade do Médico é cadastral e não restringe atendimento; chamadas da mesma
-    senha a cada 30 segundos, até 3 tentativas por oportunidade e uma única reentrada ao fim
-    da fila; fuso fixo America/Sao_Paulo.
+    a especialidade do Médico é cadastral e não restringe atendimento; chamadas sempre
+    manuais, até 3 tentativas por oportunidade e uma única reentrada ao fim da fila (Médico:
+    30 s entre chamadas; Recepção: 30 s após a 1ª e 10 s após as seguintes); fuso fixo America/Sao_Paulo.
   - Security: Autorização por perfil é validada no backend. Painel público nunca exibe CPF nem
     nome completo. Alterações relevantes geram auditoria.
   - Development: Mudanças especificadas com OpenSpec e entregues em fatias verticais verificáveis.
