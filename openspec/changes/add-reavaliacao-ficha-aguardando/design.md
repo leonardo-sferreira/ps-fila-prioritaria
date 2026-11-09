@@ -84,6 +84,7 @@ A ficha `AGUARDANDO` volta a usar os mesmos componentes de edição da triagem, 
 ## Riscos / Compromissos
 
 - [`avaliar_ficha` e `destino_da_ficha` podem não enxergar, dentro da transação, os dados que o PATCH acabou de gravar] → verificar no Run & Debug, logo na primeira tarefa do Xano; se não enxergarem, passar os dados resultantes como input em vez de reler a ficha.
+- [A recusa sem cor acontece depois de gravar e depende do rollback de `db.transaction`, que nunca foi provado neste projeto] → o cenário "gestante sem ajuste" da 3.3 confere no banco que nada mudou; se o rollback não funcionar, a avaliação passa a ser feita antes de gravar e a change volta para revisão.
 - [O número da especialidade anterior fica sem uso] → aceito; o número é só identificador, e reutilizá-lo poderia confundir quem tem o comprovante antigo.
 - [O paciente fica com comprovante inválido] → o aviso fixo e o "Reimprimir" na tela; o painel público fica para `add-painel-publico`.
 - [Confirmações e reavaliações simultâneas disputando o contador] → mesma limitação já aceita em `add-direcionamento-senha`; a operação sequencial é suportada.

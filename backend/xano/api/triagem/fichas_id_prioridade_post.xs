@@ -1,9 +1,10 @@
 // Ajuste manual da prioridade pela Recepção/Triagem (add-classificacao-prioridade, D6).
 // Também é a classificação manual excepcional quando o cálculo automático está bloqueado
 // (menor de 16 anos, gestante ou dado pendente). Justificativa obrigatória e auditada.
+// Em AGUARDANDO, a troca de cor troca também a letra da senha (add-reavaliacao-ficha-aguardando, D4).
 query "fichas/{ficha_id}/prioridade" verb=POST {
   api_group = "Triagem"
-  description = "Define a prioridade atual da ficha EM_TRIAGEM com justificativa obrigatória e auditoria PRIORIDADE_ALTERADA."
+  description = "Define a prioridade atual da ficha EM_TRIAGEM ou AGUARDANDO com justificativa obrigatória e auditoria PRIORIDADE_ALTERADA; em AGUARDANDO, atualiza a senha."
 
   auth = "usuario"
 
@@ -17,16 +18,6 @@ query "fichas/{ficha_id}/prioridade" verb=POST {
     function.run "auth/verificar_acesso" {
       input = {usuario_id: $auth.id, perfis_permitidos: ["RECEPCAO_TRIAGEM"]}
     } as $usuario
-
-    precondition (["VERMELHA", "AMARELA", "AZUL"]|in:$input.prioridade) {
-      error_type = "inputerror"
-      error = "PRIORIDADE_INVALIDA"
-    }
-
-    precondition ($input.justificativa != null && ($input.justificativa|strlen) > 0) {
-      error_type = "inputerror"
-      error = "JUSTIFICATIVA_OBRIGATORIA"
-    }
 
     db.transaction {
       stack {
@@ -44,51 +35,28 @@ query "fichas/{ficha_id}/prioridade" verb=POST {
           error = "FICHA_NAO_ENCONTRADA"
         }
 
-        precondition ($ficha.status == "EM_TRIAGEM") {
+        precondition (["EM_TRIAGEM", "AGUARDANDO"]|in:$ficha.status) {
           error_type = "inputerror"
           error = "FICHA_FORA_DA_TRIAGEM"
         }
 
-        // Compara com a classificação vigente, não com um valor gravado antigo.
-        function.run "classificacao/avaliar_ficha" {
-          input = {ficha_id: $ficha.id}
-        } as $avaliacao
+        function.run "classificacao/aplicar_ajuste" {
+          input = {ficha_id: $ficha.id, usuario_id: $usuario.id, prioridade: $input.prioridade, justificativa: $input.justificativa, reavaliar_senha: $ficha.status == "AGUARDANDO"}
+        } as $ajuste
 
-        var $prioridade_calculada {
-          value = $avaliacao.classificacao.prioridade_calculada
-        }
-
-        precondition ($prioridade_calculada == null || $prioridade_calculada != $input.prioridade) {
-          error_type = "inputerror"
-          error = "PRIORIDADE_IGUAL_A_CALCULADA"
-        }
-
-        db.patch ficha_atendimento {
-          field_name = "id"
-          field_value = $ficha.id
-          data = {prioridade_calculada: $prioridade_calculada, prioridade_atual: $input.prioridade, justificativa_ajuste: $input.justificativa}
-        } as $ficha_ajustada
-
-        function.run "registrar_alteracao" {
-          input = {
-            usuario_id    : $usuario.id
-            tipo_evento   : "PRIORIDADE_ALTERADA"
-            entidade      : "FICHA_ATENDIMENTO"
-            registro_id   : $ficha.id
-            valor_anterior: {prioridade_calculada: $ficha.prioridade_calculada, prioridade_atual: $ficha.prioridade_atual, justificativa_ajuste: $ficha.justificativa_ajuste}
-            valor_novo    : {prioridade_calculada: $prioridade_calculada, prioridade_atual: $input.prioridade}
-            justificativa : $input.justificativa
-          }
-        } as $auditoria
+        var $reavaliacao { value = $ajuste.reavaliacao }
       }
     }
   }
 
   response = {
     id                  : $input.ficha_id
-    prioridade_calculada: $prioridade_calculada
-    prioridade_atual    : $input.prioridade
-    justificativa_ajuste: $input.justificativa
+    prioridade_calculada: $ajuste.prioridade_calculada
+    prioridade_atual    : $ajuste.prioridade_atual
+    justificativa_ajuste: $ajuste.justificativa_ajuste
+    senha_anterior      : ($reavaliacao == null) ? null : $reavaliacao.senha_anterior
+    senha               : ($reavaliacao == null) ? null : $reavaliacao.senha
+    senha_alterada      : ($reavaliacao == null) ? false : $reavaliacao.senha_alterada
   }
   guid = "x3yrP4otR-fp0fb9tsb5QL-Tj-8"
 }
