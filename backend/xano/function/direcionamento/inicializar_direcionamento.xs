@@ -14,7 +14,8 @@ function "direcionamento/inicializar_direcionamento" {
         conditional {
           if ($existente == null) {
             db.add especialidade {
-              data = {nome: $padrao.nome, sigla: $padrao.sigla, ativo: true}
+              // nome_normalizado é obrigatório desde a migração de especialidade dos cadastros: lower(trim(nome)).
+              data = {nome: $padrao.nome, nome_normalizado: $padrao.nome|to_lower, sigla: $padrao.sigla, ativo: true}
             } as $criada
           }
         }
