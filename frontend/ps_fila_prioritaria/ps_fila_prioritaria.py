@@ -31,7 +31,7 @@ carregar_variaveis_ambiente()
 # Códigos da API da ficha e da classificação traduzidos para a Recepção/Triagem.
 MENSAGENS_ERRO_API = {
     "FICHA_NAO_FINALIZADA_EXISTENTE": "Este paciente já está na fila de atendimento (ficha aguardando ou chamada). Não é possível abrir outra ficha.",
-    "FICHA_FORA_DA_TRIAGEM": "Esta ficha já saiu da triagem e não pode mais ser alterada aqui.",
+    "FICHA_FORA_DA_TRIAGEM": "Esta ficha já foi chamada ou encerrada e não pode mais ser alterada.",
     "SINTOMA_LIVRE_DESCRICAO_INVALIDA": "Descreva o sintoma não listado com 3 a 80 caracteres.",
     "SINTOMA_LIVRE_PONTUACAO_INVALIDA": "Escolha a gravidade do sintoma não listado: 1, 2 ou 3.",
     "SINTOMA_LIVRE_DUPLICADO": "Há sintomas não listados repetidos.",
@@ -46,6 +46,19 @@ MENSAGENS_ERRO_API = {
     "SENHA_NAO_GERADA": "Não foi possível gerar a senha. Tente confirmar de novo.",
 }
 MENSAGEM_LIMITE_XANO ="O sistema recebeu muitos acessos ao mesmo tempo. Aguarde alguns segundos e tente novamente."
+
+
+def _codigo_erro(resposta: httpx.Response) -> str:
+    """Código de negócio devolvido pela API (ex.: FICHA_SEM_PRIORIDADE), ou vazio."""
+    try:
+        corpo: Any = resposta.json()
+    except ValueError:
+        return ""
+    if isinstance(corpo, dict):
+        codigo = corpo.get("message") or corpo.get("error") or corpo.get("code")
+        if isinstance(codigo, str):
+            return codigo
+    return ""
 
 
 def _mensagem_erro(resposta: httpx.Response) -> str:
@@ -935,6 +948,10 @@ class FichaState(rx.State):
     # Direcionamento: especialidade prevista enquanto EM_TRIAGEM (add-direcionamento-senha, D7).
     destino_previsto: dict[str, Any] = {}
     confirmando: bool = False
+    # Reavaliação em AGUARDANDO (add-reavaliacao-ficha-aguardando, D6): aviso fixo quando a senha muda e
+    # código do último erro da API, para reagir à ficha que ficaria sem cor.
+    aviso_senha: str = ""
+    ultimo_erro: str = ""
 
     @rx.var
     def cpf_exibido(self) -> str:
@@ -976,6 +993,10 @@ class FichaState(rx.State):
         return self.ficha.get("status") == "EM_TRIAGEM"
 
     @rx.var
+    def aguardando(self) -> bool:
+        return self.ficha.get("status") == "AGUARDANDO"
+
+    @rx.var
     def destino_texto(self) -> str:
         especialidade = (self.destino_previsto or {}).get("especialidade") or {}
         if not especialidade:
@@ -1015,11 +1036,24 @@ class FichaState(rx.State):
             return None
         if resposta.status_code == 401:
             auth._encerrar_sessao_local("Sua sessão expirou. Faça login novamente.")
+        self.ultimo_erro = ""
         if not resposta.is_success:
+            self.ultimo_erro = _codigo_erro(resposta)
             self.mensagem = _mensagem_erro(resposta)
             self.erro = True
             return None
         return resposta
+
+    def _alteracoes_pendentes(self) -> bool:
+        return self.sintomas_alterados or self.observacao_alterada or self.livres_alterados or self.sinais_alterados
+
+    def _registrar_senha(self, resultado: dict[str, Any]) -> None:
+        """Guarda o aviso de reimpressão quando a reavaliação troca a senha (D6)."""
+        if resultado.get("senha_alterada"):
+            self.aviso_senha = (
+                f"Senha alterada de {resultado.get('senha_anterior')} para {resultado.get('senha')}: "
+                "o comprovante impresso deixou de valer. Reimprima e entregue o novo ao paciente."
+            )
 
     def _carregar_resposta_ficha(self, dados: dict[str, Any]) -> None:
         ficha = dados.get("ficha") or {}
@@ -1066,6 +1100,8 @@ class FichaState(rx.State):
             return
         self.carregando = True
         self._limpar_feedback()
+        # O aviso de reimpressão vale para a ficha salva agora, não para outra ficha aberta depois.
+        self.aviso_senha = ""
         try:
             await self._recarregar()
         finally:
@@ -1166,6 +1202,23 @@ class FichaState(rx.State):
             return
 
         self._limpar_feedback()
+        dados = self._dados_alterados()
+        if dados is None:
+            return
+        if not dados:
+            self.mensagem = "Nenhuma alteração para salvar."
+            return
+
+        self.salvando = True
+        # Entrega o loading antes das requisições de PATCH e GET.
+        yield
+        try:
+            await self._enviar_alteracoes(dados)
+        finally:
+            self.salvando = False
+
+    def _dados_alterados(self) -> dict[str, Any] | None:
+        """Monta o PATCH só com o que mudou; None quando um sinal vital digitado é inválido."""
         dados: dict[str, Any] = {}
         if self.sintomas_alterados:
             # Uma lista vazia é uma coleção final válida e não equivale a campo omitido.
@@ -1177,26 +1230,30 @@ class FichaState(rx.State):
         if self.sinais_alterados:
             sinais = self._sinais_para_envio()
             if sinais is None:
-                return
+                return None
             dados["sinais_vitais"] = sinais
-        if not dados:
-            self.mensagem = "Nenhuma alteração para salvar."
-            return
+        return dados
 
-        self.salvando = True
-        # Entrega o loading antes das requisições de PATCH e GET.
-        yield
-        try:
-            resposta = await self._requisitar("PATCH", f"/fichas/{self.ficha_id}", json=dados)
-            if resposta is not None:
-                if await self._recarregar():
-                    self.mensagem = "Ficha salva. A prioridade foi recalculada."
-                    self.erro = False
-                elif not self.mensagem:
-                    self.mensagem = "A ficha foi salva, mas não foi possível recarregá-la."
-                    self.erro = True
-        finally:
-            self.salvando = False
+    async def _enviar_alteracoes(self, dados: dict[str, Any]) -> bool:
+        """Envia o PATCH; em AGUARDANDO o Xano também refaz destino e senha (D3)."""
+        resposta = await self._requisitar("PATCH", f"/fichas/{self.ficha_id}", json=dados)
+        if resposta is None:
+            if self.ultimo_erro == "FICHA_SEM_PRIORIDADE" and self.ficha.get("status") == "AGUARDANDO":
+                # A ficha não pode ficar na fila sem cor: o ajuste vai junto com as alterações (D2).
+                self.mensagem = (
+                    "Com essas alterações a cor não pode ser calculada. Escolha a prioridade com justificativa "
+                    "para salvar tudo junto."
+                )
+                self.abrir_ajuste()
+            return False
+        self._registrar_senha(resposta.json() or {})
+        if await self._recarregar():
+            self.mensagem = "Ficha salva. A prioridade foi recalculada."
+            self.erro = False
+        elif not self.mensagem:
+            self.mensagem = "A ficha foi salva, mas não foi possível recarregá-la."
+            self.erro = True
+        return True
 
     def abrir_ajuste(self) -> None:
         self.ajuste_prioridade = ""
@@ -1249,10 +1306,15 @@ class FichaState(rx.State):
         if not self.ajuste_justificativa.strip():
             self.ajuste_erro = "A justificativa é obrigatória."
             return
+        pendentes = self._alteracoes_pendentes()
+        if pendentes and self.ficha.get("status") == "AGUARDANDO":
+            # Com alterações pendentes, a cor calculada mostrada ainda é a antiga: o Xano valida contra a nova.
+            await self._ajustar_com_alteracoes()
+            return
         if self.prioridade_calculada and self.ajuste_prioridade == self.prioridade_calculada:
             self.ajuste_erro = "Essa já é a prioridade calculada. Escolha outra cor."
             return
-        if self.sintomas_alterados or self.observacao_alterada or self.livres_alterados or self.sinais_alterados:
+        if pendentes:
             self.ajuste_erro = "Salve a ficha antes de ajustar a prioridade: salvar recalcula a cor e descarta ajustes."
             return
         self.ajuste_erro = ""
@@ -1269,11 +1331,37 @@ class FichaState(rx.State):
                 self._limpar_feedback()
                 return
             self.ajuste_aberto = False
+            self._registrar_senha(resposta.json() or {})
             if await self._recarregar():
                 self.mensagem = "Prioridade ajustada. A justificativa ficou registrada na auditoria."
                 self.erro = False
         finally:
             self.ajustando = False
+
+    async def _ajustar_com_alteracoes(self) -> None:
+        """Ficha AGUARDANDO: alterações clínicas e ajuste no mesmo PATCH, para não ficar sem cor (D2)."""
+        dados = self._dados_alterados()
+        if dados is None:
+            self.ajuste_erro = self.mensagem
+            self._limpar_feedback()
+            return
+        dados["prioridade_ajuste"] = self.ajuste_prioridade
+        dados["justificativa_ajuste"] = self.ajuste_justificativa.strip()
+        self.ajuste_erro = ""
+        self._limpar_feedback()
+        self.ajustando = True
+        try:
+            if await self._enviar_alteracoes(dados):
+                self.ajuste_aberto = False
+                self.mensagem = "Ficha salva com a prioridade ajustada. A justificativa ficou registrada na auditoria."
+            else:
+                self.ajuste_erro = self.mensagem
+                self._limpar_feedback()
+        finally:
+            self.ajustando = False
+
+    def fechar_aviso_senha(self) -> None:
+        self.aviso_senha = ""
 
 
 NOME_PRIORIDADE = {"VERMELHA": "Vermelha", "AMARELA": "Amarela", "AZUL": "Azul"}
@@ -2548,16 +2636,49 @@ def recepcao_ficha() -> rx.Component:
                                     spacing="3",
                                     width="100%",
                                 ),
-                                rx.callout(
-                                    rx.hstack(
-                                        rx.text("Triagem confirmada: senha ", rx.text.strong(FichaState.senha_ficha), " · ", FichaState.especialidade_ficha),
-                                        rx.spacer(),
-                                        rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="2", background=COR_AZUL),
-                                        align="center",
-                                        wrap="wrap",
+                                rx.vstack(
+                                    rx.cond(
+                                        FichaState.aviso_senha != "",
+                                        rx.callout(
+                                            rx.hstack(
+                                                rx.text(FichaState.aviso_senha, weight="medium"),
+                                                rx.spacer(),
+                                                rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="2", background=COR_AZUL),
+                                                rx.icon_button(rx.icon("x", size=14), on_click=FichaState.fechar_aviso_senha, variant="ghost", size="1", aria_label="Fechar aviso"),
+                                                align="center",
+                                                wrap="wrap",
+                                                width="100%",
+                                            ),
+                                            color_scheme="amber",
+                                            width="100%",
+                                        ),
+                                    ),
+                                    rx.callout(
+                                        rx.hstack(
+                                            rx.text("Triagem confirmada: senha ", rx.text.strong(FichaState.senha_ficha), " · ", FichaState.especialidade_ficha),
+                                            rx.spacer(),
+                                            rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="2", background=COR_AZUL),
+                                            align="center",
+                                            wrap="wrap",
+                                            width="100%",
+                                        ),
+                                        color_scheme="green",
                                         width="100%",
                                     ),
-                                    color_scheme="green",
+                                    # Reavaliação (RF12): AGUARDANDO continua editável, sem "Confirmar e gerar senha";
+                                    # salvar refaz cor, destino e senha no Xano. CHAMADO e finais ficam só de leitura.
+                                    rx.cond(
+                                        FichaState.aguardando,
+                                        rx.flex(
+                                            botao_secundario("Ajustar prioridade (justificativa obrigatória)", on_click=FichaState.abrir_ajuste),
+                                            botao_secundario("Salvar alterações", on_click=FichaState.salvar, loading=FichaState.salvando),
+                                            justify="between",
+                                            gap="12px",
+                                            wrap="wrap",
+                                            width="100%",
+                                        ),
+                                    ),
+                                    spacing="3",
                                     width="100%",
                                 ),
                             ),

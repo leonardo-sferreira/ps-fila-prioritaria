@@ -31,7 +31,7 @@ Parâmetros de regra / Faixas de sinais vitais → configuração usada pelas re
 | Estado | Significado | Próximos estados |
 |---|---|---|
 | EM_TRIAGEM | Ficha aberta; triagem em andamento, ainda sem senha. | AGUARDANDO, CANCELADO |
-| AGUARDANDO | Paciente ativo na fila da especialidade indicada pelos sintomas. | CHAMADO, CANCELADO |
+| AGUARDANDO | Paciente ativo na fila da especialidade indicada pelos sintomas; a Recepção/Triagem ainda pode corrigir os dados clínicos (reavaliação). | CHAMADO, CANCELADO |
 | CHAMADO | Senha chamada por um médico; aguarda comparecimento. | ATENDIDO, AGUARDANDO (reentrada), DESISTÊNCIA |
 | ATENDIDO | Paciente compareceu e saiu da fila (não é conclusão clínica). | Final |
 | DESISTÊNCIA | Desistência explícita ou encerramento definitivo sem atendimento após as oportunidades previstas. | Final |
@@ -328,6 +328,8 @@ Passagem do paciente pelo PS, da triagem até o comparecimento, a desistência o
 - A glicemia baixa recebe os pontos definidos na tabela da seção Faixas de sinais vitais.
 - A senha é gerada somente após o direcionamento (RN19), na confirmação da triagem, que exige cor definida (calculada ou ajustada manualmente) e leva a ficha de EM_TRIAGEM a AGUARDANDO.
 - Senha `COR-ESP-NNN`: V/A/B pela cor, sigla da especialidade e número diário por especialidade (fuso `America/Sao_Paulo`), compartilhado entre cores. O comprovante de 80 mm não traz nome, CPF, data de nascimento, sintomas nem sinais vitais; a reimpressão usa a mesma senha.
+- Reavaliação em AGUARDANDO (RF12): a Recepção/Triagem pode alterar sintomas, observação, sinais vitais, gestação e o ajuste manual da ficha em AGUARDANDO; CHAMADO e os estados finais não são editáveis. Cada alteração recalcula a classificação, refaz o destino (sem contar a própria ficha no critério de fila) e atualiza a senha numa única operação, mantendo o horário de chegada. A ficha nunca fica na fila sem cor: a alteração que deixa a prioridade vazia é recusada, a menos que traga o ajuste manual justificado na mesma operação.
+- Senha na reavaliação: sem mudança de cor e especialidade, continua a mesma; só a cor mudou, troca apenas a letra e mantém o número (`A-CAR-001` → `V-CAR-001`); a especialidade mudou, recebe o próximo número do dia da nova especialidade. Quando a senha muda, o comprovante impresso deixa de valer e a tela oferece a reimpressão.
 
 ## Ficha_Sintoma
 

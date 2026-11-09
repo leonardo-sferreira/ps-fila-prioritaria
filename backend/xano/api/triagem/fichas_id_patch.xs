@@ -1,6 +1,6 @@
 query "fichas/{ficha_id}" verb=PATCH {
   api_group = "Triagem"
-  description = "Atualiza observação, sintomas do catálogo, sintomas digitados e sinais vitais da ficha EM_TRIAGEM, valida RN04, recalcula a classificação (descartando o ajuste manual) e audita."
+  description = "Atualiza observação, sintomas do catálogo, sintomas digitados e sinais vitais da ficha EM_TRIAGEM ou AGUARDANDO, valida RN04, recalcula a classificação (descartando o ajuste manual), aplica o ajuste opcional, reavalia destino e senha em AGUARDANDO e audita."
 
   auth = "usuario"
 
@@ -16,6 +16,10 @@ query "fichas/{ficha_id}" verb=PATCH {
     json sinais_vitais? = "__OMITTED__"
     // Lista final de {descricao, pontuacao} digitados pela Recepção/Triagem (D9).
     json sintomas_livres? = "__OMITTED__"
+    // Ajuste manual opcional aplicado depois do recálculo, para a ficha não ficar sem cor
+    // (add-reavaliacao-ficha-aguardando, D2).
+    text prioridade_ajuste? filters=trim|upper
+    text justificativa_ajuste? filters=trim
   }
 
   stack {
@@ -60,7 +64,8 @@ query "fichas/{ficha_id}" verb=PATCH {
           error = "FICHA_NAO_ENCONTRADA"
         }
 
-        precondition ($ficha.status == "EM_TRIAGEM") {
+        // AGUARDANDO também é editável (RF12); CHAMADO e os finais não.
+        precondition (["EM_TRIAGEM", "AGUARDANDO"]|in:$ficha.status) {
           error_type = "inputerror"
           error = "FICHA_FORA_DA_TRIAGEM"
         }
@@ -402,6 +407,28 @@ query "fichas/{ficha_id}" verb=PATCH {
           }
         } as $ficha_recalculada
 
+        var $prioridade_final { value = $prioridade_calculada }
+
+        conditional {
+          if ($input.prioridade_ajuste != null && $input.prioridade_ajuste != "") {
+            function.run "classificacao/aplicar_ajuste" {
+              input = {ficha_id: $ficha.id, usuario_id: $usuario.id, prioridade: $input.prioridade_ajuste, justificativa: $input.justificativa_ajuste}
+            } as $ajuste
+            var.update $prioridade_final { value = $ajuste.prioridade_atual }
+          }
+        }
+
+        var $reavaliacao { value = null }
+
+        conditional {
+          if ($ficha.status == "AGUARDANDO") {
+            function.run "direcionamento/reavaliar_senha" {
+              input = {ficha_id: $ficha.id, prioridade_anterior: $ficha.prioridade_atual, refazer_destino: true}
+            } as $reavaliacao_feita
+            var.update $reavaliacao { value = $reavaliacao_feita }
+          }
+        }
+
         var $tipo_evento { value = "SINAIS_VITAIS_ALTERADOS" }
 
         conditional {
@@ -416,8 +443,8 @@ query "fichas/{ficha_id}" verb=PATCH {
             tipo_evento   : $tipo_evento
             entidade      : "FICHA_ATENDIMENTO"
             registro_id   : $ficha.id
-            valor_anterior: {observacao: $ficha.observacao, sintoma_ids: $ids_atuais, sintomas_livres: $livres_anteriores, sinais_vitais: $sinais_anteriores, prioridade_calculada: $ficha.prioridade_calculada, prioridade_atual: $ficha.prioridade_atual, justificativa_ajuste: $ficha.justificativa_ajuste}
-            valor_novo    : {observacao: $observacao_resultante, sintoma_ids: $ids_resultantes, sintomas_livres: $livres_resultantes, sinais_vitais: $sinais_resultantes, prioridade_calculada: $prioridade_calculada, prioridade_atual: $prioridade_calculada}
+            valor_anterior: {observacao: $ficha.observacao, sintoma_ids: $ids_atuais, sintomas_livres: $livres_anteriores, sinais_vitais: $sinais_anteriores, prioridade_calculada: $ficha.prioridade_calculada, prioridade_atual: $ficha.prioridade_atual, justificativa_ajuste: $ficha.justificativa_ajuste, especialidade_id: $ficha.especialidade_atribuida_id, senha: $ficha.senha}
+            valor_novo    : {observacao: $observacao_resultante, sintoma_ids: $ids_resultantes, sintomas_livres: $livres_resultantes, sinais_vitais: $sinais_resultantes, prioridade_calculada: $prioridade_calculada, prioridade_atual: $prioridade_final, especialidade_id: ($reavaliacao == null) ? $ficha.especialidade_atribuida_id : $reavaliacao.especialidade.id, senha: ($reavaliacao == null) ? $ficha.senha : $reavaliacao.senha}
           }
         } as $auditoria
       }
@@ -431,6 +458,11 @@ query "fichas/{ficha_id}" verb=PATCH {
     sintomas_livres: $livres_resultantes
     sinais_vitais  : $sinais_resultantes
     classificacao  : $avaliacao.classificacao
+    prioridade_atual: $prioridade_final
+    especialidade  : ($reavaliacao == null) ? null : $reavaliacao.especialidade
+    senha_anterior : ($reavaliacao == null) ? null : $reavaliacao.senha_anterior
+    senha          : ($reavaliacao == null) ? null : $reavaliacao.senha
+    senha_alterada : ($reavaliacao == null) ? false : $reavaliacao.senha_alterada
   }
 
   guid = "XJ6U5MqK_6-Cg2920GUm4eZWp80"

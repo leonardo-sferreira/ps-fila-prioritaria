@@ -1,6 +1,6 @@
 // Destino atual da ficha (add-direcionamento-senha, D3): lê idade e sintomas do catálogo via avaliar_ficha,
 // as ligações sintoma → especialidade ativa, a fila AGUARDANDO das candidatas, Pediatria e a especialidade padrão,
-// e chama a regra pura escolher_destino. Só leitura: usada na prévia (GET) e na confirmação.
+// e chama a regra pura escolher_destino. Só leitura: usada na prévia (GET), na confirmação e na reavaliação.
 function "direcionamento/destino_da_ficha" {
   description = "Calcula a especialidade de destino da ficha e devolve também a avaliação da classificação."
 
@@ -55,8 +55,10 @@ function "direcionamento/destino_da_ficha" {
       value = ($ligacoes|map:$$.especialidade_id)|unique
     }
 
+    // A própria ficha não conta: na reavaliação ela já está AGUARDANDO e daria uma ficha a mais à especialidade
+    // atual (add-reavaliacao-ficha-aguardando, D5). Na confirmação ela ainda está EM_TRIAGEM e nada muda.
     db.query ficha_atendimento {
-      where = $db.ficha_atendimento.status == "AGUARDANDO" && $db.ficha_atendimento.especialidade_atribuida_id in $candidatas
+      where = $db.ficha_atendimento.status == "AGUARDANDO" && $db.ficha_atendimento.especialidade_atribuida_id in $candidatas && $db.ficha_atendimento.id != $input.ficha_id
       return = {type: "list"}
     } as $aguardando
 

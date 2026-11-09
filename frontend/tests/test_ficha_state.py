@@ -69,6 +69,11 @@ class EstadoFichaFalso:
     _carregar_resposta_ficha = FichaState._carregar_resposta_ficha
     _recarregar = FichaState._recarregar
     _sinais_para_envio = FichaState._sinais_para_envio
+    _alteracoes_pendentes = FichaState._alteracoes_pendentes
+    _registrar_senha = FichaState._registrar_senha
+    _dados_alterados = FichaState._dados_alterados
+    _enviar_alteracoes = FichaState._enviar_alteracoes
+    _ajustar_com_alteracoes = FichaState._ajustar_com_alteracoes
     carregar = FichaState.carregar.fn
     set_observacao = FichaState.set_observacao.fn
     alternar_sintoma = FichaState.alternar_sintoma.fn
@@ -110,6 +115,8 @@ class EstadoFichaFalso:
         self.ajustando = False
         self.destino_previsto = {}
         self.confirmando = False
+        self.aviso_senha = ""
+        self.ultimo_erro = ""
         self.auth = AuthFalso()
 
     async def get_state(self, estado):
@@ -375,7 +382,7 @@ class TestAjustePrioridade(unittest.TestCase):
         estado.ajuste_justificativa = "Dor intensa"
         with _api(Resposta(400, {"message": "FICHA_FORA_DA_TRIAGEM"})):
             asyncio.run(estado.confirmar_ajuste())
-        self.assertEqual(estado.ajuste_erro, "Esta ficha já saiu da triagem e não pode mais ser alterada aqui.")
+        self.assertEqual(estado.ajuste_erro, "Esta ficha já foi chamada ou encerrada e não pode mais ser alterada.")
         self.assertTrue(estado.ajuste_aberto)
 
 
@@ -425,6 +432,88 @@ class TestConfirmacaoTriagem(unittest.TestCase):
     def test_reimprimir_abre_o_comprovante(self) -> None:
         estado = self._estado()
         self.assertIn("/recepcao/comprovante/10", str(estado.reimprimir()))
+
+
+FICHA_AGUARDANDO = {
+    **FICHA,
+    "ficha": {**FICHA["ficha"], "status": "AGUARDANDO", "senha": "A-CAR-001", "especialidade": {"id": 1, "nome": "Cardiologia", "sigla": "CAR"}},
+    "classificacao": {**CLASSIFICACAO, "prioridade_calculada": "AMARELA", "prioridade_atual": "AMARELA"},
+}
+
+
+class TestReavaliacaoAguardando(unittest.TestCase):
+    """RF12: ficha AGUARDANDO editável, com troca de senha e ajuste no mesmo envio (add-reavaliacao-ficha-aguardando)."""
+
+    def _estado(self, ficha=FICHA_AGUARDANDO) -> EstadoFichaFalso:
+        estado = EstadoFichaFalso()
+        with _api(Resposta(200, ficha), Resposta(200, CATALOGO)):
+            asyncio.run(estado.carregar("10"))
+        return estado
+
+    def _recarga_aguardando(self, **ficha) -> list[Resposta]:
+        return [Resposta(200, {**FICHA_AGUARDANDO, "ficha": {**FICHA_AGUARDANDO["ficha"], **ficha}}), Resposta(200, CATALOGO)]
+
+    def test_salvar_com_troca_de_senha_mostra_aviso(self) -> None:
+        estado = self._estado()
+        estado.set_sinal("spo2", "88")
+        resultado = {"id": 10, "senha_alterada": True, "senha_anterior": "A-CAR-001", "senha": "V-CAR-001"}
+        with _api(Resposta(200, resultado), *self._recarga_aguardando(senha="V-CAR-001")) as requisitar:
+            asyncio.run(_executar_salvamento(estado))
+        self.assertEqual(requisitar.call_args_list[0].args[:3], ("PATCH", "XANO_TRIAGEM_API_URL", "/fichas/10"))
+        self.assertIn("A-CAR-001 para V-CAR-001", estado.aviso_senha)
+        self.assertFalse(estado.erro)
+        self.assertEqual(estado.ficha["senha"], "V-CAR-001")
+
+    def test_salvar_sem_troca_de_senha_nao_mostra_aviso(self) -> None:
+        estado = self._estado()
+        estado.set_observacao("Refere melhora")
+        resultado = {"id": 10, "senha_alterada": False, "senha_anterior": "A-CAR-001", "senha": "A-CAR-001"}
+        with _api(Resposta(200, resultado), *self._recarga_aguardando()):
+            asyncio.run(_executar_salvamento(estado))
+        self.assertEqual(estado.aviso_senha, "")
+        self.assertFalse(estado.erro)
+
+    def test_recusa_sem_cor_abre_o_ajuste_e_envia_tudo_junto(self) -> None:
+        estado = self._estado()
+        estado.set_gestante(True)
+        with _api(Resposta(400, {"message": "FICHA_SEM_PRIORIDADE"})):
+            asyncio.run(_executar_salvamento(estado))
+        self.assertTrue(estado.ajuste_aberto)
+        self.assertIn("Escolha a prioridade com justificativa", estado.mensagem)
+        self.assertTrue(estado.sinais_alterados)
+
+        estado.ajuste_prioridade = "AMARELA"
+        estado.ajuste_justificativa = " Gestante com dor "
+        resultado = {"id": 10, "senha_alterada": False, "senha_anterior": "A-CAR-001", "senha": "A-CAR-001"}
+        with _api(Resposta(200, resultado), *self._recarga_aguardando(gestante=True)) as requisitar:
+            asyncio.run(estado.confirmar_ajuste())
+        envio = requisitar.call_args_list[0]
+        self.assertEqual(envio.args[:3], ("PATCH", "XANO_TRIAGEM_API_URL", "/fichas/10"))
+        self.assertEqual(envio.kwargs["json"]["prioridade_ajuste"], "AMARELA")
+        self.assertEqual(envio.kwargs["json"]["justificativa_ajuste"], "Gestante com dor")
+        self.assertTrue(envio.kwargs["json"]["sinais_vitais"]["gestante"])
+        self.assertFalse(estado.ajuste_aberto)
+        self.assertFalse(estado.sinais_alterados)
+
+    def test_ajuste_sem_alteracoes_usa_o_endpoint_de_prioridade_e_avisa_a_senha(self) -> None:
+        estado = self._estado()
+        estado.abrir_ajuste()
+        estado.ajuste_prioridade = "VERMELHA"
+        estado.ajuste_justificativa = "Piora relatada"
+        resultado = {"id": 10, "senha_alterada": True, "senha_anterior": "A-CAR-001", "senha": "V-CAR-001"}
+        with _api(Resposta(200, resultado), *self._recarga_aguardando(senha="V-CAR-001")) as requisitar:
+            asyncio.run(estado.confirmar_ajuste())
+        self.assertEqual(requisitar.call_args_list[0].args[:3], ("POST", "XANO_TRIAGEM_API_URL", "/fichas/10/prioridade"))
+        self.assertIn("V-CAR-001", estado.aviso_senha)
+
+    def test_ficha_chamada_e_recusada_pelo_backend(self) -> None:
+        estado = self._estado({**FICHA_AGUARDANDO, "ficha": {**FICHA_AGUARDANDO["ficha"], "status": "CHAMADO"}})
+        estado.set_observacao("Tentativa")
+        with _api(Resposta(400, {"message": "FICHA_FORA_DA_TRIAGEM"})):
+            asyncio.run(_executar_salvamento(estado))
+        self.assertTrue(estado.erro)
+        self.assertEqual(estado.mensagem, "Esta ficha já foi chamada ou encerrada e não pode mais ser alterada.")
+        self.assertFalse(estado.ajuste_aberto)
 
 
 class ComprovanteFalso:
