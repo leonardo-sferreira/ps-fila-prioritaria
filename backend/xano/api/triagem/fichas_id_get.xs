@@ -25,6 +25,13 @@ query "fichas/{ficha_id}" verb=GET {
       field_value = $ficha.especialidade_atribuida_id ?? 0
     } as $especialidade_atribuida
     var $paciente { value = $avaliacao.paciente }
+
+    // Valores de referência mostrados ao lado dos sinais vitais: as faixas configuradas que valem 0 ponto.
+    db.query faixa_sinal_vital {
+      where = $db.faixa_sinal_vital.pontos == 0
+      sort = {parametro: "asc", minimo: "asc"}
+      return = {type: "list"}
+    } as $faixas_referencia
   }
 
   response = {
@@ -50,6 +57,7 @@ query "fichas/{ficha_id}" verb=GET {
     paciente: {id: $paciente.id, cpf: $paciente.cpf, nome: $paciente.nome, data_nascimento: $paciente.data_nascimento, idade: $avaliacao.idade}
     sintomas: $avaliacao.sintomas|map:{id: $$.id, nome: $$.nome, descricao: $$.descricao, grupo: $$.grupo, pontuacao: $$.pontuacao}
     sintomas_livres: $avaliacao.sintomas_livres|map:{id: $$.id, descricao: $$.descricao, pontuacao: $$.pontuacao}
+    referencias_sinais: $faixas_referencia|map:{parametro: $$.parametro, minimo: $$.minimo, maximo: $$.maximo}
     classificacao: {
       pontos_sinais       : $avaliacao.classificacao.pontos_sinais
       escore_sintomas     : $avaliacao.classificacao.escore_sintomas

@@ -34,7 +34,7 @@ _PENDENCIA_SINAL = {
     "FR_NAO_INFORMADO": "Informe a frequência respiratória.",
     "TEMPERATURA_NAO_INFORMADO": "Informe a temperatura.",
     "SPO2_NAO_INFORMADO": "Informe a SpO2.",
-    "TABELA_ADULTA_NAO_APLICAVEL": "Menor de 16 anos ou gestante: a tabela adulta não se aplica. Defina a prioridade manualmente, com justificativa.",
+    "TABELA_ADULTA_NAO_APLICAVEL": "Menor de 16 anos ou idade não informada: defina a prioridade manualmente.",
     "SEM_SINTOMA_OU_OBSERVACAO": "Informe ao menos um sintoma ou uma observação.",
     "PARAMETRO_NAO_CONFIGURADO": "Os parâmetros da classificação não estão configurados.",
 }
@@ -44,6 +44,37 @@ def _texto_pendencia(codigo: str) -> str:
     if codigo.startswith("FAIXA_NAO_CONFIGURADA:"):
         return f"Faixa de pontuação não configurada para {codigo.split(':', 1)[1]}."
     return _PENDENCIA_SINAL.get(codigo, codigo)
+
+
+# Faixas de referência (as de 0 ponto, configuradas no Xano) mostradas ao lado de cada sinal vital.
+CAMPO_DO_PARAMETRO = {
+    "PA_SISTOLICA": "pa_sistolica",
+    "FC": "fc",
+    "FR": "fr",
+    "TEMPERATURA": "temperatura",
+    "SPO2": "spo2",
+    "GLICEMIA": "glicemia",
+}
+
+
+def _referencias_sinais(faixas: Any) -> dict[str, str]:
+    """Monta "Ref.: 111–219" por campo a partir das faixas sem pontos; sem faixa, o campo fica sem referência."""
+    trechos: dict[str, list[str]] = {}
+    for faixa in faixas or []:
+        campo = CAMPO_DO_PARAMETRO.get(str(faixa.get("parametro")))
+        if campo is None:
+            continue
+        minimo, maximo = _texto_sinal(faixa.get("minimo")), _texto_sinal(faixa.get("maximo"))
+        if minimo and maximo:
+            trecho = f"{minimo}–{maximo}"
+        elif minimo:
+            trecho = f"≥ {minimo}"
+        elif maximo:
+            trecho = f"≤ {maximo}"
+        else:
+            continue
+        trechos.setdefault(campo, []).append(trecho)
+    return {campo: ("Ref.: " + " ou ".join(trechos[campo])) if campo in trechos else "" for campo in CAMPOS_SINAIS_VITAIS}
 
 
 def _texto_sinal(valor: Any) -> str:
@@ -78,6 +109,9 @@ class FichaState(rx.State):
     sintomas_livres: list[dict[str, Any]] = []
     # Sinais vitais como texto dos campos; vazio = não medido.
     sinais: dict[str, str] = {campo: "" for campo in CAMPOS_SINAIS_VITAIS}
+    # Valores como vieram do Xano, para marcar o que foi alterado e ainda não salvo.
+    sinais_salvos: dict[str, str] = {campo: "" for campo in CAMPOS_SINAIS_VITAIS}
+    referencias_sinais: dict[str, str] = {campo: "" for campo in CAMPOS_SINAIS_VITAIS}
     glicemia_gravidade: bool = False
     gestante: bool = False
     classificacao: dict[str, Any] = {}
@@ -131,8 +165,27 @@ class FichaState(rx.State):
         return f"Escore total {total} (sintomas {sintomas or 0} · sinais vitais {sinais or 0}){critico}"
 
     @rx.var
-    def pendencias_texto(self) -> list[str]:
-        return [_texto_pendencia(str(p)) for p in (self.classificacao.get("pendencias") or [])]
+    def situacao_sinais(self) -> dict[str, str]:
+        """Por campo: "vazio" (não preenchido), "alterado" (mudou e falta salvar) ou "salvo"."""
+        situacao = {}
+        for campo in CAMPOS_SINAIS_VITAIS:
+            atual = str(self.sinais.get(campo) or "").strip()
+            if atual != str(self.sinais_salvos.get(campo) or "").strip():
+                situacao[campo] = "alterado"
+            else:
+                situacao[campo] = "salvo" if atual else "vazio"
+        return situacao
+
+    @rx.var
+    def aviso_classificacao(self) -> str:
+        """Pendências da classificação numa linha só; gestante tem aviso próprio."""
+        textos = []
+        for codigo in self.classificacao.get("pendencias") or []:
+            if codigo == "TABELA_ADULTA_NAO_APLICAVEL" and self.classificacao.get("condicao_prioritaria") == "GESTANTE":
+                textos.append("Gestante: a tabela adulta não se aplica, defina a prioridade manualmente.")
+            else:
+                textos.append(_texto_pendencia(str(codigo)))
+        return " ".join(textos)
 
     @rx.var
     def condicao_texto(self) -> str:
@@ -202,7 +255,7 @@ class FichaState(rx.State):
         if resultado.get("senha_alterada"):
             self.aviso_senha = (
                 f"Senha alterada de {resultado.get('senha_anterior')} para {resultado.get('senha')}: "
-                "o comprovante impresso deixou de valer. Reimprima e entregue o novo ao paciente."
+                "reimprima o comprovante."
             )
 
     def _carregar_resposta_ficha(self, dados: dict[str, Any]) -> None:
@@ -217,6 +270,8 @@ class FichaState(rx.State):
             for livre in (dados.get("sintomas_livres") or [])
         ]
         self.sinais = {campo: _texto_sinal(ficha.get(campo)) for campo in CAMPOS_SINAIS_VITAIS}
+        self.sinais_salvos = dict(self.sinais)
+        self.referencias_sinais = _referencias_sinais(dados.get("referencias_sinais"))
         self.glicemia_gravidade = bool(ficha.get("glicemia_sinais_gravidade"))
         self.gestante = bool(ficha.get("gestante"))
         self.classificacao = dict(dados.get("classificacao") or {})

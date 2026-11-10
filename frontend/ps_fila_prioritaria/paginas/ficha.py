@@ -10,10 +10,10 @@ from ps_fila_prioritaria.componentes import (
     COR_ERRO,
     COR_FUNDO,
     COR_SECUNDARIA,
+    COR_SUCESSO,
     COR_TEXTO,
     botao_secundario,
     cabecalho,
-    campo_rotulado,
     cartao_painel,
     menu_recepcao,
     protegido,
@@ -80,10 +80,29 @@ def rotulo_secao(texto: str) -> rx.Component:
     return rx.text(texto, size="1", weight="bold", color=COR_SECUNDARIA, letter_spacing="0.02em")
 
 
+def icone_situacao_sinal(campo: str) -> rx.Component:
+    """Mostra se o campo ainda não foi preenchido, foi alterado sem salvar ou já está salvo."""
+    situacao = FichaState.situacao_sinais[campo]
+    return rx.match(
+        situacao,
+        ("vazio", rx.tooltip(rx.icon("circle-dashed", size=16, color=COR_SECUNDARIA, aria_label="Não preenchido"), content="Não preenchido")),
+        ("alterado", rx.tooltip(rx.icon("pencil", size=16, color="#B45309", aria_label="Alterado, falta salvar"), content="Alterado, falta salvar")),
+        rx.tooltip(rx.icon("circle-check", size=16, color=COR_SUCESSO, aria_label="Salvo"), content="Salvo"),
+    )
+
+
 def campo_sinal(rotulo: str, campo: str, exemplo: str) -> rx.Component:
-    return campo_rotulado(
-        rotulo,
+    return rx.vstack(
+        rx.hstack(
+            rx.text(rotulo, size="1", weight="medium", color=COR_SECUNDARIA),
+            rx.text(FichaState.referencias_sinais[campo], size="1", color=COR_SECUNDARIA),
+            justify="between",
+            gap="8px",
+            wrap="wrap",
+            width="100%",
+        ),
         rx.input(
+            rx.input.slot(icone_situacao_sinal(campo), side="right"),
             value=FichaState.sinais[campo],
             on_change=lambda valor: FichaState.set_sinal(campo, valor),
             placeholder=exemplo,
@@ -91,6 +110,8 @@ def campo_sinal(rotulo: str, campo: str, exemplo: str) -> rx.Component:
             size="3",
             width="100%",
         ),
+        spacing="1",
+        width="100%",
     )
 
 
@@ -267,16 +288,8 @@ def classificacao_ficha() -> rx.Component:
             rx.text("Justificativa do ajuste: ", FichaState.classificacao["justificativa_ajuste"], size="2", color=COR_SECUNDARIA),
         ),
         rx.cond(
-            FichaState.pendencias_texto.length() > 0,
-            rx.callout(
-                rx.vstack(
-                    rx.text("Classificação automática pendente:", weight="medium"),
-                    rx.foreach(FichaState.pendencias_texto, lambda texto: rx.text("• ", texto, size="2")),
-                    spacing="1",
-                ),
-                color_scheme="amber",
-                width="100%",
-            ),
+            FichaState.aviso_classificacao != "",
+            rx.callout(FichaState.aviso_classificacao, icon="triangle-alert", color_scheme="amber", size="1", width="100%"),
         ),
         rx.checkbox(
             "Gestante — idoso e criança são identificados automaticamente pela data de nascimento",
@@ -406,32 +419,27 @@ def recepcao_ficha() -> rx.Component:
                                     width="100%",
                                 ),
                                 rx.vstack(
-                                    rx.cond(
-                                        FichaState.aviso_senha != "",
-                                        rx.callout(
-                                            rx.hstack(
-                                                rx.text(FichaState.aviso_senha, weight="medium"),
-                                                rx.spacer(),
-                                                rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="2", background=COR_AZUL),
-                                                rx.icon_button(rx.icon("x", size=14), on_click=FichaState.fechar_aviso_senha, variant="ghost", size="1", aria_label="Fechar aviso"),
-                                                align="center",
-                                                wrap="wrap",
-                                                width="100%",
-                                            ),
-                                            color_scheme="amber",
-                                            width="100%",
-                                        ),
-                                    ),
+                                    # Um aviso só: senha alterada (âmbar, até ser fechado) ou triagem confirmada (verde).
                                     rx.callout(
                                         rx.hstack(
-                                            rx.text("Triagem confirmada: senha ", rx.text.strong(FichaState.senha_ficha), " · ", FichaState.especialidade_ficha),
+                                            rx.cond(
+                                                FichaState.aviso_senha != "",
+                                                rx.text(FichaState.aviso_senha, " · ", FichaState.especialidade_ficha, size="2"),
+                                                rx.text("Triagem confirmada: senha ", rx.text.strong(FichaState.senha_ficha), " · ", FichaState.especialidade_ficha, size="2"),
+                                            ),
                                             rx.spacer(),
-                                            rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="2", background=COR_AZUL),
+                                            rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="1", background=COR_AZUL),
+                                            rx.cond(
+                                                FichaState.aviso_senha != "",
+                                                rx.icon_button(rx.icon("x", size=14), on_click=FichaState.fechar_aviso_senha, variant="ghost", size="1", aria_label="Fechar aviso"),
+                                            ),
                                             align="center",
                                             wrap="wrap",
                                             width="100%",
                                         ),
-                                        color_scheme="green",
+                                        icon=rx.cond(FichaState.aviso_senha != "", "triangle-alert", "circle-check"),
+                                        color_scheme=rx.cond(FichaState.aviso_senha != "", "amber", "green"),
+                                        size="1",
                                         width="100%",
                                     ),
                                     # Reavaliação (RF12): AGUARDANDO continua editável, sem "Confirmar e gerar senha";
