@@ -36,3 +36,6 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
+
+# Estado local do plugin oh-my-claudecode
+.omc/
