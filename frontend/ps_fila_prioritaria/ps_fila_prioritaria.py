@@ -1496,6 +1496,80 @@ def cabecalho(titulo: str, subtitulo: str, com_sessao: bool = True) -> rx.Compon
     )
 
 
+class VisibilidadeSenhaState(rx.State):
+    """Mostrar/ocultar a senha digitada. Só muda a aparência do campo; o valor continua no formulário."""
+
+    login: bool = False
+    nova: bool = False
+
+    def alternar_login(self) -> None:
+        self.login = not self.login
+
+    def alternar_nova(self) -> None:
+        self.nova = not self.nova
+
+
+def campo_senha(nome: str, visivel: rx.Var, ao_alternar: Any) -> rx.Component:
+    """Campo de senha com o ícone de olho para conferir o que foi digitado."""
+    return rx.input(
+        rx.input.slot(
+            rx.icon_button(
+                rx.cond(visivel, rx.icon("eye-off", size=18), rx.icon("eye", size=18)),
+                type="button",
+                variant="ghost",
+                color_scheme="gray",
+                size="2",
+                on_click=ao_alternar,
+                aria_label=rx.cond(visivel, "Ocultar senha", "Mostrar senha"),
+                cursor="pointer",
+            ),
+            side="right",
+        ),
+        name=nome,
+        type=rx.cond(visivel, "text", "password"),
+        placeholder="••••••••",
+        size="3",
+        width="100%",
+    )
+
+
+# Menu da Recepção/Triagem abaixo do cabeçalho, no padrão "Navegação/Menu" do Figma: dá caminho de volta às
+# opções do menu em todas as telas internas.
+ABAS_RECEPCAO = [
+    ("Início", "/recepcao"),
+    ("Fila de pré-triagem", "/recepcao/fila"),
+    ("Identificar paciente", "/recepcao/pacientes"),
+]
+
+
+def aba_menu(nome: str, rota: str, ativa: bool) -> rx.Component:
+    conteudo = rx.box(
+        rx.text(nome, size="2", weight="bold" if ativa else "medium", color=COR_AZUL if ativa else COR_SECUNDARIA),
+        padding="12px 16px",
+        background="#E8F0FB" if ativa else "transparent",
+        border_bottom=f"2px solid {COR_AZUL}" if ativa else "2px solid transparent",
+        _hover={"background": "#E8F0FB"},
+    )
+    if rota == "/recepcao/pacientes":
+        # Identificação a partir do menu começa sem ticket (o ticket chega pela fila, em "Identificar").
+        return rx.box(conteudo, on_click=PacienteState.iniciar_sem_ticket, cursor="pointer")
+    return rx.link(conteudo, href=rota, underline="none")
+
+
+def menu_recepcao(rota_ativa: str = "") -> rx.Component:
+    return rx.hstack(
+        *[aba_menu(nome, rota, rota == rota_ativa) for nome, rota in ABAS_RECEPCAO],
+        spacing="1",
+        align="end",
+        background="white",
+        border_bottom=f"1px solid {COR_BORDA}",
+        padding="0 32px",
+        width="100%",
+        overflow_x="auto",
+        class_name="nao-imprimir",
+    )
+
+
 def campo_rotulado(rotulo: str, campo: rx.Component) -> rx.Component:
     return rx.vstack(
         rx.text(rotulo, size="1", weight="medium", color=COR_SECUNDARIA),
@@ -1586,6 +1660,7 @@ def recepcao_pacientes() -> rx.Component:
             "RECEPÇÃO/TRIAGEM — IDENTIFICAÇÃO DO PACIENTE",
             "Identifique o paciente pelo CPF antes de abrir a ficha",
         ),
+        menu_recepcao("/recepcao/pacientes"),
         rx.center(
             rx.vstack(
                 rx.vstack(
@@ -1783,7 +1858,7 @@ def login() -> rx.Component:
         "",
         "",
         campo_rotulado("E-MAIL", rx.input(name="email", type="email", placeholder="nome@ps.com.br", size="3", width="100%")),
-        campo_rotulado("SENHA", rx.input(name="senha", type="password", placeholder="••••••••", size="3", width="100%")),
+        campo_rotulado("SENHA", campo_senha("senha", VisibilidadeSenhaState.login, VisibilidadeSenhaState.alternar_login)),
         mensagens_acesso(AuthState.mensagem),
         botao_principal("Entrar", AuthState.entrando),
         rx.link("Esqueci minha senha", href="/senha", size="2", color=COR_AZUL),
@@ -1860,8 +1935,8 @@ def senha_nova() -> rx.Component:
         logo_ps(),
         "Crie uma nova senha",
         "Código confirmado. Escolha a nova senha de acesso.",
-        campo_rotulado("NOVA SENHA", rx.input(name="nova_senha", type="password", placeholder="••••••••", size="3", width="100%")),
-        campo_rotulado("CONFIRMAR NOVA SENHA", rx.input(name="confirmacao", type="password", placeholder="••••••••", size="3", width="100%")),
+        campo_rotulado("NOVA SENHA", campo_senha("nova_senha", VisibilidadeSenhaState.nova, VisibilidadeSenhaState.alternar_nova)),
+        campo_rotulado("CONFIRMAR NOVA SENHA", campo_senha("confirmacao", VisibilidadeSenhaState.nova, VisibilidadeSenhaState.alternar_nova)),
         rx.text("Mínimo de 8 caracteres. As duas senhas devem ser iguais.", size="1", color=COR_SECUNDARIA, width="100%"),
         mensagens_acesso(SenhaState.mensagem),
         botao_principal("Salvar nova senha", SenhaState.enviando),
@@ -2023,6 +2098,7 @@ def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Compon
         perfil,
         rx.box(
             cabecalho(titulo, f"Área inicial — {nome_perfil}"),
+            *([menu_recepcao("/recepcao")] if perfil == "RECEPCAO_TRIAGEM" else []),
             rx.center(
                 rx.vstack(
                     rx.text("Olá, ", AuthState.nome, weight="bold", size="5", color=COR_TEXTO),
@@ -2184,6 +2260,7 @@ def pagina_fila_tickets() -> rx.Component:
         "RECEPCAO_TRIAGEM",
         rx.box(
             cabecalho("RECEPÇÃO/TRIAGEM — FILA DE PRÉ-TRIAGEM", "Chame os tickets retirados no Totem e confirme a presença"),
+            menu_recepcao("/recepcao/fila"),
             rx.center(
                 rx.vstack(
                     rx.hstack(
@@ -2225,7 +2302,6 @@ def pagina_fila_tickets() -> rx.Component:
                         ),
                         padding="20px 16px",
                     ),
-                    rx.link("← Voltar para a área inicial", href="/recepcao", size="2", color=COR_AZUL),
                     spacing="4",
                     width="min(100%, 1184px)",
                 ),
@@ -2593,6 +2669,7 @@ def cartao_paciente_ficha() -> rx.Component:
 def recepcao_ficha() -> rx.Component:
     return rx.box(
         cabecalho("RECEPÇÃO/TRIAGEM — FICHA DE ATENDIMENTO", "Registre sintomas e sinais vitais — a cor é recalculada ao salvar"),
+        menu_recepcao(),
         rx.center(
             rx.cond(
                 FichaState.carregando,
@@ -2682,7 +2759,6 @@ def recepcao_ficha() -> rx.Component:
                                     width="100%",
                                 ),
                             ),
-                            rx.link("← Voltar para a área inicial", href="/recepcao", size="2", color=COR_AZUL),
                             spacing="4",
                             width="100%",
                         ),
@@ -2711,6 +2787,7 @@ def comprovante_senha() -> rx.Component:
     """Comprovante térmico de 80 mm sem dados pessoais nem clínicos (Rev. 2.1, §9)."""
     return rx.box(
         rx.el.style("@page { size: 80mm auto; margin: 4mm; } @media print { .nao-imprimir { display: none !important; } body { background: white !important; } }"),
+        menu_recepcao(),
         rx.cond(
             ComprovanteState.mensagem != "",
             rx.callout(ComprovanteState.mensagem, color_scheme="red", margin="16px"),
