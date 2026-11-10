@@ -1,0 +1,54 @@
+name: CI - Testes Python e Reflex
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  testes-locais:
+    name: Testes unitarios e com mocks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Baixar codigo
+        uses: actions/checkout@v7
+
+      - name: Configurar Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: frontend/requirements.txt
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pytest
+
+      # Nao executa os testes que acessam o Xano real.
+      # A integracao com Xano exige ambiente controlado e credenciais.
+      - name: Executar testes locais
+        run: |
+          python -m pytest -q tests \
+            --ignore=tests/test_api_autenticacao.py \
+            --ignore=tests/test_api_redefinicao_senha.py \
+            --ignore=tests/test_api_totem.py \
+            --ignore=tests/test_xano_api_integration.py \
+            --junitxml=pytest-results.xml
+
+      - name: Publicar relatorio de testes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-pytest
+          path: frontend/pytest-results.xml
+          if-no-files-found: ignore
