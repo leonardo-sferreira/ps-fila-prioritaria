@@ -2,12 +2,9 @@
 
 import unittest
 
-from ps_fila_prioritaria.ps_fila_prioritaria import (
-    ARQUIVO_AVISO_PRIVACIDADE,
-    FichaState,
-    carregar_aviso_privacidade,
-    mascarar_cpf,
-)
+from ps_fila_prioritaria.comum import ARQUIVO_AVISO_PRIVACIDADE, mascarar_cpf
+from ps_fila_prioritaria.estados.ficha import FichaState
+from ps_fila_prioritaria.paginas.privacidade import carregar_aviso_privacidade
 
 
 def test_cpf_com_11_digitos_mostra_so_do_4o_ao_9o() -> None:

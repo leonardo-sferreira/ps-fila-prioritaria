@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import httpx
 
-from ps_fila_prioritaria.ps_fila_prioritaria import TotemState
+from ps_fila_prioritaria.estados.totem import TotemState
 
 REQUISICAO = "ps_fila_prioritaria.api.httpx.request"
 AMBIENTE = {"XANO_TRIAGEM_API_URL": "https://triagem.test", "TOTEM_CHAVE": "chave-de-teste"}

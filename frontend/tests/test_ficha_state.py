@@ -7,9 +7,10 @@ from unittest.mock import patch
 
 import httpx
 
-from ps_fila_prioritaria.ps_fila_prioritaria import ComprovanteState, FichaState, sintomas_disponiveis
+from ps_fila_prioritaria.estados.comprovante import ComprovanteState
+from ps_fila_prioritaria.estados.ficha import FichaState, sintomas_disponiveis
 
-REQUISITAR = "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar"
+REQUISITAR = "ps_fila_prioritaria.api.requisitar"
 
 
 class Resposta:
