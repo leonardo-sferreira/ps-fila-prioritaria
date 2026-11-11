@@ -16,17 +16,17 @@
 
 ## 3. Xano — médicos e disponibilidade
 
-- [ ] 3.1 [Xano] Criar os cadastros de `medico`, `recepcao_triagem` e `sala`, seus vínculos 1:1 a `usuario` e vínculo operacional Médico–Sala, com operações administrativas auditadas; verificar com os testes 3.4
+- [ ] 3.1 [Xano] Refatorar o cadastro de `medico` para editar atomicamente seus vínculos N:N em `medico_especialidade` (tabela já existente), além dos vínculos 1:1 a `usuario` e do vínculo Médico–Sala; verificar criação/edição/remoção de duas especialidades próprias e auditoria nos testes 3.4
 - [ ] 3.2 [Xano] Criar a tabela `disponibilidade_medico`, a variável `FUSO_HORARIO` e os endpoints de criar, alterar e remover período (ADMINISTRADOR, auditados) e `GET medicos/me/disponibilidade` (MEDICO, só leitura) (D3); verificar com os testes 3.4
-- [ ] 3.3 [Xano] Criar a consulta de Médicos elegíveis considerando usuário/Médico ativo, disponibilidade, plantão e status operacional, sem filtrar pela especialidade de referência; verificar com os testes 3.4
-- [ ] 3.4 Escrever `tests/api/test_disponibilidade.py` cobrindo vínculos 1:1, elegibilidade de Médico cuja especialidade de referência difere da fila, período inválido, sobreposição, Médico/usuário inativo, valores-limite 06:59/07:00/18:59/19:00 no fuso oficial, pausa/plantão encerrado, Sala e 403 do Médico ao alterar disponibilidade; verificar que passam
+- [ ] 3.3 [Xano] Criar a consulta de Médicos elegíveis considerando usuário/Médico ativo, disponibilidade, plantão e sessão/status operacional, retornando os IDs de especialidades próprias sem usá-los como filtro absoluto; verificar PAUSA/AUSENTE e EM_ATENDIMENTO com os testes 3.4
+- [ ] 3.4 Escrever `tests/api/test_disponibilidade.py` cobrindo vínculos 1:1 e N:N (duas especialidades, edição e unicidade), elegibilidade e cobertura por sessão/status, período inválido, sobreposição, Médico/usuário inativo, valores-limite 06:59/07:00/18:59/19:00 no fuso oficial, pausa/plantão encerrado, Sala e 403 do Médico ao alterar disponibilidade; verificar que passam
 - [ ] 3.5 Exportar o XanoScript das seções 1–3 para `backend/xano/` e verificar que os arquivos estão no repositório
 
 ## 4. Reflex — telas administrativas
 
 - [ ] 4.1 [Reflex] Criar o componente `tabela_cadastro` (D8) e a página `/admin/especialidades`; verificar criação, sigla inválida e permissões
 - [ ] 4.2 [Reflex] Criar a página `/admin/sintomas` com filtro por grupo, pontuação 1–3 e destinos conforme catálogo; verificar limites e ausência de cores fixas
-- [ ] 4.3 [Reflex] Criar páginas administrativas para cadastro vinculado de Médico e Recepção/Triagem, Sala e agenda; verificar vínculos 1:1, CRM/CPF e distinção entre especialidade e Sala
+- [ ] 4.3 [Reflex] Criar páginas administrativas para cadastro vinculado de Médico e Recepção/Triagem, Sala e agenda, com edição das várias especialidades próprias do Médico; verificar vínculos 1:1/N:N, CRM/CPF e distinção entre especialidade e Sala
 - [ ] 4.4 [Reflex] Criar a página `/admin/disponibilidade` (seletor de data, lista de períodos por médico, criar/editar/remover); verificar manualmente o registro, a sobreposição e a remoção
 - [ ] 4.5 [Reflex] Criar a página `/admin/parametros` e o link das novas telas no menu do `/admin`; verificar manualmente a alteração válida e a recusa fora do limite
 - [ ] 4.6 [Reflex] Criar a página somente leitura "Minha agenda" em `/medico`; verificar manualmente que o médico vê os próprios períodos e não tem ações de edição

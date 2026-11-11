@@ -24,4 +24,5 @@ query "expiracao" verb=POST {
   }
 
   response = $resultado
+  guid = "focXJpdRqU9_RvvGveecMbbWZbM"
 }

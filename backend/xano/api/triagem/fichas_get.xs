@@ -60,4 +60,5 @@ query "fichas" verb=GET {
   }
 
   response = {fichas: $lista, agora: now}
+  guid = "r3ZFGG01ykvkFwO6-3DPV2iOgM4"
 }

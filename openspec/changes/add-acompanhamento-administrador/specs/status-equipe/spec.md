@@ -7,11 +7,11 @@ Permite que a equipe de Recepção/Triagem e os Médicos informem seu status ope
 ## ADDED Requirements
 
 ### Requirement: Status operacional por sessão
-Toda sessão autenticada de Recepção/Triagem e de Médico DEVE ter um status operacional: DISPONIVEL, EM_ATENDIMENTO, PAUSA ou AUSENTE. Ao fazer login, o status inicial DEVE ser DISPONIVEL. Sessões de Administrador NÃO DEVEM ter status operacional. Status operacional não determina se a sessão está autenticada: sessão ativa continua definida por `logout_em` nulo e `expira_em` futuro; PAUSA e AUSENTE não fazem logout.
+Toda sessão autenticada de Médico DEVE começar sem disponibilidade operacional; ele DEVE escolher DISPONIVEL explicitamente para iniciar o recebimento de atribuições. A sessão de Recepção/Triagem começa DISPONIVEL. Depois a equipe pode ter status DISPONIVEL, EM_ATENDIMENTO, PAUSA ou AUSENTE. Sessões de Administrador NÃO DEVEM ter status operacional. Status operacional não determina se a sessão está autenticada: sessão ativa continua definida por `logout_em` nulo e `expira_em` futuro; PAUSA e AUSENTE não fazem logout.
 
 #### Scenario: Status inicial
-- **QUANDO** um usuário Médico faz login
-- **ENTÃO** sua sessão começa com status DISPONIVEL
+- **QUANDO** um usuário Médico faz login ou entra novamente após perder acesso à sessão anterior
+- **ENTÃO** sua nova sessão começa indisponível e não recebe novas atribuições até ele escolher DISPONIVEL
 
 ### Requirement: Alteração do próprio status
 O usuário Recepção/Triagem ou Médico DEVE poder mudar o próprio status para DISPONIVEL, PAUSA ou AUSENTE. O status EM_ATENDIMENTO NÃO DEVE ser escolhido manualmente. Um usuário NÃO DEVE alterar o status de outro.

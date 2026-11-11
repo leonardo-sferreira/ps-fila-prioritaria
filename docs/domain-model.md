@@ -7,7 +7,8 @@ Modelo conceitual do domínio. Representa conceitos e relacionamentos, não o es
 ```
 Usuário ──(perfil)──> Recepção_Triagem | Médico | Administrador
    ├── 1:1 Médico ──> Sala atual
-   │       └──< Disponibilidade_Médico
+   │       ├──< Disponibilidade_Médico
+   │       └──< Médico_Especialidade >── Especialidade
    ├── 1:1 Recepção_Triagem
    └──< Sessão (login/logout + status operacional)
 
@@ -37,7 +38,7 @@ Parâmetros de regra / Faixas de sinais vitais → configuração usada pelas re
 | DESISTÊNCIA | Desistência explícita, encerramento definitivo sem atendimento após as oportunidades previstas ou dispensa pelo Administrador da ficha parada além do prazo `HORAS_EXPIRACAO`. | Final |
 | CANCELADO | Ficha retirada por ação autorizada, com justificativa. | Final |
 
-"Fila ativa" = fichas em AGUARDANDO ou CHAMADO. Após esgotar a primeira oportunidade sem comparecimento, a ficha retorna a AGUARDANDO no fim da mesma fila e recebe uma única nova oportunidade. A oportunidade seguinte encerrada sem atendimento leva a DESISTÊNCIA. A regra de 30 segundos entre chamadas e até 3 tentativas por oportunidade vale para a fila médica; a desistência explícita encerra a participação na fila ativa. A definição física de como registrar as oportunidades pertence à spec funcional.
+"Fila ativa" = fichas em AGUARDANDO ou CHAMADO. Após esgotar a primeira oportunidade sem comparecimento, a ficha retorna a AGUARDANDO no fim da mesma fila e recebe uma única nova oportunidade. A oportunidade seguinte encerrada sem atendimento leva a DESISTÊNCIA. A regra de 30 segundos entre chamadas e até 3 tentativas por oportunidade vale para a fila médica; a desistência explícita encerra a participação na fila ativa. A ficha guarda `oportunidade` e `fila_em` (ordem efetiva); cada evento de Chamada guarda oportunidade e tentativa.
 
 ---
 
@@ -69,10 +70,12 @@ Registro de um login da equipe; alimenta a visão "Pessoas logadas e status".
 ### Principais informações
 - usuário;
 - horário de login, horário de logout e expiração;
-- status operacional: `DISPONIVEL`, `EM_ATENDIMENTO`, `PAUSA` ou `AUSENTE`.
+- status operacional: Médico sem disponibilidade ao entrar; depois `DISPONIVEL`, `EM_ATENDIMENTO`, `PAUSA` ou `AUSENTE`.
 
 ### Regras
 - Uma sessão sem logout é considerada encerrada quando expira.
+- O Médico pode entrar novamente se perder o acesso à sessão anterior. O novo login não o torna disponível; a disponibilidade exige ação explícita (decisão do PO em 11/11/2026, substitui a recusa de segundo login de 10/11/2026).
+- O logout do Médico encerra todas as suas sessões ainda ativas.
 - PAUSA e AUSENTE são status operacionais durante uma sessão; não encerram a sessão.
 - Encerramento do plantão é um evento operacional próprio, diferente de logout e expiração.
 
@@ -97,7 +100,7 @@ Código temporário de 6 dígitos enviado ao e-mail do usuário, usado no login 
 LOGIN → SESSÃO ATIVA → LOGOUT/EXPIRAÇÃO → SESSÃO ENCERRADA
 ```
 
-Uma sessão está ativa quando `logout_em` é nulo e `expira_em` ainda está no futuro. Durante a sessão, o status operacional pode ser `DISPONIVEL`, `EM_ATENDIMENTO`, `PAUSA` ou `AUSENTE`. PAUSA/AUSENTE não encerram a sessão e impedem o Médico de receber novas atribuições. Encerrar o plantão é uma ação operacional própria, separada do encerramento da sessão.
+Uma sessão está ativa quando `logout_em` é nulo e `expira_em` ainda está no futuro. A sessão do Médico começa sem disponibilidade; ele escolhe `DISPONIVEL` quando estiver pronto. A Recepção/Triagem começa DISPONIVEL. Durante a sessão, o status operacional pode ser `DISPONIVEL`, `EM_ATENDIMENTO`, `PAUSA` ou `AUSENTE`. Sem status, PAUSA e AUSENTE não habilitam novas atribuições ao Médico. Encerrar o plantão é uma ação operacional própria, separada do encerramento da sessão.
 
 ## Médico
 
@@ -107,18 +110,21 @@ Profissional que atende a fila priorizada.
 - usuário vinculado (relação 1:1);
 - nome profissional/de exibição (pode ser derivado ou sincronizado do usuário no schema físico);
 - CRM;
-- especialidade de referência (informação cadastral, não restritiva);
+- especialidades próprias (relação N:N por `medico_especialidade`, preferência operacional, sem restrição absoluta);
 - situação (ativo/inativo).
 
 ### Relacionamentos
 - Um médico tem registros de Disponibilidade_Médico.
+- Um médico tem vínculos com uma ou mais especialidades próprias por Médico_Especialidade.
 - Um médico pode estar relacionado à sua Sala atual.
 - Um médico realiza Chamadas.
 
 ### Regras
 - O Administrador cadastra/edita o Médico junto com o usuário correspondente.
-- A especialidade de referência é cadastral e não limita as filas que o médico pode atender.
-- Um médico elegível pode atender ficha de qualquer especialidade; a especialidade da ficha permanece a definida pelos sintomas.
+- O Médico atende preferencialmente suas especialidades próprias; o vínculo não limita de forma absoluta as filas que pode apoiar.
+- Uma ficha de fila descoberta com cor mais grave que a próxima própria pode ser atendida em apoio; empate de cor favorece a própria. Sem ficha própria, o Médico apoia primeiro fila descoberta e depois outra coberta. A especialidade da ficha permanece a definida pelos sintomas (Rev. 2.1, §7.2, D03–D05).
+- Entre Vermelhas próprias, vale chegada e ID; entre Amarelas/Azuis próprias, há rodízio determinístico por médico, mantendo o ciclo interno de cada especialidade. Uma fila é descoberta quando não há médico próprio com plantão vigente e sessão apta a chamar; PAUSA/AUSENTE deixam de cobrir, EM_ATENDIMENTO não deixa a fila descoberta.
+- A seleção e a reserva da ficha ocorrem no "Chamar próximo", atomicamente e sem escolha manual; novo login não concede disponibilidade, e cada médico tem no máximo uma ficha CHAMADO pendente (Rev. 2.1, §7.1–7.2, D02; decisão do PO em 11/11/2026).
 - A disponibilidade por período é registrada pelo Administrador.
 - PAUSA ou AUSENTE impede novas atribuições sem remover itens já atribuídos.
 - Retomar restaura DISPONIVEL se houver disponibilidade/plantão vigente.
@@ -166,7 +172,7 @@ Destino clínico indicado pelos sintomas (ex.: Clínica Geral — `CLI`); as fic
 - Ligada a Sintomas por Sintoma_Especialidade, em ordem de preferência definida para cada sintoma.
 
 ### Regras
-- A disponibilidade de médicos e a especialidade cadastrada no Médico não alteram o destino clínico da ficha.
+- A disponibilidade e as especialidades próprias do Médico não alteram o destino clínico da ficha; elas influem somente na seleção operacional da chamada.
 - Destino da ficha (Rev. 2.1, §6, §14.2 e D09): paciente com até `idade_maxima_crianca` vai para Pediatria antes de qualquer cálculo. Para os demais, cada especialidade ligada a um sintoma do catálogo da ficha é candidata, e vence 1º a de maior pontuação individual de sintoma, 2º a de maior soma de pontos ligados, 3º a com menos fichas AGUARDANDO, 4º a de menor ID (transitório enquanto não houver estimativa de horário).
 - Ficha sem sintoma do catálogo (só sintomas digitados ou só observação) vai para a especialidade padrão (Clínica Geral). Sintomas digitados contam no escore, mas não no destino.
 - Sem fallback por falta de médico (RF19 supersedido, D10).
@@ -313,7 +319,7 @@ Passagem do paciente pelo PS, da triagem até o comparecimento, a desistência o
 - escore total = soma da pontuação de todos os sintomas (do catálogo e digitados) e dos pontos dos sinais vitais (incluindo glicemia quando medida), indicador de item clínico isolado com 3 pontos e classificação de risco (baixo/moderado/alto); não há máximo fixo;
 - classificação calculada, classificação atual e justificativa do ajuste manual;
 - especialidade sugerida e especialidade atribuída;
-- senha (`COR-ESP-NÚMERO`) e tentativas de chamada por oportunidade;
+- senha (`COR-ESP-NÚMERO`), oportunidade atual, tentativas de chamada por oportunidade e `fila_em` como ordem efetiva da fila;
 - médico que chamou;
 - status (ver tabela de estados).
 
@@ -325,6 +331,7 @@ Passagem do paciente pelo PS, da triagem até o comparecimento, a desistência o
 - O cálculo automático só vale para paciente com 16 anos ou mais, não gestante, com PA sistólica, FC, FR, temperatura e SpO2 informados. Dado ausente não vira zero: o cálculo fica bloqueado e a tela informa o motivo. Menores de 16 anos e gestantes têm os sinais registrados e a prioridade definida por classificação manual justificada.
 - Qualquer alteração de sintomas, observação, sinais vitais ou gestação recalcula a classificação e descarta o ajuste manual anterior (decisão do PO, 08/11/2026).
 - A condição prioritária reordena dentro da mesma classificação e não soma pontos (RN10, RN11). Precedência no registro: gestante, depois idoso, depois criança; a idade é calculada na data de chegada.
+- Na chamada, gestante, idoso e criança têm a mesma precedência entre si dentro da cor; a ordem entre essas fichas segue a posição efetiva na fila e, em empate, o menor ID. A precedência do registro acima serve apenas para escolher um rótulo quando mais de uma condição se aplica.
 - O ajuste manual exige justificativa e gera Histórico_Alteração (RN09).
 - A glicemia baixa recebe os pontos definidos na tabela da seção Faixas de sinais vitais.
 - A senha é gerada somente após o direcionamento (RN19), na confirmação da triagem, que exige cor definida (calculada ou ajustada manualmente) e leva a ficha de EM_TRIAGEM a AGUARDANDO.
@@ -341,7 +348,7 @@ Associação entre ficha e sintoma, com observação opcional.
 Tentativa de chamar uma ficha.
 
 ### Principais informações
-- ficha, médico, número da tentativa na oportunidade (1 a 3) e data/hora.
+- ficha, médico, número da oportunidade, número da tentativa (1 a 3), tipo do evento e data/hora.
 
 ### Regras
 - Intervalo mínimo de 30 segundos entre chamadas da mesma senha.

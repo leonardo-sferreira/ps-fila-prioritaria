@@ -134,4 +134,5 @@ function "manutencao/expirar_registros" {
     tickets        : $tickets
     motivo         : $motivo
   }
+  guid = "0ETxv1BT_kvBksUFeldQIbORaWY"
 }

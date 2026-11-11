@@ -1,10 +1,10 @@
-# Delta de especificação
+# Chamada de paciente — Especificação
 
 ## Purpose
 
 Permite ao médico chamar o próximo paciente escolhido pelo sistema, repetir a chamada, confirmar o comparecimento ou registrar a desistência, sem nunca escolher o paciente nem registrar dados clínicos.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Acesso às ações de chamada
 Somente o perfil Médico DEVE poder chamar, repetir, confirmar comparecimento, registrar desistência e imprimir a ficha. O médico NÃO DEVE poder escolher manualmente a ficha a ser chamada (RN24).
@@ -15,40 +15,48 @@ Somente o perfil Médico DEVE poder chamar, repetir, confirmar comparecimento, r
 
 #### Scenario: Tentativa de escolher a ficha
 - **QUANDO** uma requisição de "Chamar próximo" envia o identificador de uma ficha específica
-- **ENTÃO** o identificador é ignorado e a ficha é escolhida pela regra da fila
+- **ENTÃO** o backend rejeita a requisição sem reservar ficha nem registrar chamada
 
 ### Requirement: Visão das filas pelo médico
-O Médico DEVE ver os atendimentos atribuídos pelo sistema, que podem vir de qualquer especialidade para a qual seja elegível; antes da atribuição, dados pessoais não são exibidos. A ordem dentro de cada fila segue `fila-priorizada`; a política global de seleção entre filas distintas precisa de decisão do PO.
+O Médico DEVE ver as filas de especialidade e a ficha sob sua responsabilidade, que pode vir de uma especialidade própria, descoberta ou coberta em apoio. Antes da atribuição, dados pessoais NÃO DEVEM ser exibidos. A escolha da ficha DEVE seguir `fila-priorizada`.
 
 #### Scenario: Médico de uma especialidade
 - **QUANDO** um médico de Cardiologia abre sua tela
-- **ENTÃO** vê fichas atribuídas pelo sistema sem restrição baseada na especialidade de referência e sem nome/CPF antes da atribuição
+- **ENTÃO** vê as filas e sua ficha atribuída, sem nome/CPF de fichas ainda não atribuídas
 
 ### Requirement: Chamar próximo
-Um Médico elegível (ativo, em disponibilidade vigente, plantão aberto e status operacional que permita novas atribuições) sem ficha CHAMADO pendente DEVE poder solicitar "Chamar próximo". O sistema DEVE escolher ficha sem filtrar pela especialidade de referência; a seleção entre múltiplas filas elegíveis depende de decisão do PO antes da implementação. A ficha passa a CHAMADO com oportunidade e tentativa registradas. Nome só é exibido após atribuição autorizada.
+Um Médico elegível (cadastro e usuário ativos, disponibilidade e plantão vigentes, sessão operacional apta e nenhuma ficha CHAMADO pendente) DEVE poder solicitar "Chamar próximo". O backend DEVE selecionar a ficha pela regra de `fila-priorizada`, reservá-la e registrar a tentativa 1 na mesma operação. A especialidade e a senha da ficha NÃO DEVEM mudar. Nome só é exibido após atribuição autorizada (RF23, RF28, §7.2, D02).
 
 #### Scenario: Chamada bem-sucedida
 - **QUANDO** um médico disponível de Clínica Geral aciona "Chamar próximo" e a fila tem fichas
 - **ENTÃO** a primeira ficha pela regra passa a CHAMADO, com tentativa 1 registrada com médico e data/hora
 
-#### Scenario: Especialidade de referência não restringe
-- **QUANDO** um Médico cuja especialidade de referência é Cardiologia está elegível para atender uma ficha de Clínica Geral
-- **ENTÃO** a ficha permanece em Clínica Geral e pode ser atribuída a esse Médico
+#### Scenario: Apoio a outra especialidade
+- **QUANDO** um Médico de Cardiologia chama uma Vermelha de Clínica Geral descoberta porque sua próxima própria é Azul
+- **ENTÃO** a ficha permanece em Clínica Geral, mantém sua senha e é atribuída ao Médico de Cardiologia
 
-#### Scenario: Nenhuma ficha disponível segundo a seleção global
-- **QUANDO** não há fichas AGUARDANDO selecionáveis pela política global de distribuição entre filas
-- **ENTÃO** o sistema informa que não há pacientes aguardando e nada é registrado (CA15); isso não implica filtro pela especialidade de referência do Médico
+#### Scenario: Fila vazia
+- **QUANDO** não há ficha AGUARDANDO em nenhuma fila própria, descoberta ou outra coberta
+- **ENTÃO** o sistema informa que não há pacientes aguardando, sem registrar chamada nem avançar ciclo (RF36, CA15)
 
 #### Scenario: Médico indisponível
 - **QUANDO** um médico sem disponibilidade vigente aciona "Chamar próximo"
 - **ENTÃO** o sistema recusa e informa que ele não está disponível no momento
+
+#### Scenario: Pausa, ausência ou plantão encerrado
+- **QUANDO** um médico em PAUSA ou AUSENTE, ou com plantão encerrado, aciona "Chamar próximo"
+- **ENTÃO** o backend recusa sem reservar ficha nem registrar chamada
+
+#### Scenario: Novo login do mesmo médico
+- **QUANDO** um Médico entra novamente enquanto outra sessão ainda está ativa
+- **ENTÃO** a nova sessão fica indisponível e a chamada só é liberada após escolha explícita de DISPONIVEL
 
 #### Scenario: Ficha pendente
 - **QUANDO** o médico já tem uma ficha CHAMADO e aciona "Chamar próximo"
 - **ENTÃO** o sistema recusa e pede que ele confirme o comparecimento ou registre a desistência da ficha atual
 
 ### Requirement: Chamada sem duplicidade
-Duas chamadas simultâneas NÃO DEVEM receber a mesma ficha, e cliques repetidos NÃO DEVEM gerar tentativas duplicadas (RF38, RN34, RNF04, seção 20).
+Duas chamadas simultâneas NÃO DEVEM receber a mesma ficha. Reserva, registro da tentativa e avanço do ciclo DEVEM ser atômicos; cliques repetidos NÃO DEVEM gerar ficha ou tentativa duplicada (RF38, RN34, RNF04, Rev. 2.1, §14.3 item 6).
 
 #### Scenario: Dois médicos ao mesmo tempo
 - **QUANDO** dois médicos da mesma especialidade acionam "Chamar próximo" ao mesmo tempo, com duas fichas na fila
@@ -61,6 +69,10 @@ Duas chamadas simultâneas NÃO DEVEM receber a mesma ficha, e cliques repetidos
 #### Scenario: Duplo clique
 - **QUANDO** o médico aciona "Chamar próximo" duas vezes seguidas muito rápido
 - **ENTÃO** só uma ficha é chamada e só uma tentativa é registrada
+
+#### Scenario: Disputa pela candidata entre especialidades
+- **QUANDO** dois médicos selecionam simultaneamente a mesma candidata de uma fila descoberta
+- **ENTÃO** somente um a reserva; o outro refaz a seleção, sem duplicar evento ou avanço do ciclo
 
 ### Requirement: Repetir chamada
 O sistema DEVE permitir até 3 chamadas por oportunidade e exigir ao menos 30 segundos entre chamadas da mesma senha. Após a terceira chamada da primeira oportunidade sem comparecimento, a ficha DEVE retornar uma vez ao fim da mesma fila, mantendo senha/identidade. Sem resposta após a segunda oportunidade, encerra como DESISTÊNCIA conforme o estado final definido para a ficha. Desistência explicitamente registrada remove a ficha imediatamente.
@@ -115,11 +127,15 @@ O Médico DEVE poder registrar desistência explicitamente para a ficha sob sua 
 - **ENTÃO** fica em DESISTÊNCIA e sai definitivamente da fila ativa
 
 ### Requirement: Histórico de chamadas
-Toda tentativa de chamada, confirmação de comparecimento e desistência DEVE ser registrada com ficha, médico, número da tentativa e data/hora, sem duplicidade (RF37, RNF03).
+Toda tentativa de chamada, confirmação de comparecimento e desistência DEVE ser registrada com ficha, médico, número da oportunidade, número da tentativa e data/hora, sem duplicidade (RF37, RNF03). A mesma tentativa numérica pode ocorrer em oportunidades diferentes.
 
 #### Scenario: Consulta do histórico da ficha
 - **QUANDO** uma ficha teve 3 tentativas e desistência
 - **ENTÃO** o histórico mostra as 3 tentativas e o registro da desistência, com médico e horários
+
+#### Scenario: Tentativa 1 na segunda oportunidade
+- **QUANDO** a ficha retornou ao fim da fila depois da primeira oportunidade e é chamada novamente
+- **ENTÃO** o histórico registra tentativa 1 da oportunidade 2 sem conflitar com a tentativa 1 da oportunidade 1
 
 ### Requirement: Impressão da ficha de atendimento
 O médico DEVE poder imprimir a ficha de atendimento de uma ficha que ele chamou (CHAMADO ou ATENDIDO), com paciente (nome e idade), sintomas, observação, sinais vitais, escore e classificação de risco, prioridade atual, condição prioritária, especialidade e senha.
