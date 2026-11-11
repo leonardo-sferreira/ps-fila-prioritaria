@@ -15,6 +15,11 @@
   --ps-alerta: #B45309;
   --ps-destaque: #E8F0FB;
   --ps-hover: #F7F9FB;
+  /* Painel do plantão: cores clínicas (validadas no claro: ΔE CVD 19; âmbar < 3:1 → sempre com rótulo) e barras. */
+  --ps-clinica-vermelha: #C62828;
+  --ps-clinica-amarela: #ED8B00;
+  --ps-clinica-azul: #1565C0;
+  --ps-barra: #B7CBE6;
 }
 
 .dark {
@@ -33,6 +38,11 @@
   --ps-alerta: #F59E0B;
   --ps-destaque: #1D2C40;
   --ps-hover: #222932;
+  /* Mesmas cores clínicas em tons para o fundo escuro (validadas: L 0,48–0,67, contraste ≥ 3:1, ΔE CVD 7,9 com rótulo). */
+  --ps-clinica-vermelha: #D93B47;
+  --ps-clinica-amarela: #B98A0A;
+  --ps-clinica-azul: #3B82F6;
+  --ps-barra: #34465F;
 }
 
 /* Papel é sempre claro: comprovante e ficha impressa saem iguais nos dois modos. */
