@@ -8,13 +8,19 @@ table disponibilidade_medico {
     int medico_id {
       table = "medico"
     }
+
     timestamp inicio
     timestamp fim
+    timestamp? encerrado_em?
   }
 
   index = [
     {type: "primary", field: [{name: "id"}]}
-    {type: "btree", field: [{name: "medico_id", op: "asc"}, {name: "inicio", op: "asc"}]}
+    {
+      type : "btree"
+      field: [{name: "medico_id", op: "asc"}, {name: "inicio", op: "asc"}]
+    }
   ]
+
   guid = "sCwZN3twGx0EydHilN19d9l7mwM"
 }

@@ -64,10 +64,6 @@ def area_recepcao() -> rx.Component:
     )
 
 
-def area_medico() -> rx.Component:
-    return area_inicial("MEDICO", "MÉDICO", "Médico", rx.text("As funções do Médico ainda estão em construção.", size="2", color=COR_SECUNDARIA))
-
-
 def linha_parada(item: dict[str, Any]) -> rx.Component:
     return rx.hstack(
         rx.text(item["identificacao"], size="2", weight="bold", color=COR_TEXTO, width="110px"),

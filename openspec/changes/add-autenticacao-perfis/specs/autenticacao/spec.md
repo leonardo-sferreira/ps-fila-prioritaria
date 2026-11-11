@@ -60,6 +60,29 @@ O código do login DEVE ter 6 dígitos numéricos, DEVE valer por 10 minutos e D
 - **QUANDO** o usuário é desativado depois de receber o código e então o informa
 - **ENTÃO** o sistema recusa o login, não emite token e não registra sessão
 
+### Requirement: Recuperação do login médico sem disponibilidade automática
+O backend DEVE permitir que o Médico entre novamente após perder acesso ao login anterior, mesmo que a sessão anterior ainda esteja ativa. A nova sessão DEVE começar sem disponibilidade operacional e NÃO DEVE habilitar novas chamadas até que o Médico escolha DISPONIVEL. O logout do Médico DEVE encerrar todas as sessões ativas do usuário (decisão do PO em 11/11/2026, substitui D16 de 10/11/2026).
+
+#### Scenario: Novo login após perda do acesso
+- **QUANDO** um Médico com sessão ativa confirma um novo código de login
+- **ENTÃO** o backend permite entrar, mas a nova sessão fica indisponível até uma escolha explícita
+
+#### Scenario: Primeiro médico em pausa
+- **QUANDO** um Médico em PAUSA ou AUSENTE com sessão ainda ativa confirma um novo login
+- **ENTÃO** o backend não transforma a nova sessão em DISPONIVEL automaticamente
+
+#### Scenario: Login após encerramento da sessão
+- **QUANDO** o Médico faz logout ou a sessão anterior expira e então confirma um novo código válido
+- **ENTÃO** o backend emite token e registra uma nova sessão indisponível
+
+#### Scenario: Logout com mais de uma sessão
+- **QUANDO** um Médico com mais de uma sessão ativa faz logout
+- **ENTÃO** o backend encerra todas as sessões ativas desse Médico e permite novo login
+
+#### Scenario: Verificações concorrentes do código
+- **QUANDO** duas verificações do mesmo código de login chegam simultaneamente
+- **ENTÃO** um código consumido não é reutilizado para criar uma segunda sessão
+
 ### Requirement: Redirecionamento por perfil
 Após o login, o sistema DEVE levar o usuário para a área inicial do seu perfil e DEVE impedir a navegação para áreas de outros perfis.
 

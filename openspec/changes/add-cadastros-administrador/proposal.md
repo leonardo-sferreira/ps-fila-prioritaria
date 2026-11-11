@@ -14,13 +14,13 @@
 
 ## Why
 
-A classificação, o direcionamento e a chamada de pacientes dependem de dados que só o Administrador mantém: especialidades, catálogo de sintomas pontuados e seus destinos, cadastros de Médico e Recepção/Triagem vinculados aos respectivos usuários, salas, disponibilidade por período e parâmetros. A especialidade de referência do Médico é cadastral e não restringe as filas que pode atender. Esta change também cria a trilha de auditoria, que as próximas changes vão usar.
+A classificação, o direcionamento e a chamada de pacientes dependem de dados que só o Administrador mantém: especialidades, catálogo de sintomas pontuados e seus destinos, cadastros de Médico e Recepção/Triagem vinculados aos respectivos usuários, salas, disponibilidade por período e parâmetros. O Médico possui várias especialidades próprias (N:N) que orientam a preferência de chamada sem impedir apoio a outras filas (Rev. 2.1, §7.1–7.2, D01). Esta change também cria a trilha de auditoria, que as próximas changes vão usar.
 
 ## What Changes
 
 - **Especialidades:** cadastro (nome, descrição, sigla de 3 letras usada na senha, situação); sem alternativas usadas como fallback por disponibilidade ou especialidade cadastral do Médico.
 - **Sintomas:** cadastro (nome, descrição, grupo, pontuação de 1 a 3, situação) e relação ordenada sintoma → especialidade(s), segundo o catálogo de `docs/domain-model.md`.
-- **Médicos:** entidade própria vinculada 1:1 a um usuário, com nome profissional, CRM, especialidade de referência informativa, disponibilidade e sala atual. A especialidade não restringe atendimento.
+- **Médicos:** entidade própria vinculada 1:1 a um usuário, com nome profissional, CRM, especialidades próprias via `medico_especialidade`, disponibilidade e sala atual. Os vínculos orientam preferência de chamada, sem restringir apoio.
 - **Recepção/Triagem:** perfil funcional único e entidade própria vinculada 1:1 ao usuário, com nome, CPF e especialidade de referência quando aplicável.
 - **Salas:** cadastro administrativo e vínculo operacional com Médico, sem usar especialidade como sinônimo de local.
 - **Disponibilidade:** o Administrador registra, altera e remove períodos (data, hora inicial, hora final) de cada médico; o médico não altera a própria disponibilidade (RF15, RN15, RN16, UC06).
@@ -41,7 +41,7 @@ A classificação, o direcionamento e a chamada de pacientes dependem de dados q
 ### Novas capacidades
 - `especialidades`: cadastro de especialidades e siglas.
 - `sintomas`: cadastro de sintomas, pontuação e relação de direcionamento com especialidades.
-- `medicos-disponibilidade`: cadastros de Médico, Recepção/Triagem e Sala; vínculos 1:1 com Usuário; disponibilidade por período e especialidade de referência não restritiva.
+- `medicos-disponibilidade`: cadastros de Médico, Recepção/Triagem e Sala; vínculos 1:1 com Usuário; vínculo N:N entre Médico e especialidades próprias; disponibilidade por período.
 - `parametros-regras`: parâmetros operacionais configuráveis pelo Administrador.
 - `auditoria`: registro imutável de alterações relevantes.
 
@@ -54,7 +54,7 @@ _Nenhuma._
 - **Reflex:** telas em `/admin/especialidades`, `/admin/sintomas`, `/admin/medicos`, `/admin/disponibilidade` e `/admin/parametros`.
 - **Testes:** `tests/api/test_cadastros.py`, `test_disponibilidade.py`, `test_parametros.py` e `test_auditoria.py`.
 - **Depende de:** `add-autenticacao-perfis` (usuários, perfis e `verificar_acesso`).
-- A baseline sanitizada orienta os conceitos: Médico e Recepção/Triagem são entidades próprias 1:1 com Usuário, Sala é entidade própria, e a especialidade do Médico é cadastral. Eventuais diferenças do schema físico devem ser tratadas na implementação, não nesta revisão documental.
+- A Rev. 2.1, §7.1–7.2 e D01–D05, e a tabela existente `backend/xano/table/medico_especialidade.xs` fundamentam o vínculo N:N. O cadastro administrativo deve editá-lo; a escolha da ficha fica em `add-fila-chamada-medico`.
 
 ## Perguntas em aberto
 

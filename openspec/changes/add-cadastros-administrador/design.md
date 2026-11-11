@@ -21,7 +21,7 @@ Esta change parte da base criada por `add-autenticacao-perfis`: tabela `usuario`
 - `especialidade`: `nome` (único, sem diferenciar caixa), `sigla` (3 letras, maiúsculas, única), `descricao`, `ativo`.
 - `sintoma`: `nome` (único), `descricao`, `grupo`, `pontuacao` (inteiro 1–3), `ativo`.
 - `sintoma_especialidade`: `sintoma_id`, `especialidade_id`, `ordem`.
-- `medico`: vínculo 1:1 com `usuario`, nome profissional/de exibição, CRM, especialidade de referência não restritiva e situação. `recepcao_triagem`: vínculo 1:1 com `usuario`, nome, CPF e especialidade de referência quando aplicável. A definição física dos vínculos pertence à implementação.
+- `medico`: vínculo 1:1 com `usuario`, nome profissional/de exibição, CRM e situação; `medico_especialidade`: vínculos N:N com especialidades próprias, usando a tabela já existente. `recepcao_triagem`: vínculo 1:1 com `usuario`, nome, CPF e especialidade de referência quando aplicável. A definição física dos demais vínculos pertence à implementação.
 - `sala`: identificador, nome/número, descrição opcional e situação; associação operacional ao Médico atual, sem confundir Sala com especialidade.
 - `disponibilidade_medico`: `medico_id`, `inicio` e `fim` (timestamps).
 - `parametro`: `chave` (única), `valor` (texto), `tipo` (`inteiro|especialidade`).
@@ -37,7 +37,7 @@ A tela envia data, hora inicial e hora final; o Xano converte para `inicio` e `f
 - Plantões que viram a noite (ex.: 19:00–07:00) são registrados como dois períodos, um em cada data.
 
 ### D4. Elegibilidade operacional de Médico
-Retorna Médicos elegíveis ativos, com usuário ativo, período contendo o instante em `America/Sao_Paulo`, plantão não encerrado e status que permita novas atribuições. A especialidade de referência não é filtro. A distribuição entre médicos elegíveis e filas distintas deve seguir regra a definir em `add-fila-chamada-medico`; esta change não inventa balanceamento.
+Retorna Médicos elegíveis ativos, com usuário ativo, período contendo o instante em `America/Sao_Paulo`, plantão não encerrado e sessão operacional apta. Retorna também os IDs de especialidades próprias para a seleção em `add-fila-chamada-medico`; não usa esses vínculos como filtro absoluto. PAUSA/AUSENTE impedem cobertura; EM_ATENDIMENTO não torna a fila descoberta (Rev. 2.1, §7.1–7.2, D04).
 
 ### D5. Parâmetros em tabela chave-valor com validação por chave
 `obter_parametro(chave)` lê e converte o valor. `PATCH parametros/{chave}` valida conforme a chave: limites e coerência entre idades (ver spec `parametros-regras`). Os valores iniciais são gravados pela carga inicial (D7).

@@ -52,8 +52,8 @@ flowchart LR
 2. **Pontuação de sintomas:** cada sintoma vale de 1 a 3 pontos e todos os sintomas selecionados entram na soma.
 3. **Escore clínico:** soma os pontos dos sintomas e dos sinais vitais (incluindo glicemia quando medida). Não há máximo fixo de 18. Os limiares iniciais são 3 para risco moderado e 6 para alto; um item clínico isolado com 3 pontos pode elevar o risco a alto.
 4. **Classificação:** baixo → Azul, moderado → Amarela e alto → Vermelha. Idosos, crianças e gestantes reordenam dentro da classificação e não somam pontos.
-5. **Direcionamento:** os sintomas determinam a especialidade da ficha. A especialidade de referência do médico é cadastral; um médico elegível pode atender qualquer fila sem alterar a especialidade da ficha.
-6. **Chamadas:** 30 segundos entre chamadas da mesma senha, até 3 tentativas por oportunidade e uma única reentrada ao fim da mesma fila. A regra vale para Recepção/Triagem e Médico; desistência explícita remove a senha da fila ativa.
+5. **Direcionamento:** os sintomas determinam a especialidade da ficha. Os vínculos N:N do médico definem suas especialidades próprias e a preferência operacional; ele pode apoiar filas descobertas ou outras cobertas sem alterar a especialidade nem a senha da ficha.
+6. **Chamadas:** o médico respeita o intervalo configurável, inicialmente 30 segundos, entre chamadas da mesma senha, até 3 tentativas por oportunidade e uma única reentrada ao fim da mesma fila. A Recepção/Triagem usa os intervalos próprios da pré-triagem. Desistência explícita remove a senha da fila ativa.
 7. **Painel:** a chamada pública pode mostrar a senha e a sala, nunca nome completo ou CPF.
 
 Faixas e limiares clínicos são parametrizáveis. O fuso do projeto é `America/Sao_Paulo`.
@@ -148,6 +148,36 @@ pip install -r requirements.txt pytest
 cp .env.example .env            # preencha as URLs da API do Xano
 reflex run                      # http://localhost:3000
 python -m pytest                # testes
+```
+
+Para verificar a ordem da fila médica publicada na `v1` do Xano, execute na raiz do repositório:
+
+```bash
+.venv/bin/python -m unittest discover -s tests/api -p test_ordenacao.py -v
+```
+
+O teste usa `xano function run` com o perfil `ps-impacta` (ou `XANO_TEST_PROFILE`) e espaça as chamadas para respeitar o limite do plano Free. A ordem interna é Vermelha antes de Amarela/Azul; sem Vermelha, o ciclo configurável é inicialmente A-A-B por especialidade. Condição prioritária precede não prioritária dentro da cor, seguida pela ordem efetiva da fila e pelo menor ID.
+
+### Fila e chamada do médico
+
+Configure `XANO_FILA_API_URL` no `frontend/.env` com a URL base do grupo **Fila**. Os endpoints exigem token de usuário e validam o perfil no Xano:
+
+| Método e caminho | Resultado |
+|---|---|
+| `GET /medico/filas` | Status do médico, filas com quantidades e ficha atribuída; fichas aguardando não expõem dados pessoais. |
+| `POST /medico/chamar-proximo` | Seleciona e reserva a próxima ficha, sem aceitar ID de ficha; retorna `fila_vazia` quando não há candidata. |
+| `POST /medico/fichas/{id}/acao` | Recebe `REPETIR`, `COMPARECEU` ou `DESISTENCIA` para a ficha atribuída. |
+| `GET /fichas/{id}/impressao` | Dados de triagem para o médico que chamou a ficha, enquanto ela está CHAMADO ou ATENDIDO. |
+| `GET /filas/{especialidade}/previsao` | Próximas senhas e cores, sem reservar ficha nem expor dados pessoais. |
+
+Na seleção, Vermelhas próprias precedem as demais próprias; Amarelas e Azuis próprias seguem rodízio por médico, mantendo o ciclo de cada especialidade. Uma descoberta supera a próxima própria somente se tiver cor mais grave. Empate favorece a própria. Sem própria aguardando, o médico apoia uma descoberta e depois outra coberta. PAUSA e AUSENTE retiram cobertura; EM_ATENDIMENTO a mantém.
+
+Na raiz do repositório, os testes da seleção consultam funções publicadas na `v1`; o teste de chamada cria registros fictícios, encerra seus acessos ao final e preserva o histórico de auditoria:
+
+```bash
+.venv/bin/python -m unittest discover -s tests/api -p test_selecao_entre_filas.py -v
+.venv/bin/python -m unittest discover -s tests/api -p test_chamada.py -v
+cd frontend && ../.venv/bin/python -m unittest discover -s tests -p test_medico_state.py -v
 ```
 
 ### Primeiro administrador
