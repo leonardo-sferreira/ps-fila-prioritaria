@@ -534,7 +534,7 @@ def linha_faixa(f: Any) -> rx.Component:
         celula(texto(f["sinal"], weight="medium"), None),
         celula(texto(f["condicao"], color=COR_SECUNDARIA), "190px"),
         celula(texto(f["intervalo"]), "140px"),
-        celula(texto(f["pontos"] + " ponto(s)", weight="bold"), "100px"),
+        celula(rx.text(f["pontos"], " ponto(s)", size="2", weight="bold", color=COR_TEXTO), "100px"),
         celula(rx.button("Editar", on_click=ParametrosState.abrir_faixa(f), variant="ghost", size="1", color_scheme="gray"), "80px"),
         align="center",
         spacing="3",
