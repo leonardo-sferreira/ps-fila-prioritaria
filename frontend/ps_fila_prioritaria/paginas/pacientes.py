@@ -43,11 +43,16 @@ def formulario_paciente() -> rx.Component:
 
 
 def mensagem_identificacao() -> rx.Component:
-    cor = rx.cond(PacienteState.erro, COR_ERRO, rx.cond(PacienteState.paciente_encontrado, COR_SUCESSO, COR_SECUNDARIA))
+    na_fila = PacienteState.ficha_atual_id != 0
+    cor = rx.cond(
+        PacienteState.erro,
+        COR_ERRO,
+        rx.cond(na_fila, "#B45309", rx.cond(PacienteState.paciente_encontrado, COR_SUCESSO, COR_SECUNDARIA)),
+    )
     return rx.cond(
         PacienteState.mensagem != "",
         rx.text(
-            rx.cond(PacienteState.paciente_encontrado & ~PacienteState.erro, "✓ ", ""),
+            rx.cond(PacienteState.paciente_encontrado & ~PacienteState.erro & ~na_fila, "✓ ", ""),
             PacienteState.mensagem,
             size="2",
             color=cor,
@@ -67,13 +72,23 @@ def rodape_identificacao() -> rx.Component:
                     PacienteState.paciente_encontrado,
                     rx.hstack(
                         botao_secundario("Salvar alterações", on_click=PacienteState.atualizar),
-                        rx.button(
-                            "Continuar",
-                            on_click=PacienteState.continuar_atendimento,
-                            loading=PacienteState.abrindo_ficha,
-                            size="3",
-                            background=COR_AZUL,
-                            min_width="240px",
+                        rx.cond(
+                            PacienteState.ficha_atual_id != 0,
+                            rx.button(
+                                "Abrir ficha atual",
+                                on_click=PacienteState.abrir_ficha_atual,
+                                size="3",
+                                background=COR_AZUL,
+                                min_width="240px",
+                            ),
+                            rx.button(
+                                "Continuar",
+                                on_click=PacienteState.continuar_atendimento,
+                                loading=PacienteState.abrindo_ficha,
+                                size="3",
+                                background=COR_AZUL,
+                                min_width="240px",
+                            ),
                         ),
                         spacing="3",
                     ),

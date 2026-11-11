@@ -6,6 +6,7 @@ from ps_fila_prioritaria.componentes import carregando
 from ps_fila_prioritaria.estados.autenticacao import AuthState, SenhaState
 from ps_fila_prioritaria.estados.comprovante import ComprovanteState
 from ps_fila_prioritaria.estados.ficha import FichaState
+from ps_fila_prioritaria.estados.fichas_do_dia import FichasDoDiaState
 from ps_fila_prioritaria.estados.fila_pre_triagem import FilaTicketsState
 from ps_fila_prioritaria.estados.totem import TotemState
 from ps_fila_prioritaria.paginas.areas import area_admin, area_medico, area_recepcao
@@ -20,6 +21,7 @@ from ps_fila_prioritaria.paginas.autenticacao import (
 )
 from ps_fila_prioritaria.paginas.comprovante import pagina_comprovante
 from ps_fila_prioritaria.paginas.ficha import pagina_recepcao_ficha
+from ps_fila_prioritaria.paginas.fichas_do_dia import pagina_fichas_do_dia
 from ps_fila_prioritaria.paginas.fila_pre_triagem import pagina_fila_tickets
 from ps_fila_prioritaria.paginas.pacientes import pagina_recepcao_pacientes
 from ps_fila_prioritaria.paginas.privacidade import privacidade
@@ -59,3 +61,9 @@ app.add_page(
     on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), ComprovanteState.carregar_da_rota],
 )
 app.add_page(pagina_fila_tickets, route="/recepcao/fila", title="Fila de pré-triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FilaTicketsState.carregar, FilaTicketsState.monitorar])
+app.add_page(
+    pagina_fichas_do_dia,
+    route="/recepcao/fichas",
+    title="Fichas do dia",
+    on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FichasDoDiaState.carregar],
+)

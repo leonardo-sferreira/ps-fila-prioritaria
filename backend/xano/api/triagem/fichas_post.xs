@@ -1,6 +1,6 @@
 query "fichas" verb=POST {
   api_group = "Triagem"
-  description = "Abre ficha vazia em EM_TRIAGEM para paciente ativo, com ticket opcional e auditoria."
+  description = "Abre ficha vazia em EM_TRIAGEM para paciente ativo, com ticket opcional e auditoria; sem ticket, devolve a ficha não finalizada que o paciente já tiver."
 
   auth = "usuario"
 
@@ -34,10 +34,11 @@ query "fichas" verb=POST {
         var $ficha { value = null }
         var $ja_existente { value = false }
         conditional {
-          // RN03: não cria segunda ficha. A ficha ainda EM_TRIAGEM é reaberta para continuar a triagem
-          // (decisão do PO, 08/11/2026); ficha já na fila (AGUARDANDO/CHAMADO) ou chegada com ticket é recusada.
+          // RN03: não cria segunda ficha. Sem ticket, devolve a ficha não finalizada do paciente: EM_TRIAGEM é
+          // reaberta para a triagem (decisão do PO, 08/11/2026); AGUARDANDO/CHAMADO volta com a situação e a senha,
+          // para a tela oferecer "Abrir ficha atual" (add-fichas-do-dia, D3). Chegada com ticket é recusada.
           if ($ficha_nao_finalizada != null) {
-            precondition ($ficha_nao_finalizada.status == "EM_TRIAGEM" && $input.ticket_id == null) {
+            precondition ($input.ticket_id == null) {
               error_type = "inputerror"
               error = "FICHA_NAO_FINALIZADA_EXISTENTE"
             }
@@ -103,6 +104,6 @@ query "fichas" verb=POST {
     }
   }
 
-  response = {id: $ficha.id, paciente_id: $ficha.paciente_id, ticket_id: $ficha.ticket_id, status: $ficha.status, chegada_em: $ficha.chegada_em, ja_existente: $ja_existente}
+  response = {id: $ficha.id, paciente_id: $ficha.paciente_id, ticket_id: $ficha.ticket_id, status: $ficha.status, chegada_em: $ficha.chegada_em, senha: $ficha.senha, ja_existente: $ja_existente}
   guid = "7AzpsrORCc-N5u5PuR5rPmVraO8"
 }

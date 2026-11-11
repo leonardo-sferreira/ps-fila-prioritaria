@@ -53,6 +53,7 @@ def area_recepcao() -> rx.Component:
         rx.vstack(
             rx.link(rx.button("Fila de pré-triagem", size="3", background=COR_AZUL), href="/recepcao/fila"),
             rx.button("Identificar paciente sem ticket", size="3", variant="outline", on_click=PacienteState.iniciar_sem_ticket),
+            rx.link(rx.button("Fichas do dia", size="3", variant="outline"), href="/recepcao/fichas"),
         ),
     )
 
