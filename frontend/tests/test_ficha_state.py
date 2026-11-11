@@ -605,3 +605,30 @@ class TestReferenciasESituacaoDosSinais(unittest.TestCase):
         self.assertEqual(self.aviso(estado), "Menor de 16 anos ou idade não informada: defina a prioridade manualmente. Informe a SpO2.")
         estado.classificacao = {"pendencias": []}
         self.assertEqual(self.aviso(estado), "")
+
+
+class TestSinaisVaziosGravadosComoZero(unittest.TestCase):
+    """O banco grava 0 em sinal vital deixado vazio; na tela ele volta a ser campo vazio (exemplo + aviso)."""
+
+    situacao = staticmethod(FichaState.computed_vars["situacao_sinais"]._fget)
+
+    def test_zero_do_servidor_vira_campo_vazio_e_valor_medido_continua(self) -> None:
+        estado = EstadoFichaFalso()
+        ficha = {**FICHA["ficha"], "pa_sistolica": 0, "fc": 0, "fr": 0, "temperatura": 0, "spo2": 0, "glicemia": 0}
+        with _api(Resposta(200, {**FICHA, "ficha": ficha}), Resposta(200, CATALOGO)):
+            asyncio.run(estado.carregar("10"))
+        self.assertEqual(set(estado.sinais.values()), {""})
+        self.assertEqual(self.situacao(estado)["pa_sistolica"], "vazio")
+
+    def test_valor_medido_nao_e_afetado(self) -> None:
+        estado = EstadoFichaFalso()
+        with _api(*_recarga(temperatura=36.0, spo2=96)):
+            asyncio.run(estado.carregar("10"))
+        self.assertEqual((estado.sinais["temperatura"], estado.sinais["spo2"], estado.sinais["pa_sistolica"]), ("36", "96", "120"))
+
+    def test_digitar_no_campo_vazio_tira_o_aviso(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.sinais_salvos = dict(estado.sinais)  # ficha nova: tudo vazio
+        estado.set_sinal("pa_sistolica", "150")
+        self.assertEqual(self.situacao(estado)["pa_sistolica"], "alterado")
+        self.assertEqual(self.situacao(estado)["fc"], "vazio")

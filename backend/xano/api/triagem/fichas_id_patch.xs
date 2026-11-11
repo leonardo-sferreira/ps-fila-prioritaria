@@ -200,14 +200,19 @@ query "fichas/{ficha_id}" verb=PATCH {
         }
 
         // Sinais vitais (D5): conjunto final, com limites de digitação (não são faixas de pontuação).
+        // 0 gravado pelo banco em campo vazio volta a ser "não medido" (classificacao/sinais_da_ficha).
+        function.run "classificacao/sinais_da_ficha" {
+          input = {ficha: $ficha}
+        } as $sinais_ficha
+
         var $sinais_anteriores {
           value = {
-            pa_sistolica             : $ficha.pa_sistolica
-            fc                       : $ficha.fc
-            fr                       : $ficha.fr
-            temperatura              : $ficha.temperatura
-            spo2                     : $ficha.spo2
-            glicemia                 : $ficha.glicemia
+            pa_sistolica             : $sinais_ficha.pa_sistolica
+            fc                       : $sinais_ficha.fc
+            fr                       : $sinais_ficha.fr
+            temperatura              : $sinais_ficha.temperatura
+            spo2                     : $sinais_ficha.spo2
+            glicemia                 : $sinais_ficha.glicemia
             glicemia_sinais_gravidade: $ficha.glicemia_sinais_gravidade == true
             gestante                 : $ficha.gestante == true
           }

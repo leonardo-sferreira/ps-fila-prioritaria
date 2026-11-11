@@ -20,6 +20,10 @@ query "fichas/{ficha_id}" verb=GET {
     var $avaliacao { value = $destino.avaliacao }
     var $ficha { value = $avaliacao.ficha }
 
+    function.run "classificacao/sinais_da_ficha" {
+      input = {ficha: $ficha}
+    } as $sinais_ficha
+
     db.get especialidade {
       field_name = "id"
       field_value = $ficha.especialidade_atribuida_id ?? 0
@@ -43,12 +47,12 @@ query "fichas/{ficha_id}" verb=GET {
       status                   : $ficha.status
       observacao               : $ficha.observacao
       gestante                 : $ficha.gestante == true
-      pa_sistolica             : $ficha.pa_sistolica
-      fc                       : $ficha.fc
-      fr                       : $ficha.fr
-      temperatura              : $ficha.temperatura
-      spo2                     : $ficha.spo2
-      glicemia                 : $ficha.glicemia
+      pa_sistolica             : $sinais_ficha.pa_sistolica
+      fc                       : $sinais_ficha.fc
+      fr                       : $sinais_ficha.fr
+      temperatura              : $sinais_ficha.temperatura
+      spo2                     : $sinais_ficha.spo2
+      glicemia                 : $sinais_ficha.glicemia
       glicemia_sinais_gravidade: $ficha.glicemia_sinais_gravidade == true
       senha                    : $ficha.senha
       especialidade            : ($especialidade_atribuida == null) ? null : {id: $especialidade_atribuida.id, nome: $especialidade_atribuida.nome, sigla: $especialidade_atribuida.sigla}

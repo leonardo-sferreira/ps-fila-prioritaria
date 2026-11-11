@@ -35,6 +35,11 @@ query "fichas/{ficha_id}/impressao" verb=GET {
       field_value = $ficha.especialidade_atribuida_id
     } as $especialidade
 
+    // 0 gravado pelo banco em campo vazio volta a ser "não medido" (classificacao/sinais_da_ficha).
+    function.run "classificacao/sinais_da_ficha" {
+      input = {ficha: $ficha}
+    } as $sinais_ficha
+
     db.query chamada {
       where = $db.chamada.ficha_id == $ficha.id
       sort = {created_at: "asc"}
@@ -43,7 +48,7 @@ query "fichas/{ficha_id}/impressao" verb=GET {
   }
 
   response = {
-    ficha          : {id: $ficha.id, senha: $ficha.senha, chegada_em: $ficha.chegada_em, status: $ficha.status, observacao: $ficha.observacao, pa_sistolica: $ficha.pa_sistolica, fc: $ficha.fc, fr: $ficha.fr, temperatura: $ficha.temperatura, spo2: $ficha.spo2, glicemia: $ficha.glicemia, glicemia_sinais_gravidade: $ficha.glicemia_sinais_gravidade, escore_risco: $ficha.escore_risco, classificacao_risco: $ficha.classificacao_risco, prioridade_atual: $ficha.prioridade_atual, condicao_prioritaria: $ficha.condicao_prioritaria, especialidade: ($especialidade == null) ? null : {id: $especialidade.id, nome: $especialidade.nome, sigla: $especialidade.sigla}}
+    ficha          : {id: $ficha.id, senha: $ficha.senha, chegada_em: $ficha.chegada_em, status: $ficha.status, observacao: $ficha.observacao, pa_sistolica: $sinais_ficha.pa_sistolica, fc: $sinais_ficha.fc, fr: $sinais_ficha.fr, temperatura: $sinais_ficha.temperatura, spo2: $sinais_ficha.spo2, glicemia: $sinais_ficha.glicemia, glicemia_sinais_gravidade: $ficha.glicemia_sinais_gravidade, escore_risco: $ficha.escore_risco, classificacao_risco: $ficha.classificacao_risco, prioridade_atual: $ficha.prioridade_atual, condicao_prioritaria: $ficha.condicao_prioritaria, especialidade: ($especialidade == null) ? null : {id: $especialidade.id, nome: $especialidade.nome, sigla: $especialidade.sigla}}
     paciente       : {nome: $avaliacao.paciente.nome, idade: $avaliacao.idade}
     sintomas       : $avaliacao.sintomas|map:{nome: $$.nome, descricao: $$.descricao}
     sintomas_livres: $avaliacao.sintomas_livres|map:$$.descricao
