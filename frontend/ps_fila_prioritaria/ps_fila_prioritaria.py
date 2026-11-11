@@ -5,6 +5,7 @@ import reflex as rx
 from ps_fila_prioritaria.componentes import carregando
 from ps_fila_prioritaria.estados.autenticacao import AuthState, SenhaState
 from ps_fila_prioritaria.estados.comprovante import ComprovanteState
+from ps_fila_prioritaria.estados.expiracao import ExpiracaoState
 from ps_fila_prioritaria.estados.ficha import FichaState
 from ps_fila_prioritaria.estados.fichas_do_dia import FichasDoDiaState
 from ps_fila_prioritaria.estados.fila_pre_triagem import FilaTicketsState
@@ -41,7 +42,7 @@ app.add_page(totem, route="/totem", title="Totem de autoatendimento", on_load=To
 app.add_page(carregando, route="/sair/inatividade", title="Sessão encerrada", on_load=AuthState.sair_por_inatividade)
 app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=AuthState.verificar_sessao("RECEPCAO_TRIAGEM"))
 app.add_page(area_medico, route="/medico", title="Médico", on_load=AuthState.verificar_sessao("MEDICO"))
-app.add_page(area_admin, route="/admin", title="Administrador", on_load=AuthState.verificar_sessao("ADMINISTRADOR"))
+app.add_page(area_admin, route="/admin", title="Administrador", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), ExpiracaoState.carregar])
 app.add_page(
     pagina_recepcao_pacientes,
     route="/recepcao/pacientes",

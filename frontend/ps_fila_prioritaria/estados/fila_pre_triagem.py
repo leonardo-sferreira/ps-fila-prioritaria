@@ -7,7 +7,7 @@ import httpx
 import reflex as rx
 
 from ps_fila_prioritaria import api
-from ps_fila_prioritaria.comum import _hora_brasilia, _mensagem_erro, _timestamp_segundos
+from ps_fila_prioritaria.comum import _hora_brasilia, _mensagem_erro, _timestamp_segundos, formatar_ticket
 from ps_fila_prioritaria.estados.autenticacao import AuthState
 from ps_fila_prioritaria.estados.pacientes import PacienteState
 
@@ -65,8 +65,7 @@ class FilaTicketsState(rx.State):
                 ticket["segundos_restantes"] = max(0, int(chamado + espera - agora + 0.999)) if chamado is not None and agora is not None and espera > 0 else -1
                 # Sem o limite configurado, a tela oferece o botão e o Xano decide (LIMITE_DE_CHAMADAS).
                 ticket["pode_chamar_novamente"] = tentativas_maximas <= 0 or tentativas < tentativas_maximas
-                prefixo = {"PEDIATRICO": "C", "PREFERENCIAL": "P", "NORMAL": "N"}.get(ticket.get("tipo"), "?")
-                ticket["senha_exibida"] = f"{prefixo}-{int(ticket.get('numero') or 0):03d}"
+                ticket["senha_exibida"] = formatar_ticket(ticket.get("tipo"), ticket.get("numero"))
                 ticket["nome_tipo"], ticket["cor_tipo"] = APARENCIA_TIPO_TICKET.get(ticket.get("tipo"), ("—", COR_SECUNDARIA_FILA))
                 ticket["emitido_hora"] = _hora_brasilia(ticket.get("emitido_em"))
             self.atualizado_em = _hora_brasilia(corpo.get("agora") if isinstance(corpo, dict) else None, segundos=True)

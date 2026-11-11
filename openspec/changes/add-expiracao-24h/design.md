@@ -1,39 +1,59 @@
-# Design: expiração automática após 24 horas
+# Design: dispensa de fichas e tickets parados há mais de 24 horas
 
 ## Contexto
 
-`ficha_atendimento` tem `chegada_em` e `status`; `DESISTENCIA` já é um estado final. `ticket_pre_triagem` tem `emitido_em` e `status`; `DESISTENCIA` também já existe.
+`ficha_atendimento` tem `chegada_em` e `status`, e `ticket_pre_triagem` tem `emitido_em` e `status`. Nas duas, `DESISTENCIA` já é um estado final, então nenhuma tabela muda.
 
-A função `registrar_alteracao` exige um usuário ativo, porque foi feita para operações autenticadas. `historico_alteracao.usuario_id`, porém, aceita vazio.
+O primeiro desenho usava uma tarefa agendada, mas o push foi recusado pelo Xano ("Please upgrade to access tasks"), porque o workspace está no plano gratuito. Por decisão do PO, a dispensa passou a ser uma ação do Administrador.
 
 ## Decisões
 
-### D1. Tarefa agendada + função testável
-`task "expirar_registros"` roda a cada 3600 s e só chama `function "manutencao/expirar_registros"`. A função pode ser rodada à mão pelo CLI (`xano function run`), como o reparo de especialidade. O teste do prazo fica numa função pura, `manutencao/expirou`, com testes inline de valor-limite. Os testes do Xano neste projeto não usam o banco, e testar a `expirar_registros` alteraria dados reais.
+### D1. Ação do Administrador, com prévia
+- `GET expiracao` devolve o que está parado, sem alterar nada.
+- `POST expiracao` encerra tudo o que está parado no momento da chamada.
 
-- **Alternativa recusada:** expirar "sob demanda" ao consultar as filas. Espalha a regra por vários endpoints e não limpa nada se ninguém abrir a tela.
+Os dois validam o perfil `ADMINISTRADOR` com `auth/verificar_acesso`. Ficam no grupo Triagem porque o Reflex já tem a URL desse grupo; o grupo Cadastros não tem URL configurada.
 
-### D2. Corte por horário
-`limite = now - HORAS_EXPIRACAO horas`.
-- Fichas: `status in [EM_TRIAGEM, AGUARDANDO, CHAMADO] && chegada_em < limite`.
-- Tickets: `status in [AGUARDANDO, CHAMADO] && emitido_em < limite`.
+O POST recalcula a lista no servidor, em vez de receber IDs da tela. Assim, não encerra algo que mudou entre a prévia e o clique.
 
-Exatamente 24 h ainda não expira; passou disso, expira. Quando `HORAS_EXPIRACAO` falta ou não é um inteiro positivo, a função não altera nada e devolve o motivo, como as outras regras com parâmetro.
+- **Alternativa recusada:** tarefa agendada, que exige plano pago.
+- **Alternativa recusada:** expirar "sob demanda" ao consultar as filas. Espalha a regra por vários endpoints, e o PO preferiu a ação explícita.
 
-### D3. Encerramento e auditoria na mesma transação
-Para cada registro, dentro de `db.transaction`:
-- `db.patch` com `status: "DESISTENCIA"`;
-- `db.add historico_alteracao` com `tipo_evento: "EXPIRACAO"`, `entidade`, `registro_id`, `valor_anterior: {status}`, `valor_novo: {status: "DESISTENCIA"}`, `justificativa` e `usuario_id` vazio.
+### D2. Prazo numa função pura
+`manutencao/expirou(horario, agora, horas)` diz se `horario < agora - horas × 3600000`, com testes inline de valor-limite:
+- exatamente no prazo, ainda não expirou;
+- horário vazio nunca expira;
+- prazo que não seja positivo nunca expira.
 
-A função não usa `registrar_alteracao`, porque não há usuário. Ela não altera o ticket ligado à ficha nem a ficha ligada ao ticket: cada um expira pela sua própria data.
+Os testes do Xano neste projeto não usam o banco. Por isso, a regra testável fica separada da função que consulta e grava.
+
+### D3. Prévia e aplicação na mesma função
+`manutencao/expirar_registros(aplicar, usuario_id)` consulta as fichas `EM_TRIAGEM`/`AGUARDANDO`/`CHAMADO` e os tickets `AGUARDANDO`/`CHAMADO`, separa os expirados com `expirou` e devolve a lista.
+
+Com `aplicar`, cada item, dentro de `db.transaction`:
+- recebe `db.patch` com `status: "DESISTENCIA"`;
+- é registrado com `registrar_alteracao`, com `tipo_evento: "EXPIRACAO"`, o estado anterior, a justificativa e o Administrador como usuário.
+
+O ticket não tem `tentativas` alterado. A dispensa de uma ficha não mexe no ticket ligado a ela, porque cada um expira pela sua própria data.
 
 ### D4. Parâmetro
-`HORAS_EXPIRACAO = 24` entra em `inicializar_parametros_fila`, que já cria os parâmetros da fila sem sobrescrever os existentes. A tarefa também chama essa inicialização antes da primeira execução, para não depender de alguém ter usado a fila.
+`HORAS_EXPIRACAO = 24` entra em `inicializar_parametros_fila`, que cria os padrões sem sobrescrever os existentes. Os dois endpoints chamam essa inicialização antes de ler o parâmetro. Com o parâmetro inválido, nada é alterado e a resposta traz `motivo`.
 
-### D5. Resposta da função
-`{horas_expiracao, fichas_expiradas: [ids], tickets_expirados: [ids], motivo}`, para o roteiro manual e o log da tarefa (`debug.log`). `motivo` só vem preenchido quando o parâmetro é inválido.
+### D5. Resposta
+`{horas_expiracao, aplicado, fichas: [{id, senha, status, chegada_em}], tickets: [{id, tipo, numero, status, emitido_em}], motivo}`.
+
+Não há nome nem CPF: o Administrador decide pelo tempo parado, não pelo paciente.
+
+### D6. Tela
+- O cartão "Fichas e tickets parados" carrega a prévia ao abrir `/admin`.
+- Mostra os totais e as listas: senha ou ticket, situação, e chegada ou emissão no horário de Brasília.
+- "Dispensar todos" abre uma confirmação: "Encerrar N fichas e M tickets como desistência?".
+- Depois da dispensa, o cartão mostra quantos itens foram encerrados e recarrega a prévia.
+- Com a lista vazia, o botão fica desabilitado.
 
 ## Riscos
 
-- Expirar um atendimento real que demorou mais de 24 h. Mitigação: o prazo é configurável, o histórico guarda o estado anterior e o paciente pode abrir nova ficha.
-- A tarefa roda no fuso do servidor, mas a comparação usa timestamps absolutos, então o fuso não interfere.
+- **Dispensar um atendimento real que demorou mais de 24 h.** Mitigações:
+  - a prévia mostra cada item antes da confirmação;
+  - o prazo é configurável;
+  - o histórico guarda o estado anterior e quem dispensou.

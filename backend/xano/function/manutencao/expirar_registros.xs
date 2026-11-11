@@ -1,12 +1,15 @@
-// Expiração (add-expiracao-24h, D2–D5): encerra como DESISTENCIA as fichas EM_TRIAGEM/AGUARDANDO/CHAMADO e os tickets
-// AGUARDANDO/CHAMADO que passaram de HORAS_EXPIRACAO horas desde a chegada/emissão. Registros finais não entram na
-// consulta. Cada encerramento grava EXPIRACAO no histórico sem usuário (ação do sistema), na mesma transação.
-// Chamada pela tarefa "expirar_registros" a cada hora; também pode ser rodada pelo CLI:
-// xano function run manutencao/expirar_registros --branch v1 --no-input-check
+// Dispensa por prazo (add-expiracao-24h, D2–D5): lista as fichas EM_TRIAGEM/AGUARDANDO/CHAMADO e os tickets
+// AGUARDANDO/CHAMADO parados há mais de HORAS_EXPIRACAO horas desde a chegada/emissão. Sem `aplicar`, só devolve a
+// prévia; com `aplicar`, encerra cada um como DESISTENCIA e audita EXPIRACAO em nome de `usuario_id` (Administrador),
+// na mesma transação. Registros finais não entram na consulta.
 function "manutencao/expirar_registros" {
-  description = "Encerra como desistência fichas e tickets não concluídos dentro de HORAS_EXPIRACAO horas e registra no histórico."
+  description = "Prévia ou dispensa (aplicar=true) de fichas e tickets parados há mais de HORAS_EXPIRACAO horas, com auditoria."
 
-  input {}
+  input {
+    bool aplicar?=false
+    // Administrador que dispensa; obrigatório com aplicar=true (registrar_alteracao exige usuário ativo).
+    int? usuario_id?
+  }
 
   stack {
     db.get parametro {
@@ -22,10 +25,10 @@ function "manutencao/expirar_registros" {
     }
 
     var $agora { value = now }
-    var $fichas_expiradas { value = [] }
-    var $tickets_expirados { value = [] }
+    var $fichas { value = [] }
+    var $tickets { value = [] }
     var $motivo { value = null }
-    var $justificativa { value = "Encerrada após o prazo de expiração sem conclusão (HORAS_EXPIRACAO)." }
+    var $aplicado { value = false }
 
     conditional {
       if ($horas == null || $horas <= 0) {
@@ -34,63 +37,90 @@ function "manutencao/expirar_registros" {
       else {
         db.query ficha_atendimento {
           where = $db.ficha_atendimento.status in ["EM_TRIAGEM", "AGUARDANDO", "CHAMADO"]
+          sort = {chegada_em: "asc", id: "asc"}
           return = {type: "list"}
         } as $fichas_ativas
 
         db.query ticket_pre_triagem {
           where = $db.ticket_pre_triagem.status in ["AGUARDANDO", "CHAMADO"]
+          sort = {emitido_em: "asc", id: "asc"}
           return = {type: "list"}
         } as $tickets_ativos
 
-        db.transaction {
-          stack {
-            foreach ($fichas_ativas) {
-              each as $ficha {
-                function.run "manutencao/expirou" {
-                  input = {horario: $ficha.chegada_em, agora: $agora, horas: $horas}
-                } as $ficha_expirou
+        foreach ($fichas_ativas) {
+          each as $ficha {
+            function.run "manutencao/expirou" {
+              input = {horario: $ficha.chegada_em, agora: $agora, horas: $horas}
+            } as $ficha_expirou
+            conditional {
+              if ($ficha_expirou) {
+                var.update $fichas {
+                  value = $fichas|push:{id: $ficha.id, senha: $ficha.senha, status: $ficha.status, chegada_em: $ficha.chegada_em}
+                }
+              }
+            }
+          }
+        }
 
-                conditional {
-                  if ($ficha_expirou) {
+        foreach ($tickets_ativos) {
+          each as $ticket {
+            function.run "manutencao/expirou" {
+              input = {horario: $ticket.emitido_em, agora: $agora, horas: $horas}
+            } as $ticket_expirou
+            conditional {
+              if ($ticket_expirou) {
+                var.update $tickets {
+                  value = $tickets|push:{id: $ticket.id, tipo: $ticket.tipo, numero: $ticket.numero, status: $ticket.status, emitido_em: $ticket.emitido_em}
+                }
+              }
+            }
+          }
+        }
+
+        conditional {
+          if ($input.aplicar) {
+            precondition ($input.usuario_id != null) {
+              error_type = "inputerror"
+              error = "USUARIO_OBRIGATORIO"
+            }
+
+            var $justificativa {
+              value = "Dispensada pelo Administrador: parada há mais de " ~ $horas ~ " h sem conclusão."
+            }
+
+            db.transaction {
+              stack {
+                foreach ($fichas) {
+                  each as $item_ficha {
                     db.patch ficha_atendimento {
                       field_name = "id"
-                      field_value = $ficha.id
+                      field_value = $item_ficha.id
                       data = {status: "DESISTENCIA"}
                     } as $ficha_encerrada
 
-                    db.add historico_alteracao {
-                      data = {tipo_evento: "EXPIRACAO", entidade: "FICHA_ATENDIMENTO", registro_id: $ficha.id, valor_anterior: {status: $ficha.status}, valor_novo: {status: "DESISTENCIA"}, justificativa: $justificativa, usuario_id: null}
-                    } as $historico_ficha
-
-                    var.update $fichas_expiradas { value = $fichas_expiradas|push:$ficha.id }
+                    function.run "registrar_alteracao" {
+                      input = {usuario_id: $input.usuario_id, tipo_evento: "EXPIRACAO", entidade: "FICHA_ATENDIMENTO", registro_id: $item_ficha.id, valor_anterior: {status: $item_ficha.status}, valor_novo: {status: "DESISTENCIA"}, justificativa: $justificativa}
+                    } as $auditoria_ficha
                   }
                 }
-              }
-            }
 
-            foreach ($tickets_ativos) {
-              each as $ticket {
-                function.run "manutencao/expirou" {
-                  input = {horario: $ticket.emitido_em, agora: $agora, horas: $horas}
-                } as $ticket_expirou
-
-                conditional {
-                  if ($ticket_expirou) {
+                foreach ($tickets) {
+                  each as $item_ticket {
                     db.patch ticket_pre_triagem {
                       field_name = "id"
-                      field_value = $ticket.id
+                      field_value = $item_ticket.id
                       data = {status: "DESISTENCIA"}
                     } as $ticket_encerrado
 
-                    db.add historico_alteracao {
-                      data = {tipo_evento: "EXPIRACAO", entidade: "TICKET_PRE_TRIAGEM", registro_id: $ticket.id, valor_anterior: {status: $ticket.status}, valor_novo: {status: "DESISTENCIA"}, justificativa: $justificativa, usuario_id: null}
-                    } as $historico_ticket
-
-                    var.update $tickets_expirados { value = $tickets_expirados|push:$ticket.id }
+                    function.run "registrar_alteracao" {
+                      input = {usuario_id: $input.usuario_id, tipo_evento: "EXPIRACAO", entidade: "TICKET_PRE_TRIAGEM", registro_id: $item_ticket.id, valor_anterior: {status: $item_ticket.status}, valor_novo: {status: "DESISTENCIA"}, justificativa: $justificativa}
+                    } as $auditoria_ticket
                   }
                 }
               }
             }
+
+            var.update $aplicado { value = true }
           }
         }
       }
@@ -98,9 +128,10 @@ function "manutencao/expirar_registros" {
   }
 
   response = {
-    horas_expiracao  : $horas
-    fichas_expiradas : $fichas_expiradas
-    tickets_expirados: $tickets_expirados
-    motivo           : $motivo
+    horas_expiracao: $horas
+    aplicado       : $aplicado
+    fichas         : $fichas
+    tickets        : $tickets
+    motivo         : $motivo
   }
 }

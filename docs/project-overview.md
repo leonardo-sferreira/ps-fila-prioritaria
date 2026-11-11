@@ -77,7 +77,7 @@ Paciente → Totem → Ticket na fila de Recepção/Triagem → Triagem e classi
 - **Classificação:** baixo → Azul, moderado → Amarela e alto → Vermelha. Idoso, criança e gestante reordenam dentro da mesma classificação, sem somar pontos nem alterar a classificação. O ajuste manual exige justificativa e é descartado quando sintomas ou sinais vitais mudam.
 - **Direcionamento e médico:** os sintomas definem automaticamente a especialidade da ficha. Um médico elegível pode atender qualquer fila; sua especialidade de referência é apenas dado cadastral.
 - **Chamadas:** sempre feitas por uma pessoa, sem repetição nem encerramento automáticos; até 3 tentativas em cada oportunidade; após a primeira oportunidade sem comparecimento, uma reentrada ao fim da mesma fila. Na Recepção/Triagem, 30 segundos depois da 1ª chamada e 10 segundos depois das seguintes até liberar "Chamar novamente" e "Não compareceu"; no Médico, 30 segundos entre chamadas.
-- **Expiração (decisão do PO, 10/11/2026):** ficha em triagem, aguardando ou chamada e ticket do Totem aguardando ou chamado que passarem de 24 horas (configurável, `HORAS_EXPIRACAO`) são encerrados como desistência por uma rotina do sistema, com registro no histórico. É limpeza de registro abandonado, não uma chamada automática; o paciente pode abrir nova ficha.
+- **Dispensa por prazo (decisão do PO, 10/11/2026):** ficha em triagem, aguardando ou chamada e ticket do Totem aguardando ou chamado parados há mais de 24 horas (configurável, `HORAS_EXPIRACAO`) aparecem para o Administrador, que os dispensa de uma vez como desistência, com registro no histórico em seu nome. É limpeza de registro abandonado, não uma chamada automática; o paciente pode abrir nova ficha.
 - **Médico:** PAUSA e AUSENTE impedem novas atribuições sem remover itens já atribuídos. Retomar volta a DISPONIVEL se houver plantão vigente. Encerrar plantão é ação explícita e exige fila atribuída zerada.
 - **Painel público:** pode exibir senha e sala; nunca exibe CPF nem nome completo.
 - **Privacidade nas telas internas (decisão do PO, 26/10/2026):** o CPF aparece mascarado (`***.456.789-**`) onde não precisa ser lido inteiro; os campos de digitação mostram o CPF completo. A sessão é encerrada após 1 hora sem uso (configurável, `INATIVIDADE_SEGUNDOS`), além da expiração de 12 h.
@@ -104,6 +104,7 @@ As permissões são validadas no backend Xano. O Reflex apenas apresenta ou ocul
 | Gerenciar usuários e perfis | Não | Não | Sim | Não |
 | Cadastrar Médico e Recepção/Triagem | Não | Não | Sim | Não |
 | Gerenciar especialidades, sintomas, salas e parâmetros | Não | Não | Sim | Não |
+| Dispensar fichas e tickets parados há mais de 24 h | Não | Não | Sim | Não |
 | Definir disponibilidade dos médicos | Não | Não | Sim | Não |
 | Acompanhar fila geral, equipe e auditoria | Não | Não | Sim | Não |
 | Visualizar painel público | Sim | Sim | Sim | Sim |
