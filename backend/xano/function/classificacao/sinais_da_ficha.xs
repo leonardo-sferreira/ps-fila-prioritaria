@@ -68,4 +68,5 @@ function "classificacao/sinais_da_ficha" {
     }
     expect.to_be_false ($response.glicemia_sinais_gravidade)
   }
+  guid = "MVs6oi9ALI8ccyprLB2zlR1uVl4"
 }
