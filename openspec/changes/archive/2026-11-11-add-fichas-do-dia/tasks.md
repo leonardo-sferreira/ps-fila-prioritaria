@@ -24,9 +24,10 @@ Pedido do PO em 10/11/2026: ver as fichas já criadas e chegar à ficha aguardan
 - [x] 2.2 Em `api/triagem/fichas_post.xs` (D3), sem ticket, devolver a ficha `AGUARDANDO` ou `CHAMADO` existente com `ja_existente: true`, `status` e `senha`, sem alterar nem auditar. Com ticket, manter a recusa. Verificar com `xano_validate_xanoscript`
   - Evidência (10/11/2026): `xano_validate_xanoscript` válido, 0 avisos. A recusa ficou só para chegada com ticket (`precondition ($input.ticket_id == null)`); a resposta passa a trazer `senha`.
 
-- [ ] 2.3 Publicar só os dois arquivos na `v1` (`--dry-run` antes; o PO roda o push) e conferir:
+- [x] 2.3 Publicar só os dois arquivos na `v1` (`--dry-run` antes; o PO roda o push) e conferir:
   - `GET fichas` com a Recepção, e a recusa com outro perfil;
   - `POST fichas` para um paciente com ficha aguardando, que deve devolver a mesma ficha sem criar outra.
+  - Evidência (11/11/2026): o primeiro push falhou sem aviso (CLI 1.2.0 incompatível com o Node 26: `UND_ERR_INVALID_ARG`); com o CLI 1.3.4, o `--dry-run` mostrou `CREATE query fichas GET` e `UPDATE query fichas POST`, o PO publicou na `v1` e o CLI gravou os guids (commit `a02787e`).
 
 ## 3. Reflex
 
@@ -60,9 +61,10 @@ Pedido do PO em 10/11/2026: ver as fichas já criadas e chegar à ficha aguardan
 
 ## 4. Verificação ponta a ponta
 
-- [ ] 4.1 Roteiro manual com a Recepção logada:
+- [x] 4.1 Roteiro manual com a Recepção logada:
   - confirmar uma ficha e sair do comprovante;
   - abrir "Fichas do dia", achar a ficha pela senha e abrir;
   - alterar um sinal vital e salvar (reavaliação RF12), e ver a lista refletir a nova cor;
   - identificar o mesmo paciente pelo CPF, ver o aviso com "Abrir ficha atual" e abrir;
   - conferir que nenhuma ficha nova foi criada.
+  - Evidência (11/11/2026): roteiro manual feito pelo PO, logado como Recepção: a aba Fichas do dia lista as fichas, a ficha aguardando abre pela senha para reavaliação, e a identificação pelo CPF de paciente já na fila mostra "Abrir ficha atual" sem criar ficha nova.

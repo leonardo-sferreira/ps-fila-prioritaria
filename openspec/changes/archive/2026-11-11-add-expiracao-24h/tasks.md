@@ -37,11 +37,12 @@ Revisão no mesmo dia: o plano gratuito do Xano recusou a tarefa agendada, e o P
 - [x] 2.4 Criar `api/triagem/expiracao_get.xs` (prévia) e `api/triagem/expiracao_post.xs` (dispensa), só para `ADMINISTRADOR`, chamando `inicializar_parametros_fila` antes (D1, D4). Verificar com `xano_validate_xanoscript`
   - Evidência (10/11/2026): `expiracao_get.xs` e `expiracao_post.xs` com `verificar_acesso` para `ADMINISTRADOR`; o POST não recebe IDs da tela. `xano_validate_xanoscript` válido, 0 avisos.
 
-- [ ] 2.5 Publicar na `v1` (`--dry-run` antes; o PO roda o push):
+- [x] 2.5 Publicar na `v1` (`--dry-run` antes; o PO roda o push):
   - `inicializar_parametros_fila`, `expirou`, `expirar_registros` e os dois endpoints;
   - junto, `fichas_get` e `fichas_post` de `add-fichas-do-dia`, que ficaram de fora pela recusa da tarefa.
 
   Rodar `xano unit_test run_all` e conferir os 6 testes novos.
+  - Evidência (11/11/2026): a 1ª versão (tarefa agendada) foi recusada pelo plano gratuito ("Please upgrade to access tasks") e motivou a revisão para ação do Administrador. O `--dry-run` final mostrou 5 criações e 2 atualizações, sem remoções. Depois do push, `xano unit_test run_all` deu 85 passando, incluindo os 6 de `manutencao/expirou`.
 
 ## 3. Reflex
 
@@ -68,9 +69,10 @@ Revisão no mesmo dia: o plano gratuito do Xano recusou a tarefa agendada, e o P
 
 ## 4. Verificação ponta a ponta
 
-- [ ] 4.1 Roteiro manual:
+- [x] 4.1 Roteiro manual:
   - como Administrador, abrir `/admin` e ver a ficha antiga do PO na prévia;
   - dispensar e confirmar;
   - ver o histórico com `EXPIRACAO` em nome do Administrador;
   - como Recepção, ver a ficha em "Fichas do dia" > "Finalizadas", se a chegada foi hoje, e abrir uma nova ficha para o mesmo paciente;
   - conferir que a prévia e a dispensa recusam a Recepção.
+  - Evidência (11/11/2026): roteiro manual feito pelo PO: como Administrador, o cartão "Fichas e tickets parados" mostrou a ficha antiga, "Dispensar todos" a encerrou como desistência com auditoria, e o CPF ficou livre para uma nova ficha.
