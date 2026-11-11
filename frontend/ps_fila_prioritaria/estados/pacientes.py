@@ -28,6 +28,9 @@ class PacienteState(rx.State):
     telefone_alterado: bool = False
     abrindo_ficha: bool = False
     ticket_id: int = 0
+    # Ficha do paciente que já está na fila (AGUARDANDO/CHAMADO), para o atalho "Abrir ficha atual" (add-fichas-do-dia, D4).
+    ficha_atual_id: int = 0
+    ficha_atual_senha: str = ""
 
     def set_cpf_busca(self, valor: str) -> None:
         self.cpf_busca = valor
@@ -78,6 +81,8 @@ class PacienteState(rx.State):
         self.erro = False
         self.alterado = None
         self.telefone_alterado = False
+        self.ficha_atual_id = 0
+        self.ficha_atual_senha = ""
 
     def _carregar_paciente(self, paciente: dict[str, Any]) -> None:
         """Preenche a tela exclusivamente com os dados de um Paciente retornado pela API."""
@@ -232,4 +237,16 @@ class PacienteState(rx.State):
             self.mensagem = "A API de Fichas retornou uma resposta inválida."
             self.erro = True
             return None
+        if ficha.get("ja_existente") and ficha.get("status") in ("AGUARDANDO", "CHAMADO"):
+            # Mesma ficha, já na fila: avisa e oferece o atalho em vez de abrir como se fosse nova chegada (D4).
+            self.ficha_atual_id = ficha_id
+            self.ficha_atual_senha = str(ficha.get("senha") or "")
+            senha = f" com a senha {self.ficha_atual_senha}" if self.ficha_atual_senha else ""
+            self.mensagem = f"Este paciente já está na fila{senha}."
+            return None
         return rx.redirect(f"/recepcao/ficha/{ficha_id}")
+
+    def abrir_ficha_atual(self) -> rx.event.EventSpec | None:
+        if not self.ficha_atual_id:
+            return None
+        return rx.redirect(f"/recepcao/ficha/{self.ficha_atual_id}")

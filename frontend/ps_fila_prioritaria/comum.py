@@ -158,6 +158,14 @@ def _timestamp_segundos(valor: Any) -> float | None:
 FUSO_BRASILIA = timezone(timedelta(hours=-3))
 
 
+PREFIXO_TICKET = {"PEDIATRICO": "C", "PREFERENCIAL": "P", "NORMAL": "N"}
+
+
+def formatar_ticket(tipo: Any, numero: Any) -> str:
+    """Ticket do Totem como aparece para o paciente: prefixo do tipo e número com 3 dígitos (C-004, N-031)."""
+    return f"{PREFIXO_TICKET.get(str(tipo), '?')}-{int(numero or 0):03d}"
+
+
 def _hora_brasilia(valor: Any, segundos: bool = False) -> str:
     instante = _timestamp_segundos(valor)
     if instante is None:
