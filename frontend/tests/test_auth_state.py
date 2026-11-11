@@ -5,10 +5,10 @@ from unittest.mock import patch
 
 import httpx
 
-from ps_fila_prioritaria.ps_fila_prioritaria import AuthState
+from ps_fila_prioritaria.estados.autenticacao import AuthState
 
 REQUISICAO = "ps_fila_prioritaria.api.httpx.request"
-REDIRECT = "ps_fila_prioritaria.ps_fila_prioritaria.rx.redirect"
+REDIRECT = "reflex.redirect"
 AMBIENTE = {"XANO_AUTH_API_URL": "https://auth.test"}
 
 

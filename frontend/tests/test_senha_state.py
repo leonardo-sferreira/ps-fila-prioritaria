@@ -3,10 +3,10 @@
 import unittest
 from unittest.mock import patch
 
-from ps_fila_prioritaria.ps_fila_prioritaria import SenhaState
+from ps_fila_prioritaria.estados.autenticacao import SenhaState
 
 REQUISICAO = "ps_fila_prioritaria.api.httpx.request"
-REDIRECT = "ps_fila_prioritaria.ps_fila_prioritaria.rx.redirect"
+REDIRECT = "reflex.redirect"
 AMBIENTE = {"XANO_AUTH_API_URL": "https://auth.test"}
 GENERICA = "Se o e-mail estiver cadastrado, enviamos um código"
 

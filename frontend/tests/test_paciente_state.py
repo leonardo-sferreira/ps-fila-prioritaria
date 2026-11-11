@@ -5,7 +5,9 @@ from collections import deque
 import unittest
 from unittest.mock import patch
 
-from ps_fila_prioritaria.ps_fila_prioritaria import ARQUIVO_ENV, AuthState, PacienteState, carregar_variaveis_ambiente
+from ps_fila_prioritaria.comum import ARQUIVO_ENV, carregar_variaveis_ambiente
+from ps_fila_prioritaria.estados.autenticacao import AuthState
+from ps_fila_prioritaria.estados.pacientes import PacienteState
 
 
 class Resposta:
@@ -108,7 +110,7 @@ def test_buscas_sequenciais_nao_reaproveitam_dados_do_paciente_anterior() -> Non
         Resposta(200, None),
     ])
 
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", side_effect=lambda *args, **kwargs: respostas_get.popleft()):
+    with patch("ps_fila_prioritaria.api.requisitar", side_effect=lambda *args, **kwargs: respostas_get.popleft()):
         asyncio.run(estado.buscar())
         assert estado.nome == "Paciente A"
         assert estado.paciente_encontrado
@@ -153,7 +155,7 @@ def test_cpf_invalido_descarta_o_paciente_carregado() -> None:
     estado.alterado = True
 
     with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         return_value=Resposta(400, {"message": "CPF inválido"}),
     ):
         asyncio.run(estado.buscar())
@@ -181,7 +183,7 @@ def test_atualizar_envia_telefone_vazio_so_quando_usuario_apaga() -> None:
     ])
 
     with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         side_effect=lambda *args, **kwargs: respostas.popleft(),
     ) as patch_http:
         # Outro campo pode ser salvo sem tocar no telefone: ele fica omitido.
@@ -208,7 +210,7 @@ def test_continuar_cria_ficha_para_paciente_identificado() -> None:
     estado.paciente_id = PACIENTE_A["id"]
 
     with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}, clear=False), patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         return_value=Resposta(201, {"id": 10, "paciente_id": PACIENTE_A["id"]}),
     ) as post:
         redirecionamento = asyncio.run(estado.continuar_atendimento())
@@ -226,7 +228,7 @@ def test_continuar_reabre_ficha_em_triagem_existente() -> None:
     estado.paciente_id = PACIENTE_A["id"]
 
     with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}, clear=False), patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         return_value=Resposta(200, {"id": 33, "paciente_id": PACIENTE_A["id"], "status": "EM_TRIAGEM", "ja_existente": True}),
     ):
         redirecionamento = asyncio.run(estado.continuar_atendimento())
@@ -241,7 +243,7 @@ def test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes() -> None:
     estado.paciente_id = PACIENTE_A["id"]
 
     with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": ""}, clear=False), patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar"
+        "ps_fila_prioritaria.api.requisitar"
     ) as post:
         asyncio.run(estado.continuar_atendimento())
 
@@ -254,13 +256,13 @@ def test_cancelar_limpa_pesquisa_e_formulario_sem_chamar_api() -> None:
     estado = EstadoFalso(PACIENTE_A["cpf"])
 
     with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         return_value=Resposta(200, PACIENTE_A),
     ):
         asyncio.run(estado.buscar())
     assert estado.paciente_encontrado
 
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar") as requisitar:
+    with patch("ps_fila_prioritaria.api.requisitar") as requisitar:
         estado.cancelar()
 
     requisitar.assert_not_called()
@@ -278,7 +280,7 @@ def test_operacoes_de_paciente_enviam_token_e_tratam_401_e_403() -> None:
     estado = EstadoFalso(PACIENTE_A["cpf"])
 
     with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         side_effect=[
             Resposta(200, PACIENTE_A),
             Resposta(200, PACIENTE_B),
@@ -297,7 +299,7 @@ def test_operacoes_de_paciente_enviam_token_e_tratam_401_e_403() -> None:
     assert all(chamada.kwargs["token"] == "token-teste" for chamada in requisitar.call_args_list)
 
     estado = EstadoFalso(PACIENTE_A["cpf"])
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", return_value=Resposta(403, {"message": "negado"})) as requisitar:
+    with patch("ps_fila_prioritaria.api.requisitar", return_value=Resposta(403, {"message": "negado"})) as requisitar:
         assert asyncio.run(estado.buscar()) is None
     assert requisitar.call_args.args[:3] == ("GET", "XANO_API_URL", "/pacientes")
     assert requisitar.call_args.kwargs["token"] == "token-teste"
@@ -305,7 +307,7 @@ def test_operacoes_de_paciente_enviam_token_e_tratam_401_e_403() -> None:
     assert estado.auth.token == "token-teste"
 
     estado.cpf_busca = PACIENTE_A["cpf"]
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", return_value=Resposta(401, {"message": "Sessão inválida."})):
+    with patch("ps_fila_prioritaria.api.requisitar", return_value=Resposta(401, {"message": "Sessão inválida."})):
         assert asyncio.run(estado.buscar()) is not None
     assert estado.auth.token == estado.auth.nome == estado.auth.perfil == ""
     assert estado.auth.mensagem == "Sua sessão expirou. Faça login novamente."
@@ -313,7 +315,7 @@ def test_operacoes_de_paciente_enviam_token_e_tratam_401_e_403() -> None:
 
 def test_erros_publicos_de_paciente_sao_preservados() -> None:
     estado = EstadoFalso("cpf-nao-encontrado")
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", return_value=Resposta(200, None)):
+    with patch("ps_fila_prioritaria.api.requisitar", return_value=Resposta(200, None)):
         asyncio.run(estado.buscar())
     assert estado.mensagem == "Paciente não encontrado — preencha o cadastro."
     assert estado.exibir_cadastro
@@ -321,7 +323,7 @@ def test_erros_publicos_de_paciente_sao_preservados() -> None:
     estado.nome = "Paciente de teste"
     estado.data_nascimento = "1990-01-01"
     with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         return_value=Resposta(400, {"message": "CPF_DUPLICADO"}),
     ):
         asyncio.run(estado.cadastrar())
@@ -330,7 +332,7 @@ def test_erros_publicos_de_paciente_sao_preservados() -> None:
 
     estado._carregar_paciente(PACIENTE_A)
     with patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar",
+        "ps_fila_prioritaria.api.requisitar",
         return_value=Resposta(400, {"message": "Data de nascimento inválida"}),
     ):
         asyncio.run(estado.atualizar())
@@ -341,7 +343,7 @@ def test_erros_publicos_de_paciente_sao_preservados() -> None:
 def test_carregamento_de_env_usa_o_arquivo_do_frontend() -> None:
     assert ARQUIVO_ENV.name == ".env"
     assert ARQUIVO_ENV.parent.name == "frontend"
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.load_dotenv") as carregar:
+    with patch("ps_fila_prioritaria.comum.load_dotenv") as carregar:
         carregar_variaveis_ambiente()
     carregar.assert_called_once_with(dotenv_path=ARQUIVO_ENV)
 
@@ -385,7 +387,7 @@ def test_continuar_encaminha_ticket_e_limpa_contexto_apos_sucesso() -> None:
     estado.paciente_id = 1
     estado.ticket_id = 42
     with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}), patch(
-        "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", return_value=Resposta(201, {"id": 5})
+        "ps_fila_prioritaria.api.requisitar", return_value=Resposta(201, {"id": 5})
     ) as requisitar:
         asyncio.run(estado.continuar_atendimento())
     assert requisitar.call_args.kwargs["json"] == {"paciente_id": 1, "ticket_id": 42}

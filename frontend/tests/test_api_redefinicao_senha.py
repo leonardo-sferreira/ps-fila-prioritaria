@@ -11,7 +11,7 @@ import time
 import httpx
 import pytest
 
-from ps_fila_prioritaria.ps_fila_prioritaria import carregar_variaveis_ambiente
+from ps_fila_prioritaria.comum import carregar_variaveis_ambiente
 
 carregar_variaveis_ambiente()
 
