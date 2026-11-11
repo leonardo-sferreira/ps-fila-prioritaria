@@ -13,7 +13,38 @@ from ps_fila_prioritaria.componentes import (
     cartao_painel,
     protegido,
 )
+from ps_fila_prioritaria.estados.cadastros import MeusPlantoesState
 from ps_fila_prioritaria.estados.medico import ImpressaoMedicoState, MedicoState
+
+
+def meus_plantoes() -> rx.Component:
+    """Plantões do próprio médico, cadastrados pelo Administrador; só leitura (add-cadastros-administrador)."""
+    return cartao_painel(
+        rx.vstack(
+            rx.text("Meus plantões", weight="bold", size="4"),
+            rx.cond(
+                MeusPlantoesState.plantoes.length() == 0,
+                rx.text("Nenhum plantão agendado. Os plantões são cadastrados pelo Administrador.", size="2", color=COR_SECUNDARIA),
+                rx.vstack(
+                    rx.foreach(
+                        MeusPlantoesState.plantoes,
+                        lambda p: rx.hstack(
+                            rx.text(p["dia"], size="2", weight="bold", width="56px"),
+                            rx.text(p["horario"], size="2"),
+                            rx.spacer(),
+                            rx.text(p["situacao"], size="1", color=COR_SECUNDARIA),
+                            width="100%",
+                        ),
+                    ),
+                    spacing="2",
+                    width="100%",
+                ),
+            ),
+            spacing="2",
+            width="100%",
+        ),
+        padding="16px",
+    )
 
 
 def area_medico() -> rx.Component:
@@ -55,6 +86,7 @@ def area_medico() -> rx.Component:
                     ), padding="24px"),
                     rx.callout("Nenhuma ficha atribuída. Use ‘Chamar próximo’ para receber uma ficha.", color_scheme="blue", width="100%"),
                 ),
+                meus_plantoes(),
                 rx.text("Filas de especialidade", weight="bold", size="5"),
                 rx.text("Antes da atribuição, aparecem somente quantidades. O médico também pode apoiar outras especialidades.", size="2", color=COR_SECUNDARIA),
                 rx.foreach(MedicoState.filas, lambda fila: cartao_painel(rx.hstack(

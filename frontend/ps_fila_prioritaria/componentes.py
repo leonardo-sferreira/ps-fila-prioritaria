@@ -148,9 +148,22 @@ def aba_menu(nome: str, rota: str, ativa: bool) -> rx.Component:
     return rx.link(conteudo, href=rota, underline="none")
 
 
-def menu_recepcao(rota_ativa: str = "") -> rx.Component:
+# Menu do Administrador, no mesmo padrão (add-cadastros-administrador, D9).
+ABAS_ADMIN = [
+    ("Início", "/admin"),
+    ("Médicos", "/admin/medicos"),
+    ("Recepção", "/admin/recepcao"),
+    ("Especialidades", "/admin/especialidades"),
+    ("Sintomas", "/admin/sintomas"),
+    ("Salas", "/admin/salas"),
+    ("Plantões", "/admin/disponibilidade"),
+    ("Parâmetros", "/admin/parametros"),
+]
+
+
+def menu_abas(abas: list[tuple[str, str]], rota_ativa: str = "") -> rx.Component:
     return rx.hstack(
-        *[aba_menu(nome, rota, rota == rota_ativa) for nome, rota in ABAS_RECEPCAO],
+        *[aba_menu(nome, rota, rota == rota_ativa) for nome, rota in abas],
         spacing="1",
         align="end",
         background=COR_SUPERFICIE,
@@ -160,6 +173,14 @@ def menu_recepcao(rota_ativa: str = "") -> rx.Component:
         overflow_x="auto",
         class_name="nao-imprimir",
     )
+
+
+def menu_recepcao(rota_ativa: str = "") -> rx.Component:
+    return menu_abas(ABAS_RECEPCAO, rota_ativa)
+
+
+def menu_admin(rota_ativa: str = "") -> rx.Component:
+    return menu_abas(ABAS_ADMIN, rota_ativa)
 
 
 def campo_rotulado(rotulo: str, campo: rx.Component) -> rx.Component:

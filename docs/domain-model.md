@@ -120,7 +120,7 @@ Profissional que atende a fila priorizada.
 - Um médico realiza Chamadas.
 
 ### Regras
-- O Administrador cadastra/edita o Médico junto com o usuário correspondente.
+- O Administrador cadastra/edita o Médico junto com o usuário correspondente (nome, e-mail e senha inicial), com ao menos uma especialidade própria ativa. Desativar o médico desativa o login e é recusado enquanto houver ficha CHAMADO pendente.
 - O Médico atende preferencialmente suas especialidades próprias; o vínculo não limita de forma absoluta as filas que pode apoiar.
 - Uma ficha de fila descoberta com cor mais grave que a próxima própria pode ser atendida em apoio; empate de cor favorece a própria. Sem ficha própria, o Médico apoia primeiro fila descoberta e depois outra coberta. A especialidade da ficha permanece a definida pelos sintomas (Rev. 2.1, §7.2, D03–D05).
 - Entre Vermelhas próprias, vale chegada e ID; entre Amarelas/Azuis próprias, há rodízio determinístico por médico, mantendo o ciclo interno de cada especialidade. Uma fila é descoberta quando não há médico próprio com plantão vigente e sessão apta a chamar; PAUSA/AUSENTE deixam de cobrir, EM_ATENDIMENTO não deixa a fila descoberta.
@@ -142,7 +142,7 @@ Entidade cadastral da pessoa com perfil RECEPCAO_TRIAGEM.
 - situação (ativo/inativo).
 
 ### Regras
-- O Administrador cria e edita os dados da Recepção/Triagem juntamente com o usuário correspondente.
+- O Administrador cria e edita os dados da Recepção/Triagem juntamente com o usuário correspondente (nome, e-mail e senha inicial); o CPF é único e validado. Desativar o cadastro desativa o login.
 - A especialidade de referência é cadastral e não limita as operações de triagem.
 
 ## Sala
@@ -158,7 +158,7 @@ Local de atendimento que pode estar relacionado ao Médico atual.
 ### Regras
 - O painel público pode exibir a sala associada ao médico responsável pela chamada.
 - A chamada pública nunca exibe nome completo nem CPF do paciente.
-- O vínculo físico (por exemplo, direto, histórico ou por plantão) será definido pela change funcional que implementar Sala.
+- O vínculo é a sala atual do médico (`medico.sala_id`, opcional, sem histórico), mantido pelo Administrador; só sala ativa pode ser vinculada, e desativar a sala desfaz o vínculo dos médicos que a tinham (add-cadastros-administrador).
 
 ## Especialidade
 
@@ -180,6 +180,11 @@ Destino clínico indicado pelos sintomas (ex.: Clínica Geral — `CLI`); as fic
 ## Disponibilidade_Médico
 
 Período em que um médico está disponível: médico, data, horário inicial e horário final. É registrada pelo Administrador depois de o médico informá-la fora do sistema.
+
+- Horários no fuso America/Sao_Paulo; quando o fim é menor ou igual ao início, o período termina no dia seguinte (plantão noturno), com no máximo 24 horas.
+- Não pode haver sobreposição entre períodos do mesmo médico (intervalos semiabertos: um período pode começar quando o outro termina).
+- Período não iniciado pode ser alterado ou removido; período iniciado só pode ter o fim ajustado e nunca é removido.
+- O Médico consulta os próprios períodos, sem alterá-los.
 
 ## Sintoma
 

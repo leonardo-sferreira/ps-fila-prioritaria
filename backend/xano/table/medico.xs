@@ -10,6 +10,10 @@ table medico {
     }
     text registro_profissional filters=trim
     bool ativo?=true
+    // Sala atual do médico (opcional, sem histórico); só sala ativa (add-cadastros-administrador, D4).
+    int? sala_id? {
+      table = "sala"
+    }
   }
 
   index = [

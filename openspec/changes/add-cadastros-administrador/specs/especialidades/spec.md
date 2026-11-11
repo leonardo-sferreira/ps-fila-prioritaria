@@ -2,46 +2,29 @@
 
 ## Purpose
 
-Permite ao Administrador manter as especialidades de atendimento e suas siglas usadas na senha. Destinos clínicos vêm da relação entre sintomas e especialidades; a especialidade do Médico e a disponibilidade não causam fallback para outro destino.
+Permite ao Administrador manter as especialidades que organizam as filas e compõem as senhas.
 
 ## ADDED Requirements
 
-### Requirement: Cadastro de especialidades exclusivo do Administrador
-O sistema DEVE permitir somente ao Administrador criar, editar, ativar e desativar especialidades. Os demais perfis autenticados DEVEM poder apenas consultar as especialidades ativas.
+### Requirement: Cadastro de especialidades
+O Administrador DEVE poder listar todas as especialidades (ativas e inativas), criar uma especialidade com nome, sigla de exatamente 3 letras (gravada em maiúsculas) e descrição opcional, editar nome e descrição e ativar ou desativar. Nome e sigla DEVEM ser únicos, sem diferenciar maiúsculas. A sigla NÃO DEVE ser alterada depois de criada, porque compõe as senhas já emitidas. Especialidade NÃO DEVE ser excluída.
 
-#### Scenario: Não administrador tenta alterar especialidade
-- **QUANDO** um usuário Recepção/Triagem ou Médico tenta criar, editar ou desativar uma especialidade
-- **ENTÃO** o backend responde como acesso negado e nada é alterado
+#### Scenario: Criar especialidade
+- **QUANDO** o Administrador cria "Dermatologia" com a sigla "der"
+- **ENTÃO** a especialidade é criada ativa com a sigla "DER" e a operação é auditada
 
-#### Scenario: Consulta por outro perfil
-- **QUANDO** um usuário Recepção/Triagem consulta as especialidades
-- **ENTÃO** o sistema retorna somente as especialidades ativas, com nome e sigla
+#### Scenario: Sigla inválida ou repetida
+- **QUANDO** a sigla tem 2 ou 4 letras, contém número ou já existe em outra especialidade
+- **ENTÃO** a criação é recusada com mensagem clara e nada é gravado
 
-### Requirement: Dados da especialidade
-Cada especialidade DEVE ter nome, sigla e situação (ativa/inativa), e pode ter descrição. A sigla DEVE ter exatamente 3 letras, ser gravada em maiúsculas e ser única entre todas as especialidades. O nome DEVE ser único, sem diferenciar maiúsculas e minúsculas.
+#### Scenario: Desativar especialidade com fichas na fila
+- **QUANDO** o Administrador tenta desativar uma especialidade com fichas AGUARDANDO ou CHAMADO
+- **ENTÃO** a operação é recusada e a especialidade continua ativa
 
-#### Scenario: Criação bem-sucedida
-- **QUANDO** o Administrador informa nome "Clínica Geral" e sigla "cli"
-- **ENTÃO** a especialidade é criada ativa com a sigla "CLI"
+#### Scenario: Desativar a especialidade padrão
+- **QUANDO** o Administrador tenta desativar a especialidade configurada em `ESPECIALIDADE_PADRAO`
+- **ENTÃO** a operação é recusada
 
-#### Scenario: Sigla inválida
-- **QUANDO** o Administrador informa uma sigla com 2 ou 4 caracteres, ou com números
-- **ENTÃO** o sistema recusa com a mensagem "A sigla deve ter exatamente 3 letras" e não cria a especialidade
-
-#### Scenario: Sigla ou nome duplicado
-- **QUANDO** o Administrador informa uma sigla ou um nome já usados por outra especialidade
-- **ENTÃO** o sistema recusa, indica o campo duplicado e não cria a especialidade
-
-### Requirement: Desativação sem exclusão
-Especialidades NÃO DEVEM ser excluídas. Uma especialidade inativa NÃO DEVE receber novos pacientes nem aparecer como opção de direcionamento, mas continua visível no histórico.
-
-#### Scenario: Desativar especialidade
-- **QUANDO** o Administrador desativa uma especialidade
-- **ENTÃO** ela deixa de aparecer na consulta de especialidades ativas e o registro continua existindo
-
-### Requirement: Alterações de especialidades são auditadas
-Toda criação, edição, ativação ou desativação de uma especialidade DEVE gerar registro de auditoria.
-
-#### Scenario: Edição auditada
-- **QUANDO** o Administrador altera o nome de uma especialidade
-- **ENTÃO** a auditoria registra o valor anterior, o valor novo, o usuário e a data/hora
+#### Scenario: Perfil sem permissão
+- **QUANDO** a Recepção/Triagem ou o Médico tentam criar, editar ou desativar especialidade
+- **ENTÃO** o backend recusa e nada é alterado
