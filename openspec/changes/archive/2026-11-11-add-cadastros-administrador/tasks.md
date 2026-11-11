@@ -88,9 +88,10 @@ Revisada em 11/11/2026 (decisões do PO: escopo completo do card; o cadastro de 
 
 ## 5. Verificação ponta a ponta
 
-- [ ] 5.1 Roteiro manual com o Administrador logado:
+- [x] 5.1 Roteiro manual com o Administrador logado:
   - criar uma sala, um médico com duas especialidades e sala, e um plantão para agora;
   - como Médico, ver "Plantão vigente", ficar disponível e chamar;
   - ajustar um parâmetro e uma faixa;
   - desativar a sala e conferir que o médico ficou sem sala;
   - conferir os eventos na auditoria.
+  - Evidência (11/11/2026): roteiro manual feito pelo PO com o Administrador logado; aprovado ("testei e gostei"). Ajustes futuros entram em changes novas.
