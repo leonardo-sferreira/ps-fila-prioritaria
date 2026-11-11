@@ -57,6 +57,16 @@
 - [x] 3A.7 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
   - Evidência: `codigo_verificacao.xs`, `function/auth/emitir_codigo.xs`, `function/auth/conferir_codigo.xs`, `auth_login_verificar_post.xs` e `auth_login_reenviar_post.xs` versionados com os GUIDs do servidor.
 
+## 3B. Recuperação de acesso do Médico
+
+- [x] 3B.1 [Xano] Permitir novo login médico com sessão anterior ativa sem conceder disponibilidade automática; no logout, encerrar todas as sessões ativas desse Médico; verificar com os testes 3B.2
+- [x] 3B.2 [Teste] Cobrir em `tests/api/test_recuperacao_sessao_medico.py` o primeiro login, novo login após perda de acesso, PAUSA/AUSENTE preservados na sessão anterior, logout de todas as sessões, expiração e duas verificações concorrentes do mesmo código; verificar também que a nova sessão fica indisponível até ação explícita
+  - Evidência (11/11/2026): `unittest discover -s tests/api -p test_recuperacao_sessao_medico.py -v` passou contra a `v1` em 86 s; o cenário sintético confirmou sessões anteriores em PAUSA/AUSENTE, nova sessão sem disponibilidade, ativação manual, logout de todas as sessões, expiração e uso único do código em duas verificações concorrentes.
+- [x] 3B.3 [Reflex] Mostrar a disponibilidade da sessão e permitir ativação explícita pela tela médica na change `add-acompanhamento-administrador`; verificar sem navegador por teste de estado e compilação
+  - Evidência (11/11/2026): 10 testes de `test_medico_state.py` passaram; `reflex compile --dry` concluiu com sucesso.
+- [x] 3B.4 [Documentação] Exportar o XanoScript revisado da autenticação para `backend/xano/` e registrar a verificação da recuperação de acesso nesta change, sem editar o README
+  - Evidência (11/11/2026): `auth_login_verificar_post.xs`, `auth_logout_post.xs` e `me_status_patch.xs` conferidos com os documentos publicados na `v1`; função sintética `auth/teste_sessao_unica.xs` publicada e exportada com GUID.
+
 ## 4. Xano — gestão de usuários
 
 - [ ] 4.1 [Xano] Implementar `GET usuarios` (somente ADMINISTRADOR), com filtros opcionais de `perfil` e `ativo`, sem retornar `password`; verificar com os testes 4.5

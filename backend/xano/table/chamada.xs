@@ -8,10 +8,13 @@ table chamada {
     int ficha_id {
       table = "ficha_atendimento"
     }
+
     int medico_id {
       table = "medico"
     }
+
     int tentativa
+    int oportunidade?=1
     enum tipo {
       values = ["CHAMADA", "COMPARECIMENTO", "DESISTENCIA"]
     }
@@ -19,8 +22,17 @@ table chamada {
 
   index = [
     {type: "primary", field: [{name: "id"}]}
-    {type: "btree|unique", field: [{name: "ficha_id", op: "asc"}, {name: "tentativa", op: "asc"}, {name: "tipo", op: "asc"}]}
+    {
+      type : "btree|unique"
+      field: [
+        {name: "ficha_id", op: "asc"}
+        {name: "oportunidade", op: "asc"}
+        {name: "tentativa", op: "asc"}
+        {name: "tipo", op: "asc"}
+      ]
+    }
     {type: "btree", field: [{name: "created_at", op: "asc"}]}
   ]
+
   guid = "ntXxj8uyjUr8HtsV0khuM5vd8j4"
 }

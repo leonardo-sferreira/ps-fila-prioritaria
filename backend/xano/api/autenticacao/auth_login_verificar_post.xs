@@ -64,7 +64,8 @@ query "auth/login/verificar" verb=POST {
       data = {
         usuario_id: $usuario.id,
         login_em  : now,
-        expira_em : now|add_secs_to_timestamp:$ttl
+        expira_em : now|add_secs_to_timestamp:$ttl,
+        status_operacional: ($usuario.perfil == "RECEPCAO_TRIAGEM") ? "DISPONIVEL" : null
       }
     }
   }

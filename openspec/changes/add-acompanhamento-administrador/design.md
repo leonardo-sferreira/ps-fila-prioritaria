@@ -16,7 +16,7 @@ Os dados já existem: `sessao` (change 1), `historico_alteracao` (change 2), `fi
 ## Decisões
 
 ### D1. Status operacional e sessão
-Campo `status_operacional` (enum, nulo para ADMINISTRADOR) representa disponibilidade operacional e não autenticação; sessão ativa continua determinada por `logout_em` nulo e `expira_em` futuro conforme `add-autenticacao-perfis`. `PATCH me/status` altera o status. `comparecimento` define EM_ATENDIMENTO e chamada aceita define DISPONIVEL, na mesma transação da operação. PAUSA/AUSENTE impedem novas atribuições, não encerram a sessão nem retiram fichas já atribuídas. O plantão possui estado próprio, separado da sessão/status; seu encerramento só é concluído com fila atribuída zerada.
+Campo `status_operacional` (enum opcional) representa disponibilidade operacional e não autenticação; nulo é o estado inicial indisponível do Médico e não se aplica ao Administrador, enquanto Recepção/Triagem começa DISPONIVEL. Sessão ativa continua determinada por `logout_em` nulo e `expira_em` futuro conforme `add-autenticacao-perfis`. `PATCH me/status` permite que a equipe escolha DISPONIVEL, PAUSA ou AUSENTE. `comparecimento` define EM_ATENDIMENTO e chamada aceita define DISPONIVEL, na mesma transação da operação. Sem status, PAUSA e AUSENTE impedem novas atribuições ao Médico, sem encerrar a sessão nem retirar fichas já atribuídas. O plantão possui estado próprio, separado da sessão/status; seu encerramento só é concluído com fila atribuída zerada.
 - **Por quê:** autenticação, disponibilidade e ciclo do plantão são estados distintos; logout/expiração encerram a sessão, não uma pausa operacional.
 
 ### D2. Auditoria consolidada por consulta, não por cópia
@@ -41,4 +41,4 @@ Um componente no cabeçalho de `/recepcao` e `/medico` mostra o status atual e p
 
 ## Plano de migração
 
-Campo novo em `sessao` (as sessões existentes ficam com DISPONIVEL para perfis não administradores). Rollback: remover o campo, os endpoints e a página, e voltar `chamar-proximo`/`comparecimento` à versão anterior.
+Campo já existente em `sessao`. A migração das sessões médicas ativas que receberam DISPONIVEL automaticamente deixa o status nulo até o Médico escolher DISPONIVEL; não altera PAUSA, AUSENTE ou EM_ATENDIMENTO. Rollback: restaurar o comportamento anterior do login e dos endpoints de status.

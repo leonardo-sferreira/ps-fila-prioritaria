@@ -7,18 +7,54 @@ query "auth/logout" verb=POST {
   }
 
   stack {
-    db.query sessao {
-      where = $db.sessao.usuario_id == $auth.id && $db.sessao.logout_em == null
-      sort = {login_em: "desc"}
-      return = {type: "single"}
-    } as $sessao_aberta
+    db.get usuario {
+      field_name = "id"
+      field_value = $auth.id
+    } as $usuario
 
-    conditional {
-      if ($sessao_aberta != null) {
-        db.edit sessao {
-          field_name = "id"
-          field_value = $sessao_aberta.id
-          data = {logout_em: now}
+    precondition ($usuario != null) {
+      error_type = "unauthorized"
+      error = "Sessão inválida. Faça login novamente."
+    }
+
+    db.transaction {
+      stack {
+        conditional {
+          if ($usuario.perfil == "MEDICO") {
+            db.edit usuario {
+              field_name = "id"
+              field_value = $usuario.id
+              data = {ativo: $usuario.ativo}
+            } as $usuario_travado
+          }
+        }
+
+        db.query sessao {
+          where = $db.sessao.usuario_id == $usuario.id && $db.sessao.logout_em == null && $db.sessao.expira_em > now
+          sort = {login_em: "desc"}
+          return = {type: "list"}
+        } as $sessoes_ativas
+
+        conditional {
+          if ($usuario.perfil == "MEDICO") {
+            foreach ($sessoes_ativas) {
+              each as $sessao {
+                db.edit sessao {
+                  field_name = "id"
+                  field_value = $sessao.id
+                  data = {logout_em: now}
+                } as $encerrada
+              }
+            }
+          }
+
+          elseif (($sessoes_ativas|count) > 0) {
+            db.edit sessao {
+              field_name = "id"
+              field_value = ($sessoes_ativas|first).id
+              data = {logout_em: now}
+            } as $encerrada
+          }
         }
       }
     }
