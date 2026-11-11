@@ -34,6 +34,7 @@
 - [x] 5.2 [Reflex] Tela inicial `/admin` com o painel do plantão reaproveitado, indicadores do dia, equipe agora e o cartão de fichas paradas; atualização a cada 30 s; verificar com testes de estado e compilação
   - Evidência (11/11/2026): `paginas/painel_admin.py` e `estados/equipe.py`; indicadores em `resumir_plantao`; `painel_plantao` aceita blocos extras e percurso sem links; 8 testes em `tests/test_painel_admin.py`; suíte do frontend com 242 aprovados; `reflex compile --dry` concluiu.
 - [ ] 5.3 Publicar na `v1` (o PO roda o push) e conferir a tela com dados reais
+  - Publicação (11/11/2026): o PO publicou os 3 documentos na `v1` (GUID de `admin/equipe` sincronizada). Falta conferir a tela com dados reais.
 
 ## 6. "Visualizar como" (decisão do PO em 11/11/2026, D7)
 

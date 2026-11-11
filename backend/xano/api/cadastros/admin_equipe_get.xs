@@ -43,4 +43,5 @@ query "admin/equipe" verb=GET {
   }
 
   response = {equipe: $equipe, agora: now}
+  guid = "sBJR_URGUWaZYhaxvFCRyo4he5Y"
 }
