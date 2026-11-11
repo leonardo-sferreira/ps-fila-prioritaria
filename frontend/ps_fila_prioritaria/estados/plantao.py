@@ -111,8 +111,20 @@ def resumir_plantao(fichas: list[dict[str, Any]], tickets: list[dict[str, Any]],
                  "valor": str(por_hora[h]) if h == agora_local.hour and por_hora[h] else "",
                  "dica": f"{h:02d}h: {por_hora[h]} chegada(s)"} for h in range(primeira, agora_local.hour + 1)]
 
+    # Indicadores do dia (dashboard do Administrador, add-acompanhamento-administrador D6).
+    esperas = [m for m in (_minutos(f.get("chegada_em"), agora) for f in aguardando) if m is not None]
+    media = round(sum(esperas) / len(esperas)) if esperas else None
+    indicadores = [
+        {"rotulo": "Atendidas", "valor": str(atendidas), "detalhe": "hoje"},
+        {"rotulo": "Desistências", "valor": str(len(por_status.get("DESISTENCIA", []))), "detalhe": "hoje"},
+        {"rotulo": "Canceladas", "valor": str(len(por_status.get("CANCELADO", []))), "detalhe": "hoje"},
+        {"rotulo": "Espera média", "valor": _texto_espera(media) if media is not None else "—",
+         "detalhe": f"de {len(esperas)} na fila médica agora" if esperas else "fila médica vazia"},
+    ]
+
     return {
         "na_espera": len(tickets_aguardando) + len(aguardando),
+        "indicadores": indicadores,
         "tickets_aguardando": len(tickets_aguardando),
         "fichas_aguardando": len(aguardando),
         "cores": cores,
@@ -138,6 +150,7 @@ class PlantaoState(rx.State):
     etapas: list[dict[str, Any]] = []
     especialidades: list[dict[str, Any]] = []
     chegadas: list[dict[str, Any]] = []
+    indicadores: list[dict[str, str]] = []
     chegadas_hoje: int = 0
     data_extenso: str = ""
     carregado: bool = False

@@ -7,7 +7,7 @@
 | Fatias no Trello | Nenhuma (sem card) |
 | Dupla | A definir |
 | Depende de | Todas as changes anteriores |
-| Situação | Em revisão |
+| Situação | Em revisão; dashboard do Administrador e "visualizar como" aprovados pelo PO em 11/11/2026 |
 | RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF44 (status da equipe); RF45 (fila geral e auditoria) |
 
 > Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
@@ -24,10 +24,13 @@ Depois do feedback do professor, o Administrador ganhou uma tela de acompanhamen
 - **Auditoria:** consulta das últimas alterações (prioridade, sintomas, disponibilidade, cadastros, chamadas, logins) com responsável, data/hora, valores e justificativa, com filtros (RF37, RNF07).
 - **Detalhe da ficha para o Administrador**, somente leitura, com o histórico da ficha.
 
+- **Dashboard do Administrador** na tela inicial: o painel do plantão da Recepção/Triagem, com indicadores do dia e a equipe logada (D6).
+- **"Visualizar como"**: o Administrador vê as telas da Recepção/Triagem e do Médico sem poder agir (D7).
+
 ### Fora do escopo
 
 - Qualquer ação corretiva pelo Administrador na fila (cancelar, redirecionar ficha a ficha, trocar médico): a tela é de acompanhamento.
-- Exportação de relatórios (PDF/CSV) e indicadores estatísticos (tempo médio de espera etc.).
+- Exportação de relatórios (PDF/CSV) e indicadores estatísticos além do recorte do dia no dashboard (D6).
 - Encerrar a sessão de outro usuário pela tela (a desativação do usuário já cobre isso, na change 1).
 
 ## Capacidades

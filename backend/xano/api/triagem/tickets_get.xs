@@ -4,7 +4,7 @@ query "tickets" verb=GET {
   input {}
   stack {
     function.run "auth/verificar_acesso" {
-      input = {usuario_id: $auth.id, perfis_permitidos: ["RECEPCAO_TRIAGEM"]}
+      input = {usuario_id: $auth.id, perfis_permitidos: ["RECEPCAO_TRIAGEM", "ADMINISTRADOR"]}
     } as $usuario
     db.get parametro {
       field_name = "chave"

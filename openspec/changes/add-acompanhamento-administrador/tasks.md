@@ -26,3 +26,15 @@
 
 - [ ] 4.1 Verificação ponta a ponta do plantão: com Administrador, Recepção/Triagem, dois Médicos e o painel abertos, executar o fluxo totem → triagem → chamada → comparecimento/desistência e conferir que a tela de acompanhamento reflete fila, status e auditoria em até 10 s
 - [ ] 4.2 Conferir `docs/domain-model.md` (Sessão com status operacional, Histórico_Alteração) com a implementação e ajustar o que divergir
+
+## 5. Dashboard do Administrador (decisão do PO em 11/11/2026, D6)
+
+- [x] 5.1 [Xano] `GET fichas` e `GET tickets` aceitam também `ADMINISTRADOR` (só leitura); criar `GET admin/equipe` (só `ADMINISTRADOR`, sessões ativas, a mais recente por usuário); verificar com `xano_validate_xanoscript` e `--dry-run`
+  - Evidência (11/11/2026): `api/cadastros/admin_equipe_get.xs` novo; `api/triagem/fichas_get.xs` e `tickets_get.xs` com `ADMINISTRADOR`; válidos no `xano_validate_xanoscript`; `--dry-run` na `v1`: 1 criação e 2 atualizações.
+- [x] 5.2 [Reflex] Tela inicial `/admin` com o painel do plantão reaproveitado, indicadores do dia, equipe agora e o cartão de fichas paradas; atualização a cada 30 s; verificar com testes de estado e compilação
+  - Evidência (11/11/2026): `paginas/painel_admin.py` e `estados/equipe.py`; indicadores em `resumir_plantao`; `painel_plantao` aceita blocos extras e percurso sem links; 8 testes em `tests/test_painel_admin.py`; suíte do frontend com 242 aprovados; `reflex compile --dry` concluiu.
+- [ ] 5.3 Publicar na `v1` (o PO roda o push) e conferir a tela com dados reais
+
+## 6. "Visualizar como" (decisão do PO em 11/11/2026, D7)
+
+- [ ] 6.1 Detalhar no design quais telas e leituras entram, e como as ações ficam desabilitadas; depois quebrar em tarefas

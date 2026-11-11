@@ -34,6 +34,20 @@ Três abas ou blocos: "Fila geral" (tabela com cores calculadas da prioridade, f
 ### D5. Seletor de status para a equipe
 Um componente no cabeçalho de `/recepcao` e `/medico` mostra o status atual e permite trocar entre Disponível, Pausa e Ausente; EM_ATENDIMENTO aparece como texto, não como opção.
 
+### D6. Dashboard do Administrador na tela inicial (decisão do PO em 11/11/2026)
+A tela `/admin` passa a abrir com o mesmo painel do plantão da Recepção/Triagem, mais blocos que só o Administrador vê:
+- **Reaproveitado da Recepção:** na espera (pré-triagem e fila médica), cores da fila médica, espera mais longa, percurso do dia, fila por especialidade e chegadas por hora. A função `resumir_plantao` é a mesma; no Administrador os cartões do percurso não levam a telas da Recepção.
+- **Só do Administrador:**
+  - indicadores do dia: atendidas, desistências, canceladas e espera média de quem está na fila médica agora;
+  - equipe agora: pessoas com sessão ativa, com perfil e status operacional, e a contagem de médicos por status (Disponível, Em atendimento, Pausa, Ausente, sem status).
+- O cartão "Fichas e tickets parados" (expiração de 24 h) continua no fim da tela.
+- **Backend:** `GET fichas` e `GET tickets` (grupo Triagem) passam a aceitar também `ADMINISTRADOR`, só leitura. O novo `GET admin/equipe` (grupo Cadastros, só `ADMINISTRADOR`) lista as sessões ativas (`logout_em` nulo e `expira_em` no futuro), a mais recente por usuário, com nome, perfil, status e horário de login. É a parte "equipe" da tarefa 2.2.
+- Atualiza sozinho a cada 30 s, como o painel da Recepção.
+- **Por quê:** o PO pediu que a tela inicial do Administrador tenha o mesmo dashboard da Recepção, mais detalhado. Indicadores estatísticos, antes fora do escopo, entram só nesse recorte do dia.
+
+### D7. "Visualizar como" Recepção ou Médico (decisão do PO em 11/11/2026)
+O Administrador pode abrir as telas da Recepção/Triagem e do Médico só para ver, sem trocar o próprio perfil. A tela mostra uma faixa "Visualizando como …" e as ações ficam desabilitadas; o backend continua recusando ações de quem não é do perfil, então nada muda mesmo que um botão escape. Detalhamento na próxima fatia desta change (seção 6 das tasks).
+
 ## Riscos / Compromissos
 
 - [Consulta unificada de auditoria pesada com muitos dados] → Paginação e filtro por período obrigatório no backend (padrão: últimas 24 h).
