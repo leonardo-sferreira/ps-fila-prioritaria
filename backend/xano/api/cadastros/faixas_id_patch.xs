@@ -31,12 +31,13 @@ query "faixas/{faixa_id}" verb=PATCH {
       error = "Os pontos devem ficar entre 0 e 3."
     }
 
-    precondition ($input.minimo != null || $input.maximo != null) {
+    // is_null: o Xano compara de forma frouxa e trataria um limite 0 como vazio.
+    precondition (!($input.minimo|is_null) || !($input.maximo|is_null)) {
       error_type = "inputerror"
       error = "Informe ao menos um dos limites."
     }
 
-    precondition ($input.minimo == null || $input.maximo == null || $input.minimo <= $input.maximo) {
+    precondition (($input.minimo|is_null) || ($input.maximo|is_null) || $input.minimo <= $input.maximo) {
       error_type = "inputerror"
       error = "O mínimo deve ser menor ou igual ao máximo."
     }

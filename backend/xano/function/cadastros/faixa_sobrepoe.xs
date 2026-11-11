@@ -10,7 +10,7 @@ function "cadastros/faixa_sobrepoe" {
   }
 
   stack {
-    // `get` com padrão devolve o padrão também para false e 0: lê o campo só quando ele existe.
+    // O Xano compara de forma frouxa (false == null e 0 == null são verdadeiros): vazio só com is_null.
     var $a_min { value = ($input.faixa|has:"minimo") ? $input.faixa.minimo : null }
     var $a_max { value = ($input.faixa|has:"maximo") ? $input.faixa.maximo : null }
     var $a_cond { value = ($input.faixa|has:"condicao_gravidade") ? $input.faixa.condicao_gravidade : null }
@@ -22,10 +22,10 @@ function "cadastros/faixa_sobrepoe" {
         var $b_max { value = ($b|has:"maximo") ? $b.maximo : null }
         var $b_cond { value = ($b|has:"condicao_gravidade") ? $b.condicao_gravidade : null }
         var $mesma_condicao {
-          value = $a_cond == null || $b_cond == null || $a_cond == $b_cond
+          value = ($a_cond|is_null) || ($b_cond|is_null) || $a_cond == $b_cond
         }
         var $cruza {
-          value = ($a_min == null || $b_max == null || $a_min <= $b_max) && ($b_min == null || $a_max == null || $b_min <= $a_max)
+          value = (($a_min|is_null) || ($b_max|is_null) || $a_min <= $b_max) && (($b_min|is_null) || ($a_max|is_null) || $b_min <= $a_max)
         }
         conditional {
           if ($mesma_condicao && $cruza) {
