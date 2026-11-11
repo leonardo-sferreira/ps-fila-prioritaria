@@ -14,6 +14,7 @@ from ps_fila_prioritaria.componentes import (
     COR_TEXTO,
     botao_secundario,
     cabecalho,
+    menu_admin,
     menu_recepcao,
     protegido,
 )
@@ -27,6 +28,7 @@ def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Compon
         rx.box(
             cabecalho(titulo, f"Área inicial — {nome_perfil}"),
             *([menu_recepcao("/recepcao")] if perfil == "RECEPCAO_TRIAGEM" else []),
+            *([menu_admin("/admin")] if perfil == "ADMINISTRADOR" else []),
             rx.center(
                 rx.vstack(
                     rx.text("Olá, ", AuthState.nome, weight="bold", size="5", color=COR_TEXTO),

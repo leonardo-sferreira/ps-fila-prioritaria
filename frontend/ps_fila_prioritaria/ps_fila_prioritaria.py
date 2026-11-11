@@ -4,6 +4,16 @@ import reflex as rx
 
 from ps_fila_prioritaria.componentes import carregando
 from ps_fila_prioritaria.estados.autenticacao import AuthState, SenhaState
+from ps_fila_prioritaria.estados.cadastros import (
+    EspecialidadesState,
+    MedicosState,
+    MeusPlantoesState,
+    ParametrosState,
+    PlantoesState,
+    RecepcaoState,
+    SalasState,
+    SintomasState,
+)
 from ps_fila_prioritaria.estados.comprovante import ComprovanteState
 from ps_fila_prioritaria.estados.expiracao import ExpiracaoState
 from ps_fila_prioritaria.estados.ficha import FichaState
@@ -21,6 +31,15 @@ from ps_fila_prioritaria.paginas.autenticacao import (
     senha_email,
     senha_nova,
     senha_sucesso,
+)
+from ps_fila_prioritaria.paginas.cadastros import (
+    pagina_especialidades,
+    pagina_medicos,
+    pagina_parametros,
+    pagina_plantoes,
+    pagina_recepcao,
+    pagina_salas,
+    pagina_sintomas,
 )
 from ps_fila_prioritaria.paginas.comprovante import pagina_comprovante
 from ps_fila_prioritaria.paginas.ficha import pagina_recepcao_ficha
@@ -45,7 +64,7 @@ app.add_page(privacidade, route="/privacidade", title="Aviso de privacidade")
 app.add_page(totem, route="/totem", title="Totem de autoatendimento", on_load=TotemState.concluir)
 app.add_page(carregando, route="/sair/inatividade", title="Sessão encerrada", on_load=AuthState.sair_por_inatividade)
 app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), PlantaoState.carregar])
-app.add_page(area_medico, route="/medico", title="Médico", on_load=[AuthState.verificar_sessao("MEDICO"), MedicoState.carregar])
+app.add_page(area_medico, route="/medico", title="Médico", on_load=[AuthState.verificar_sessao("MEDICO"), MedicoState.carregar, MeusPlantoesState.carregar])
 app.add_page(pagina_impressao_medico, route="/medico/ficha/[id]/imprimir", title="Imprimir ficha", on_load=[AuthState.verificar_sessao("MEDICO"), ImpressaoMedicoState.carregar_da_rota])
 app.add_page(area_admin, route="/admin", title="Administrador", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), ExpiracaoState.carregar])
 app.add_page(
@@ -73,3 +92,14 @@ app.add_page(
     title="Fichas do dia",
     on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), FichasDoDiaState.carregar],
 )
+# Cadastros do Administrador (add-cadastros-administrador).
+for _pagina, _rota, _titulo, _estado in [
+    (pagina_medicos, "/admin/medicos", "Médicos", MedicosState),
+    (pagina_recepcao, "/admin/recepcao", "Recepção/Triagem", RecepcaoState),
+    (pagina_especialidades, "/admin/especialidades", "Especialidades", EspecialidadesState),
+    (pagina_sintomas, "/admin/sintomas", "Sintomas", SintomasState),
+    (pagina_salas, "/admin/salas", "Salas", SalasState),
+    (pagina_plantoes, "/admin/disponibilidade", "Plantões", PlantoesState),
+    (pagina_parametros, "/admin/parametros", "Parâmetros", ParametrosState),
+]:
+    app.add_page(_pagina, route=_rota, title=_titulo, on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), _estado.carregar])

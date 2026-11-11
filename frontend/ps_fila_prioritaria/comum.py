@@ -42,6 +42,16 @@ MENSAGENS_ERRO_API = {
     "DESTINO_NAO_CONFIGURADO": "Não há especialidade de destino configurada. Avise o Administrador.",
     "SENHA_NAO_ATIVA": "Esta ficha não tem senha ativa para o comprovante.",
     "SENHA_NAO_GERADA": "Não foi possível gerar a senha. Tente confirmar de novo.",
+    # Cadastros do Administrador (add-cadastros-administrador).
+    "ESPECIALIDADE_COM_FICHAS": "Há fichas aguardando ou chamadas nesta especialidade. Desative depois que a fila esvaziar.",
+    "MEDICO_COM_FICHA_CHAMADA": "O médico tem uma ficha chamada em andamento. Desative depois que ele concluir.",
+    "PLANTAO_SOBREPOSTO": "Este horário se sobrepõe a outro plantão do mesmo médico.",
+    "PLANTAO_INICIADO": "Plantão já iniciado: não pode ser removido nem ter o início alterado; só o fim pode mudar.",
+    "PARAMETRO_NAO_EDITAVEL_AQUI": "Este parâmetro não pode ser alterado pela tela.",
+    "PARAMETRO_FORA_DOS_LIMITES": "Valor fora dos limites permitidos para este parâmetro.",
+    "IDADES_INCOERENTES": "As idades precisam ficar em ordem: criança < tabela adulta ≤ idoso.",
+    "LIMIARES_INCOERENTES": "O limiar da Amarela precisa ser menor que o da Vermelha.",
+    "FAIXA_SOBREPOSTA": "Esta faixa se sobrepõe a outra do mesmo sinal vital.",
 }
 
 
