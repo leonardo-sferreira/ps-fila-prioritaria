@@ -30,11 +30,11 @@ Parâmetros de regra / Faixas de sinais vitais → configuração usada pelas re
 
 | Estado | Significado | Próximos estados |
 |---|---|---|
-| EM_TRIAGEM | Ficha aberta; triagem em andamento, ainda sem senha. | AGUARDANDO, CANCELADO |
-| AGUARDANDO | Paciente ativo na fila da especialidade indicada pelos sintomas; a Recepção/Triagem ainda pode corrigir os dados clínicos (reavaliação). | CHAMADO, CANCELADO |
+| EM_TRIAGEM | Ficha aberta; triagem em andamento, ainda sem senha. | AGUARDANDO, CANCELADO, DESISTÊNCIA (expiração) |
+| AGUARDANDO | Paciente ativo na fila da especialidade indicada pelos sintomas; a Recepção/Triagem ainda pode corrigir os dados clínicos (reavaliação). | CHAMADO, CANCELADO, DESISTÊNCIA (expiração) |
 | CHAMADO | Senha chamada por um médico; aguarda comparecimento. | ATENDIDO, AGUARDANDO (reentrada), DESISTÊNCIA |
 | ATENDIDO | Paciente compareceu e saiu da fila (não é conclusão clínica). | Final |
-| DESISTÊNCIA | Desistência explícita ou encerramento definitivo sem atendimento após as oportunidades previstas. | Final |
+| DESISTÊNCIA | Desistência explícita, encerramento definitivo sem atendimento após as oportunidades previstas ou expiração (ficha não concluída no prazo `HORAS_EXPIRACAO`). | Final |
 | CANCELADO | Ficha retirada por ação autorizada, com justificativa. | Final |
 
 "Fila ativa" = fichas em AGUARDANDO ou CHAMADO. Após esgotar a primeira oportunidade sem comparecimento, a ficha retorna a AGUARDANDO no fim da mesma fila e recebe uma única nova oportunidade. A oportunidade seguinte encerrada sem atendimento leva a DESISTÊNCIA. A regra de 30 segundos entre chamadas e até 3 tentativas por oportunidade vale para a fila médica; a desistência explícita encerra a participação na fila ativa. A definição física de como registrar as oportunidades pertence à spec funcional.
@@ -284,6 +284,7 @@ Ticket simples emitido pelo Totem na chegada, antes da triagem.
 - O primeiro "Não compareceu" devolve o ticket ao fim da fila uma única vez, sem novo número e sem perder sua identidade, com a contagem de chamadas zerada.
 - O "Não compareceu" na segunda oportunidade dá ao ticket `NAO_COMPARECEU` e o retira da fila ativa.
 - Desistência explícita altera o ticket para `DESISTENCIA`, estado final que o remove da fila ativa sem alterar Fichas.
+- Expiração: uma rotina do sistema, a cada hora, encerra como `DESISTENCIA` o ticket `AGUARDANDO` ou `CHAMADO` emitido há mais de `HORAS_EXPIRACAO` horas (inicialmente 24), e também a ficha `EM_TRIAGEM`, `AGUARDANDO` ou `CHAMADO` com chegada há mais desse prazo. Cada um expira pela própria data, com evento `EXPIRACAO` no histórico, sem usuário. Não é chamada nem "não compareceu".
 
 ### Máquina de estados
 
@@ -377,6 +378,7 @@ Parâmetros configuráveis pelo Administrador e invariantes operacionais aprovad
 | Tentativas por oportunidade | 3 |
 | Novas oportunidades após a primeira reentrada | 1 |
 | Tamanho da previsão do painel | 5 |
+| Prazo para encerrar ficha ou ticket não concluído (`HORAS_EXPIRACAO`) | 24 horas |
 | Especialidade padrão (ficha sem sintoma do catálogo) | Clínica Geral |
 | Limiar da cor Amarela | escore total a partir de 5 |
 | Limiar da cor Vermelha | escore total a partir de 10, ou qualquer item com 3 pontos |
