@@ -55,4 +55,5 @@ function "manutencao/expirou" {
     input = {horario: 1794150000000, agora: 1794157200000, horas: 1}
     expect.to_be_true ($response)
   }
+  guid = "rdR0VZ-g78pGGphfb4Czn5Ixdt0"
 }

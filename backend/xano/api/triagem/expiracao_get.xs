@@ -23,4 +23,5 @@ query "expiracao" verb=GET {
   }
 
   response = $previa
+  guid = "_yXo5ydULsPBi55HFpmjSUslsck"
 }
