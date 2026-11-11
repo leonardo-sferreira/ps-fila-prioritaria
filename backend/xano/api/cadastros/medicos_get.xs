@@ -58,4 +58,5 @@ query medicos verb=GET {
   }
 
   response = $lista|sort:"nome":"itext":true
+  guid = "NyHdDsYG1DTQC6Jho0Md_pPZYGk"
 }

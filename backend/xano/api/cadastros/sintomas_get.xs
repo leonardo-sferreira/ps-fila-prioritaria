@@ -45,4 +45,5 @@ query sintomas verb=GET {
   }
 
   response = $lista
+  guid = "DZGsB1SQXOavWKwgWNOr0M3AQHQ"
 }

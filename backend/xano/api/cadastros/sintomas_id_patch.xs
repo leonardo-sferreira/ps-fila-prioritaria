@@ -87,4 +87,5 @@ query "sintomas/{sintoma_id}" verb=PATCH {
   }
 
   response = {id: $sintoma.id, nome: $sintoma.nome, ativo: $sintoma.ativo, especialidade_ids: $destinos}
+  guid = "dWT4dd02RIk-vCbRc49LIwIqvb8"
 }

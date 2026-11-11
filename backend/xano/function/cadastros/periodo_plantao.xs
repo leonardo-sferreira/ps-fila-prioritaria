@@ -80,4 +80,5 @@ function "cadastros/periodo_plantao" {
     input = {data: "11/11/2026", hora_inicio: "07:00", hora_fim: "19:00"}
     expect.to_be_false ($response.valido)
   }
+  guid = "VdWkQKY9YTDlMsfnPfXl-X1MZPE"
 }

@@ -71,4 +71,5 @@ query "faixas/{faixa_id}" verb=PATCH {
   }
 
   response = {id: $faixa.id, parametro: $faixa.parametro, minimo: $faixa.minimo, maximo: $faixa.maximo, pontos: $faixa.pontos, condicao_gravidade: $faixa.condicao_gravidade}
+  guid = "iSS15mdhWbiE0DiaD_GGtSIBmG4"
 }

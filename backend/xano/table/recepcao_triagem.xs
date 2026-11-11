@@ -23,4 +23,5 @@ table recepcao_triagem {
     {type: "btree|unique", field: [{name: "usuario_id", op: "asc"}]}
     {type: "btree|unique", field: [{name: "cpf", op: "asc"}]}
   ]
+  guid = "2LihNU7KY429toOcqlOKjDXV8Vc"
 }

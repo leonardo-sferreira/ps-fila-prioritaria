@@ -44,4 +44,5 @@ query salas verb=POST {
   }
 
   response = {id: $sala.id, nome: $sala.nome, descricao: $sala.descricao, ativo: true, medicos: 0}
+  guid = "xFYG9E15nlCbkz3GlLUaDKysbVg"
 }

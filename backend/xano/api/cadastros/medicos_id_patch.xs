@@ -88,4 +88,5 @@ query "medicos/{medico_id}" verb=PATCH {
   }
 
   response = {id: $medico.id, nome: $login.nome, email: $login.email, crm: $medico.registro_profissional, ativo: $medico.ativo, especialidade_ids: $proprias, sala_id: $sala_id}
+  guid = "gwf2FljM9stV28H3IvfYp2whSy0"
 }

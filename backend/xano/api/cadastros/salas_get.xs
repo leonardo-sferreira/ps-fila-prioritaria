@@ -32,4 +32,5 @@ query salas verb=GET {
   }
 
   response = $lista
+  guid = "B2GEp609sx4CD4_aWi8lffCd4BU"
 }

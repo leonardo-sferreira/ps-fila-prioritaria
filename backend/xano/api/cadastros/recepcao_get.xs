@@ -41,4 +41,5 @@ query recepcao verb=GET {
   }
 
   response = $lista|sort:"nome":"itext":true
+  guid = "-t0t219caQPmy3blwheHnBp6KHU"
 }

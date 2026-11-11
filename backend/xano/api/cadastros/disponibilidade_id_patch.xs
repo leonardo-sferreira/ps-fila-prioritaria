@@ -75,4 +75,5 @@ query "disponibilidade/{disponibilidade_id}" verb=PATCH {
   }
 
   response = {id: $plantao.id, medico_id: $plantao.medico_id, inicio: $plantao.inicio, fim: $plantao.fim}
+  guid = "6BZpsmXfePR6RUnK0eIajnTfUxE"
 }

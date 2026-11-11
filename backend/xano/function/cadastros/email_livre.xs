@@ -26,4 +26,5 @@ function "cadastros/email_livre" {
   }
 
   response = $input.email
+  guid = "zRKdLk_-9SipUZpvFE3kE5IpkdQ"
 }

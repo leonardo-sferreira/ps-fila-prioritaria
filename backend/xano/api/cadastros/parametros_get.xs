@@ -29,4 +29,5 @@ query parametros verb=GET {
   }
 
   response = $lista
+  guid = "5uo4MaY4__Juw8I58mh8bpCSBoM"
 }

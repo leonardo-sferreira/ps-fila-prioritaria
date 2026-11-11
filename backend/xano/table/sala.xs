@@ -17,4 +17,5 @@ table sala {
     {type: "primary", field: [{name: "id"}]}
     {type: "btree|unique", field: [{name: "nome_normalizado", op: "asc"}]}
   ]
+  guid = "LDunBTTSzCuA36Bd0RkcLbedZ0U"
 }

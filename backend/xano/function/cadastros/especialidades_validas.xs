@@ -37,4 +37,5 @@ function "cadastros/especialidades_validas" {
   }
 
   response = $ids
+  guid = "ldpH3RpN_ouBz--JbNajf4ElB6c"
 }

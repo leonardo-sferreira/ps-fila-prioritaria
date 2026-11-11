@@ -59,4 +59,5 @@ query "medicos/{medico_id}/ativo" verb=PATCH {
   }
 
   response = {id: $medico.id, ativo: $medico.ativo}
+  guid = "WPOzd8svFQPaz0abSf8YeBLZqhk"
 }

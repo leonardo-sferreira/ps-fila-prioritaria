@@ -74,4 +74,5 @@ query recepcao verb=POST {
   }
 
   response = {id: $cadastro.id, usuario_id: $login.id, nome: $login.nome, email: $login.email, cpf: $cpf, especialidade_referencia_id: $referencia, ativo: true}
+  guid = "aAZV6SlevjXICywpvMm7wYSK6tg"
 }

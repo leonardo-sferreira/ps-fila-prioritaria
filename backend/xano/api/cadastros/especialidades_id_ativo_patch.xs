@@ -66,4 +66,5 @@ query "especialidades/{especialidade_id}/ativo" verb=PATCH {
   }
 
   response = {id: $especialidade.id, ativo: $especialidade.ativo}
+  guid = "Ej3Sx1vKCQTpwD02EqDstI_D6BU"
 }

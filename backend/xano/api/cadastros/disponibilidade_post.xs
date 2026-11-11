@@ -57,4 +57,5 @@ query disponibilidade verb=POST {
   }
 
   response = {id: $plantao.id, medico_id: $plantao.medico_id, inicio: $plantao.inicio, fim: $plantao.fim}
+  guid = "oPCOzfyZ0vKB8-1pqP4GtO6PZvY"
 }

@@ -80,4 +80,5 @@ query disponibilidade verb=GET {
   }
 
   response = {data: $dia, agora: $agora, plantoes: $lista}
+  guid = "KaAGy7uzUynjZsgtCb__4VM9kf0"
 }

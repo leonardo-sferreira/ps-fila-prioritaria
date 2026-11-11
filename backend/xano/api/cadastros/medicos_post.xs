@@ -69,4 +69,5 @@ query medicos verb=POST {
   }
 
   response = {id: $medico.id, usuario_id: $login.id, nome: $login.nome, email: $login.email, crm: $medico.registro_profissional, ativo: true, especialidade_ids: $proprias, sala_id: $sala_id}
+  guid = "MLsmRHduj4XoblejmhGKj0bAniw"
 }

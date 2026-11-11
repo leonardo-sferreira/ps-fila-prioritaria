@@ -80,4 +80,5 @@ function "cadastros/regra_parametro" {
       value = "ESPECIALIDADE"
     }
   }
+  guid = "5tz1-0EodErhLuGHdNsfmq_5LcE"
 }

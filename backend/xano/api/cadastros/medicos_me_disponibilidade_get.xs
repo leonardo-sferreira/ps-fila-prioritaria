@@ -30,4 +30,5 @@ query "medicos/me/disponibilidade" verb=GET {
   }
 
   response = {agora: $agora, plantoes: $periodos|map:{id: $$.id, inicio: $$.inicio, fim: $$.fim}}
+  guid = "3DqKgnh7BTMkVFHEdATy9ynaIqE"
 }

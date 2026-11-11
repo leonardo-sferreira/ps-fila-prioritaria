@@ -23,4 +23,5 @@ function "cadastros/sala_valida" {
   }
 
   response = $sala_id
+  guid = "b3ckdXjLRe8AJtInb_KOjqycEr4"
 }

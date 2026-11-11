@@ -18,4 +18,5 @@ function "cadastros/plantao_sobreposto" {
   }
 
   response = $existe
+  guid = "1ii6pxAG9wA3e29EFX1jaRz0uRc"
 }

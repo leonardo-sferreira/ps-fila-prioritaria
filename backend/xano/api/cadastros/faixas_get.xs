@@ -17,4 +17,5 @@ query faixas verb=GET {
   }
 
   response = $faixas|map:{id: $$.id, parametro: $$.parametro, minimo: $$.minimo, maximo: $$.maximo, pontos: $$.pontos, condicao_gravidade: $$.condicao_gravidade}
+  guid = "gWX0zAl07ICgVxeaLdYyDYHsrF8"
 }

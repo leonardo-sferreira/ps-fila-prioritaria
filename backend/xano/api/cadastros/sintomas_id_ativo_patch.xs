@@ -40,4 +40,5 @@ query "sintomas/{sintoma_id}/ativo" verb=PATCH {
   }
 
   response = {id: $sintoma.id, ativo: $sintoma.ativo}
+  guid = "VuO_eDXOaPD9GevVcwaASSYFfNw"
 }

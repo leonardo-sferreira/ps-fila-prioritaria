@@ -10,16 +10,17 @@ function "cadastros/faixa_sobrepoe" {
   }
 
   stack {
-    var $a_min { value = $input.faixa|get:"minimo":null }
-    var $a_max { value = $input.faixa|get:"maximo":null }
-    var $a_cond { value = $input.faixa|get:"condicao_gravidade":null }
+    // `get` com padrão devolve o padrão também para false e 0: lê o campo só quando ele existe.
+    var $a_min { value = ($input.faixa|has:"minimo") ? $input.faixa.minimo : null }
+    var $a_max { value = ($input.faixa|has:"maximo") ? $input.faixa.maximo : null }
+    var $a_cond { value = ($input.faixa|has:"condicao_gravidade") ? $input.faixa.condicao_gravidade : null }
     var $sobrepoe { value = false }
 
     foreach ($input.outras ?? []) {
       each as $b {
-        var $b_min { value = $b|get:"minimo":null }
-        var $b_max { value = $b|get:"maximo":null }
-        var $b_cond { value = $b|get:"condicao_gravidade":null }
+        var $b_min { value = ($b|has:"minimo") ? $b.minimo : null }
+        var $b_max { value = ($b|has:"maximo") ? $b.maximo : null }
+        var $b_cond { value = ($b|has:"condicao_gravidade") ? $b.condicao_gravidade : null }
         var $mesma_condicao {
           value = $a_cond == null || $b_cond == null || $a_cond == $b_cond
         }
@@ -62,8 +63,14 @@ function "cadastros/faixa_sobrepoe" {
     expect.to_be_false ($response)
   }
 
+  test "limite zero não vira extremo aberto" {
+    input = {faixa: {minimo: 0, maximo: 5, condicao_gravidade: null}, outras: [{minimo: null, maximo: -1, condicao_gravidade: null}]}
+    expect.to_be_false ($response)
+  }
+
   test "faixa sem condição colide com qualquer condição" {
     input = {faixa: {minimo: 50, maximo: null, condicao_gravidade: null}, outras: [{minimo: 54, maximo: 59, condicao_gravidade: true}]}
     expect.to_be_true ($response)
   }
+  guid = "S4_r18Y3oBEivqrW3LLd-DQEXmI"
 }

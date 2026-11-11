@@ -58,4 +58,5 @@ query "especialidades/{especialidade_id}" verb=PATCH {
   }
 
   response = {id: $especialidade.id, nome: $especialidade.nome, sigla: $especialidade.sigla, descricao: $especialidade.descricao, ativo: $especialidade.ativo}
+  guid = "m1TqHLNk6pI5RV2kiEuzcw-lHoQ"
 }

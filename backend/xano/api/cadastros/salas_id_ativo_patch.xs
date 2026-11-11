@@ -61,4 +61,5 @@ query "salas/{sala_id}/ativo" verb=PATCH {
   }
 
   response = {id: $sala.id, ativo: $sala.ativo, medicos_desvinculados: $desvinculados}
+  guid = "y4AiMkWKaP4uc8rrvTZ8fiae9yg"
 }

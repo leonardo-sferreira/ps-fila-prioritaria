@@ -43,4 +43,5 @@ query "disponibilidade/{disponibilidade_id}" verb=DELETE {
   }
 
   response = {id: $anterior.id, removido: true}
+  guid = "zpvsixmqkaWS98cqyG-Y9Pa-ZoU"
 }

@@ -45,4 +45,5 @@ query "recepcao/{recepcao_id}/ativo" verb=PATCH {
   }
 
   response = {id: $cadastro.id, ativo: $cadastro.ativo}
+  guid = "wl7cEgoRkIL9CkhA1BzFoT3YY2I"
 }

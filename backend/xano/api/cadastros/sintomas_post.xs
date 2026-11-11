@@ -65,4 +65,5 @@ query sintomas verb=POST {
   }
 
   response = {id: $sintoma.id, nome: $sintoma.nome, ativo: true, especialidade_ids: $destinos}
+  guid = "pN-i3r7R2ZJ_oiCqJIV5xhJU12Q"
 }

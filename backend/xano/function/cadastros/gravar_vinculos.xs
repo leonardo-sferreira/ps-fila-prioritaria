@@ -65,4 +65,5 @@ function "cadastros/gravar_vinculos" {
   }
 
   response = $input.especialidade_ids
+  guid = "01V5n-luy9OxYb0q_xUmQB0YqPo"
 }

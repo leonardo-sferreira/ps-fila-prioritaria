@@ -85,4 +85,5 @@ query "recepcao/{recepcao_id}" verb=PATCH {
   }
 
   response = {id: $cadastro.id, nome: $login.nome, email: $login.email, cpf: $cpf, especialidade_referencia_id: $referencia, ativo: $cadastro.ativo}
+  guid = "Zl8ULrWKdFG_1AlYG_CUMrvCMOk"
 }

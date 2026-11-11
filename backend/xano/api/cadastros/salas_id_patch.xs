@@ -57,4 +57,5 @@ query "salas/{sala_id}" verb=PATCH {
   }
 
   response = {id: $sala.id, nome: $sala.nome, descricao: $sala.descricao, ativo: $sala.ativo}
+  guid = "Y6TqFNsa2Nb13BArYEBzy0ALGkA"
 }
