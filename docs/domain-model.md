@@ -261,7 +261,7 @@ Pessoa atendida no PS.
 
 ### Regras
 - Todo atendimento começa pela pesquisa do CPF (RN01); um CPF corresponde a um único paciente (RN02).
-- Um paciente pode ter várias Fichas ao longo do tempo, mas no máximo uma ficha não finalizada.
+- Um paciente pode ter várias Fichas ao longo do tempo, mas no máximo uma ficha não finalizada. Uma nova abertura sem ticket devolve essa ficha (em triagem, reaberta para edição; aguardando ou chamada, com o atalho "Abrir ficha atual").
 
 ## Ticket_Pré-Triagem
 

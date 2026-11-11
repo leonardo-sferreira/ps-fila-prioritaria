@@ -101,6 +101,7 @@ ABAS_RECEPCAO = [
     ("Início", "/recepcao"),
     ("Fila de pré-triagem", "/recepcao/fila"),
     ("Identificar paciente", "/recepcao/pacientes"),
+    ("Fichas do dia", "/recepcao/fichas"),
 ]
 
 

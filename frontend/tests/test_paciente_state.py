@@ -5,6 +5,8 @@ from collections import deque
 import unittest
 from unittest.mock import patch
 
+import pytest
+
 from ps_fila_prioritaria.comum import ARQUIVO_ENV, carregar_variaveis_ambiente
 from ps_fila_prioritaria.estados.autenticacao import AuthState
 from ps_fila_prioritaria.estados.pacientes import PacienteState
@@ -45,6 +47,7 @@ class EstadoFalso:
     atualizar = PacienteState.atualizar.fn
     set_telefone = PacienteState.set_telefone.fn
     continuar_atendimento = PacienteState.continuar_atendimento.fn
+    abrir_ficha_atual = PacienteState.abrir_ficha_atual.fn
     cancelar = PacienteState.cancelar.fn
 
     def __init__(self, cpf: str = "") -> None:
@@ -58,6 +61,8 @@ class EstadoFalso:
         self.exibir_cadastro = False
         self.mensagem = ""
         self.erro = False
+        self.ficha_atual_id = 0
+        self.ficha_atual_senha = ""
         self.alterado = None
         self.telefone_alterado = False
         self.abrindo_ficha = False
@@ -236,6 +241,36 @@ def test_continuar_reabre_ficha_em_triagem_existente() -> None:
     assert redirecionamento is not None
     assert "/recepcao/ficha/33" in str(redirecionamento)
     assert not estado.erro
+
+
+@pytest.mark.parametrize("situacao", ["AGUARDANDO", "CHAMADO"])
+def test_paciente_ja_na_fila_mostra_aviso_e_atalho_sem_redirecionar(situacao: str) -> None:
+    estado = EstadoFalso()
+    estado.paciente_id = PACIENTE_A["id"]
+    corpo = {"id": 41, "paciente_id": PACIENTE_A["id"], "status": situacao, "senha": "A-NEU-002", "ja_existente": True}
+
+    with patch.dict("os.environ", {"XANO_TRIAGEM_API_URL": "https://triagem.test"}, clear=False), patch(
+        "ps_fila_prioritaria.api.requisitar", return_value=Resposta(200, corpo)
+    ):
+        redirecionamento = asyncio.run(estado.continuar_atendimento())
+
+    assert redirecionamento is None
+    assert not estado.erro
+    assert estado.ficha_atual_id == 41
+    assert estado.mensagem == "Este paciente já está na fila com a senha A-NEU-002."
+    assert "/recepcao/ficha/41" in str(estado.abrir_ficha_atual())
+
+
+def test_abrir_ficha_atual_sem_ficha_nao_redireciona() -> None:
+    assert EstadoFalso().abrir_ficha_atual() is None
+
+
+def test_nova_busca_descarta_o_atalho_da_ficha_anterior() -> None:
+    estado = EstadoFalso()
+    estado.ficha_atual_id = 41
+    estado.ficha_atual_senha = "A-NEU-002"
+    estado._resetar_paciente_atual()
+    assert (estado.ficha_atual_id, estado.ficha_atual_senha) == (0, "")
 
 
 def test_continuar_exibe_erro_de_configuracao_na_tela_de_pacientes() -> None:
