@@ -79,4 +79,5 @@ query "usuarios/{usuario_id}/ativo" verb=PATCH {
   }
 
   response = {id: $editado.id, ativo: $editado.ativo}
+  guid = "efSAnMhfJgkzmkQ6OBHU63J7a9s"
 }

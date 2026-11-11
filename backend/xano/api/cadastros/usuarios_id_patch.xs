@@ -55,4 +55,5 @@ query "usuarios/{usuario_id}" verb=PATCH {
   }
 
   response = {id: $editado.id, nome: $editado.nome, email: $editado.email, perfil: $editado.perfil, ativo: $editado.ativo}
+  guid = "OyeNbp_9SV_E5OtwAbIxhjbWAMo"
 }

@@ -45,4 +45,5 @@ query usuarios verb=POST {
   }
 
   response = {id: $novo.id, nome: $novo.nome, email: $novo.email, perfil: "ADMINISTRADOR", ativo: true}
+  guid = "B83ut4b2TJqj5XyRdrx8_Dour5Y"
 }
