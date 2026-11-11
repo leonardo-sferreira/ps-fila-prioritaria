@@ -4,7 +4,9 @@ import inspect
 import unittest
 from unittest.mock import patch
 
-from ps_fila_prioritaria.ps_fila_prioritaria import AuthState, FilaTicketsState, _timestamp_segundos
+from ps_fila_prioritaria.comum import _timestamp_segundos
+from ps_fila_prioritaria.estados.autenticacao import AuthState
+from ps_fila_prioritaria.estados.fila_pre_triagem import FilaTicketsState
 
 AGORA = 1_794_155_600_000  # ms, como o Xano devolve
 
@@ -48,7 +50,7 @@ def carregar_ticket(tentativas: int, segundos_desde_chamada: int, tentativas_max
         "intervalo_repeticao_segundos": 10,
         "tentativas_maximas": tentativas_maximas,
     }
-    with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", return_value=Resposta(corpo)):
+    with patch("ps_fila_prioritaria.api.requisitar", return_value=Resposta(corpo)):
         asyncio.run(estado.carregar())
     return estado.tickets[0]
 
@@ -73,7 +75,7 @@ class TestContagemPorChamada(unittest.TestCase):
     def test_sem_parametros_a_tela_nao_bloqueia_e_o_xano_decide(self):
         estado = EstadoFalso()
         corpo = [{"id": 7, "status": "CHAMADO", "tentativas": 1, "chamado_em": AGORA}]
-        with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", return_value=Resposta(corpo)):
+        with patch("ps_fila_prioritaria.api.requisitar", return_value=Resposta(corpo)):
             asyncio.run(estado.carregar())
         self.assertEqual(estado.tickets[0]["segundos_restantes"], -1)
         self.assertTrue(estado.tickets[0]["pode_chamar_novamente"])
@@ -82,7 +84,7 @@ class TestContagemPorChamada(unittest.TestCase):
 class TestAcoesManuais(unittest.TestCase):
     def _executar(self, metodo: str) -> tuple[EstadoFalso, list]:
         estado = EstadoFalso()
-        with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", side_effect=[Resposta({}), Resposta([])]) as requisitar:
+        with patch("ps_fila_prioritaria.api.requisitar", side_effect=[Resposta({}), Resposta([])]) as requisitar:
             asyncio.run(getattr(estado, metodo)(7))
         return estado, requisitar.call_args_list
 

@@ -3,7 +3,7 @@ import unittest
 
 import httpx
 
-from ps_fila_prioritaria.ps_fila_prioritaria import MENSAGEM_LIMITE_XANO, _mensagem_erro
+from ps_fila_prioritaria.comum import MENSAGEM_LIMITE_XANO, _mensagem_erro
 
 LIMITE_XANO = ("Whoa there! Your plan only supports 10 requests per 20 seconds. Upgrade options and additional "
                "information is available at: https://docs.xano.com/api-rate-limit")
@@ -35,7 +35,7 @@ class TestMensagensDaFicha(unittest.TestCase):
 
 class TestIdDaRota(unittest.TestCase):
     def test_extrai_o_id_do_caminho(self):
-        from ps_fila_prioritaria.ps_fila_prioritaria import _id_da_rota
+        from ps_fila_prioritaria.comum import _id_da_rota
         self.assertEqual(_id_da_rota("/recepcao/ficha/12"), "12")
         self.assertEqual(_id_da_rota("/recepcao/comprovante/7/"), "7")
         self.assertEqual(_id_da_rota(""), "")

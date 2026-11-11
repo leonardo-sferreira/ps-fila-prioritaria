@@ -7,9 +7,10 @@ from unittest.mock import patch
 
 import httpx
 
-from ps_fila_prioritaria.ps_fila_prioritaria import ComprovanteState, FichaState, sintomas_disponiveis
+from ps_fila_prioritaria.estados.comprovante import ComprovanteState
+from ps_fila_prioritaria.estados.ficha import FichaState, _referencias_sinais, sintomas_disponiveis
 
-REQUISITAR = "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar"
+REQUISITAR = "ps_fila_prioritaria.api.requisitar"
 
 
 class Resposta:
@@ -551,3 +552,56 @@ class TestComprovante(unittest.TestCase):
             asyncio.run(estado.carregar("10"))
         self.assertTrue(estado.mensagem)
         self.assertEqual(estado.senha, "")
+
+
+class TestReferenciasESituacaoDosSinais(unittest.TestCase):
+    situacao = staticmethod(FichaState.computed_vars["situacao_sinais"]._fget)
+    aviso = staticmethod(FichaState.computed_vars["aviso_classificacao"]._fget)
+
+    def test_referencias_vem_das_faixas_de_zero_ponto(self) -> None:
+        faixas = [
+            {"parametro": "PA_SISTOLICA", "minimo": 111, "maximo": 219},
+            {"parametro": "TEMPERATURA", "minimo": 36.1, "maximo": 38.0},
+            {"parametro": "SPO2", "minimo": 96, "maximo": None},
+            {"parametro": "FC", "minimo": None, "maximo": 90},
+            {"parametro": "GLICEMIA", "minimo": 60, "maximo": None},
+            {"parametro": "GLICEMIA", "minimo": None, "maximo": None},
+            {"parametro": "DESCONHECIDO", "minimo": 1, "maximo": 2},
+        ]
+        referencias = _referencias_sinais(faixas)
+        self.assertEqual(referencias["pa_sistolica"], "Ref.: 111–219")
+        self.assertEqual(referencias["temperatura"], "Ref.: 36,1–38")
+        self.assertEqual(referencias["spo2"], "Ref.: ≥ 96")
+        self.assertEqual(referencias["fc"], "Ref.: ≤ 90")
+        self.assertEqual(referencias["glicemia"], "Ref.: ≥ 60")
+        self.assertEqual(referencias["fr"], "")
+
+    def test_sem_faixas_todos_os_campos_ficam_sem_referencia(self) -> None:
+        self.assertEqual(set(_referencias_sinais(None).values()), {""})
+
+    def test_carregar_guarda_valores_salvos_e_referencias(self) -> None:
+        estado = EstadoFichaFalso()
+        corpo = {**FICHA, "referencias_sinais": [{"parametro": "FR", "minimo": 12, "maximo": 20}]}
+        with _api(Resposta(200, corpo), Resposta(200, CATALOGO)):
+            asyncio.run(estado.carregar("10"))
+        self.assertEqual(estado.sinais_salvos["pa_sistolica"], "120")
+        self.assertEqual(estado.referencias_sinais["fr"], "Ref.: 12–20")
+
+    def test_situacao_vazio_alterado_e_salvo(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.sinais = {**estado.sinais, "pa_sistolica": "120", "fc": "95", "fr": ""}
+        estado.sinais_salvos = {**estado.sinais, "fc": "80", "temperatura": "36,5"}
+        situacao = self.situacao(estado)
+        self.assertEqual(situacao["pa_sistolica"], "salvo")
+        self.assertEqual(situacao["fc"], "alterado")
+        self.assertEqual(situacao["fr"], "vazio")
+        self.assertEqual(situacao["temperatura"], "alterado")  # apagou um valor salvo
+
+    def test_aviso_de_gestante_e_uma_linha_so(self) -> None:
+        estado = EstadoFichaFalso()
+        estado.classificacao = {"pendencias": ["TABELA_ADULTA_NAO_APLICAVEL"], "condicao_prioritaria": "GESTANTE"}
+        self.assertEqual(self.aviso(estado), "Gestante: a tabela adulta não se aplica, defina a prioridade manualmente.")
+        estado.classificacao = {"pendencias": ["TABELA_ADULTA_NAO_APLICAVEL", "SPO2_NAO_INFORMADO"], "condicao_prioritaria": "CRIANCA"}
+        self.assertEqual(self.aviso(estado), "Menor de 16 anos ou idade não informada: defina a prioridade manualmente. Informe a SpO2.")
+        estado.classificacao = {"pendencias": []}
+        self.assertEqual(self.aviso(estado), "")
