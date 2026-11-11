@@ -2,27 +2,17 @@
 
 ## Purpose
 
-Registra de forma imutável quem alterou o quê e quando nas informações relevantes do sistema, atendendo RF37 e RNF07.
+Garante que toda alteração administrativa fique registrada de forma imutável.
 
 ## ADDED Requirements
 
-### Requirement: Conteúdo do registro de auditoria
-Todo registro de auditoria DEVE conter tipo do evento, entidade e identificador do registro afetado, valor anterior, valor novo, usuário responsável, data/hora e, quando a operação exigir, justificativa.
+### Requirement: Auditoria dos cadastros
+Toda criação, edição, ativação, desativação e remoção feita nos cadastros do Administrador DEVE gravar um evento em `historico_alteracao` com o tipo do evento, a entidade, o registro, o valor anterior, o valor novo e o Administrador, na mesma transação da alteração. Operação recusada NÃO DEVE gravar evento. NÃO DEVE existir endpoint que altere ou apague eventos de auditoria.
 
-#### Scenario: Registro completo
-- **QUANDO** uma operação auditada é concluída
-- **ENTÃO** existe um registro com todos os campos acima preenchidos; o valor anterior fica vazio apenas em criações e o valor novo fica vazio apenas em remoções
+#### Scenario: Alteração auditada
+- **QUANDO** o Administrador desativa a sala "Consultório 3"
+- **ENTÃO** o histórico registra `SALA_DESATIVADA` com o estado anterior, o novo e o usuário
 
-### Requirement: Auditoria atômica com a operação
-O registro de auditoria DEVE ser gravado junto com a alteração. Se a alteração falhar, NÃO DEVE existir registro de auditoria dela; se a gravação da auditoria falhar, a alteração NÃO DEVE ser confirmada.
-
-#### Scenario: Operação recusada não gera auditoria
-- **QUANDO** uma alteração é recusada por validação
-- **ENTÃO** nenhum registro de auditoria é criado para ela
-
-### Requirement: Imutabilidade
-Registros de auditoria NÃO DEVEM poder ser editados nem excluídos pela API, por nenhum perfil.
-
-#### Scenario: Tentativa de alterar auditoria
-- **QUANDO** qualquer usuário, inclusive o Administrador, tenta editar ou excluir um registro de auditoria pela API
-- **ENTÃO** não existe operação que permita isso e o registro permanece inalterado
+#### Scenario: Operação recusada
+- **QUANDO** uma criação de médico é recusada por e-mail repetido
+- **ENTÃO** nenhum evento de auditoria é gravado

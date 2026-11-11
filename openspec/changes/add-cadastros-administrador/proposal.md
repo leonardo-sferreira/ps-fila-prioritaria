@@ -1,63 +1,71 @@
-# Proposta: Cadastros do Administrador, parâmetros e auditoria
+# Proposta: cadastros do Administrador
 
 | Campo | Valor |
 |---|---|
 | Change | `add-cadastros-administrador` |
-| Sprint e entrega | Sprint 3, segunda 19/10 (médicos, especialidades e disponibilidade). Sintomas, parâmetros e auditoria sem card |
-| Fatias no Trello | Fatia 5 — Administrador |
-| Dupla | Leonardo Machado (API e dados) · Nicolas (tela) |
-| Depende de | `add-autenticacao-perfis` (usuários, perfis e `verificar_acesso`) |
-| Situação | Em revisão |
-| Rastreabilidade formal | RF13–RF16 e RF49 quando aplicáveis; decisões de domínio detalhadas na baseline local até a sincronização do Confluence, sem atribuir texto não confirmado a RFs |
-
-> Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
+| Sprint e entrega | Sprint 4, segunda 16/11/2026 |
+| Card no Trello | "Cadastros do administrador — médicos, especialidades, sintomas e disponibilidade" |
+| Depende de | `add-autenticacao-perfis` (usuário, perfis e `verificar_acesso`); fila médica (PR #39), que lê médicos, especialidades e disponibilidade |
+| Situação | Revisada em 11/11/2026 (escopo completo do card, decisão do PO) e em implementação |
+| Rastreabilidade formal | RF13–RF16 (§12), RF49 (§23), vínculos do médico (§7.1), administração (§10), N:N médico–especialidade (§11.1–11.2, D01), Rev. 2.1 |
 
 ## Why
 
-A classificação, o direcionamento e a chamada de pacientes dependem de dados que só o Administrador mantém: especialidades, catálogo de sintomas pontuados e seus destinos, cadastros de Médico e Recepção/Triagem vinculados aos respectivos usuários, salas, disponibilidade por período e parâmetros. O Médico possui várias especialidades próprias (N:N) que orientam a preferência de chamada sem impedir apoio a outras filas (Rev. 2.1, §7.1–7.2, D01). Esta change também cria a trilha de auditoria, que as próximas changes vão usar.
+Hoje especialidades, sintomas, médicos, plantões e parâmetros só podem ser alterados direto no banco do Xano. A fila médica já depende desses dados: um médico só fica disponível com plantão cadastrado, e as especialidades próprias dele decidem a ordem de chamada. O Administrador precisa mantê-los pelo sistema, com auditoria e sem apagar histórico.
+
+A versão anterior desta change foi escrita antes de existirem a auditoria (`historico_alteracao`, `registrar_alteracao`), a tabela de parâmetros, o catálogo de sintomas, a tabela de disponibilidade e a elegibilidade dos médicos. Esta revisão parte do que já existe.
 
 ## What Changes
 
-- **Especialidades:** cadastro (nome, descrição, sigla de 3 letras usada na senha, situação); sem alternativas usadas como fallback por disponibilidade ou especialidade cadastral do Médico.
-- **Sintomas:** cadastro (nome, descrição, grupo, pontuação de 1 a 3, situação) e relação ordenada sintoma → especialidade(s), segundo o catálogo de `docs/domain-model.md`.
-- **Médicos:** entidade própria vinculada 1:1 a um usuário, com nome profissional, CRM, especialidades próprias via `medico_especialidade`, disponibilidade e sala atual. Os vínculos orientam preferência de chamada, sem restringir apoio.
-- **Recepção/Triagem:** perfil funcional único e entidade própria vinculada 1:1 ao usuário, com nome, CPF e especialidade de referência quando aplicável.
-- **Salas:** cadastro administrativo e vínculo operacional com Médico, sem usar especialidade como sinônimo de local.
-- **Disponibilidade:** o Administrador registra, altera e remove períodos (data, hora inicial, hora final) de cada médico; o médico não altera a própria disponibilidade (RF15, RN15, RN16, UC06).
-- **Parâmetros de regra:** tela para consultar e alterar somente parâmetros configuráveis previstos. As chamadas seguem 30 segundos, até 3 tentativas por oportunidade e uma reentrada; o fuso `America/Sao_Paulo` não é editável nesta tela.
-- **Auditoria:** registro imutável de alterações relevantes (tipo, registro afetado, valor anterior, valor novo, usuário, data/hora, justificativa). Nesta change ele passa a registrar alterações de disponibilidade, sintomas, especialidades e parâmetros (RF37, RNF07).
-- Carga inicial de dados de exemplo (especialidades e sintomas da seção 6 do documento formal) para permitir testes.
+- **Especialidades:** listar, criar, editar (nome e descrição) e ativar/desativar. A sigla, usada nas senhas já emitidas, não muda depois de criada.
+- **Sintomas:** listar todos (ativos e inativos), criar, editar (nome, descrição, grupo, pontuação 1–3) e ativar/desativar, com os **destinos** (especialidades, em ordem de preferência).
+- **Médicos:** o formulário "Novo médico" cria **o login e o médico juntos**: nome, e-mail, senha inicial, CRM, especialidades próprias (várias) e sala atual. Editar, ativar/desativar (o login acompanha).
+- **Recepção/Triagem:** cadastro com login junto: nome, e-mail, senha inicial, CPF e especialidade de referência. Editar e ativar/desativar.
+- **Salas:** listar, criar, editar e ativar/desativar. O médico pode ter uma **sala atual**.
+- **Disponibilidade (plantões):** por médico e por dia, criar, editar e remover períodos (data, hora de início e de fim). O plantão que passa da meia-noite é aceito. Não pode haver sobreposição para o mesmo médico. Período já iniciado não é removido.
+- **Parâmetros e faixas:** listar e alterar os parâmetros configuráveis, com limites e coerência entre idades e limiares, e as faixas de pontuação dos sinais vitais, sem sobreposição.
+- **Minha agenda:** o Médico vê os próprios plantões, sem editar.
+- **Auditoria:** toda alteração registra o evento em `historico_alteracao`, em nome do Administrador, na mesma transação.
+- **Nada é excluído**, exceto plantão futuro: o que tem histórico é desativado.
 
 ### Fora do escopo
 
-- Faixas de pontuação dos sinais vitais e limiares de risco: ficam em `add-triagem-classificacao`, junto com o cálculo que os usa.
-- Redistribuição de pacientes quando um médico fica indisponível: fica em `add-direcionamento-senha`.
-- Tela de consulta da auditoria pelo Administrador: fica em `add-acompanhamento-administrador`. Nesta change a auditoria só é gravada e verificada por testes.
-- Exclusão física de registros: cadastros são desativados, nunca excluídos.
-- Qualquer funcionalidade de paciente, ficha ou fila.
+- Gestão de usuários do Administrador e da equipe em geral (tela `/admin/usuarios`), que fica em `add-autenticacao-perfis`. Aqui só são criados os logins de Médico e Recepção/Triagem junto do cadastro.
+- Consulta da auditoria na tela: fica em `add-acompanhamento-administrador`.
+- Disponibilidade recorrente ("toda segunda"): cada período é registrado por data.
+- Redistribuir fichas quando um médico é desativado.
 
-## Capacidades
+## Capabilities
 
-### Novas capacidades
-- `especialidades`: cadastro de especialidades e siglas.
-- `sintomas`: cadastro de sintomas, pontuação e relação de direcionamento com especialidades.
-- `medicos-disponibilidade`: cadastros de Médico, Recepção/Triagem e Sala; vínculos 1:1 com Usuário; vínculo N:N entre Médico e especialidades próprias; disponibilidade por período.
-- `parametros-regras`: parâmetros operacionais configuráveis pelo Administrador.
-- `auditoria`: registro imutável de alterações relevantes.
+### New Capabilities
+- `especialidades`: cadastro de especialidades.
+- `sintomas`: cadastro de sintomas e destinos.
+- `medicos-disponibilidade`: médicos, Recepção/Triagem, salas e plantões.
+- `parametros-regras`: parâmetros e faixas configuráveis.
+- `auditoria`: registro das alterações administrativas.
 
-### Capacidades modificadas
+### Modified Capabilities
 _Nenhuma._
 
 ## Impacto
 
-- **Xano:** contratos conceituais de especialidade, sintoma, Médico, Recepção/Triagem, Sala, disponibilidade, parâmetros e auditoria. O schema físico será definido pela implementação funcional; esta etapa não altera `.xs`.
-- **Reflex:** telas em `/admin/especialidades`, `/admin/sintomas`, `/admin/medicos`, `/admin/disponibilidade` e `/admin/parametros`.
-- **Testes:** `tests/api/test_cadastros.py`, `test_disponibilidade.py`, `test_parametros.py` e `test_auditoria.py`.
-- **Depende de:** `add-autenticacao-perfis` (usuários, perfis e `verificar_acesso`).
-- A Rev. 2.1, §7.1–7.2 e D01–D05, e a tabela existente `backend/xano/table/medico_especialidade.xs` fundamentam o vínculo N:N. O cadastro administrativo deve editá-lo; a escolha da ficha fica em `add-fila-chamada-medico`.
+- **Xano (grupo Cadastros):**
+  - endpoints de especialidades, sintomas, médicos, Recepção/Triagem, salas, disponibilidade, parâmetros e faixas, todos validando `ADMINISTRADOR` (exceto "Minha agenda", do `MEDICO`);
+  - funções puras de validação, com testes.
+- **Tabelas novas:**
+  - `sala`;
+  - `recepcao_triagem`.
+- **Campo novo:** `medico.sala_id`, a sala atual.
+- O PATCH de parâmetros da fila médica (`parametros/{chave}`) passa a aceitar todos os parâmetros editáveis.
+- **Reflex:**
+  - páginas `/admin/especialidades`, `/admin/sintomas`, `/admin/medicos`, `/admin/recepcao`, `/admin/salas`, `/admin/disponibilidade` e `/admin/parametros`;
+  - menu do Administrador;
+  - "Minha agenda" na tela do Médico.
+- **Configuração:** nova variável `XANO_CADASTROS_API_URL`.
+- **Documentos:** `docs/domain-model.md` (Sala, Recepção/Triagem, vínculo médico–sala) e `docs/project-overview.md`.
 
 ## Perguntas em aberto
 
-- [x] Antecipar para a Sprint 1 `historico_alteracao`, `registrar_alteracao`, `FUSO_HORARIO`, `obter_parametro` e a carga inicial de sintomas: decidido pelo PO em 04/10/2026, na change `add-base-compartilhada`. Falta aplicar `/opsx:update` aqui para remover os itens que passaram para a base. · PO
-- [ ] Sintomas, parâmetros e a consulta da auditoria não têm card; o card da Fatia 5 cobre só médicos, especialidades e disponibilidade. · PENDENTE PO
-- [x] Catálogo, grupos, pontuações e destinos seguem `docs/domain-model.md`; prioridade por cor e glicemia pendente foram substituídas pela baseline sanitizada.
+- [x] Escopo: tudo do card, incluindo salas, Recepção/Triagem, parâmetros e faixas (decisão do PO em 11/11/2026).
+- [x] Como cadastrar o médico: o formulário cria o login (perfil Médico) junto com o médico (decisão do PO em 11/11/2026).
+- [x] Vínculo médico–sala: `medico.sala_id` (sala atual), sem histórico de salas. Basta para o painel mostrar a sala de quem chamou.

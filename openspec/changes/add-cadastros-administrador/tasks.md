@@ -1,38 +1,62 @@
 # Tarefas
 
-## 1. Xano — auditoria e parâmetros
+Revisada em 11/11/2026 (decisões do PO: escopo completo do card; o cadastro de médico e o de Recepção/Triagem criam o login junto). Ver `proposal.md` e `design.md` (D1–D10).
 
-- [ ] 1.1 [Xano] Criar a tabela `historico_alteracao` (D1) sem endpoints de escrita e verificar no painel que nenhum endpoint da API faz PATCH/DELETE nela
-- [ ] 1.2 [Xano] Criar a função `registrar_alteracao` e verificar, com Run & Debug, que uma transação com erro forçado depois da chamada não deixa registro (D6)
-- [ ] 1.3 [Xano] Criar a tabela `parametro`, a função `obter_parametro` e os endpoints `GET parametros` (autenticado) e `PATCH parametros/{chave}` (ADMINISTRADOR, com validação por chave e auditoria) (D5); verificar com os testes 1.4
-- [ ] 1.4 Escrever `tests/api/test_parametros.py` e `tests/api/test_auditoria.py` cobrindo valores iniciais, os limites 0/1/20/21 da previsão, a coerência de idades, 401 sem token, 403 para outros perfis, operação recusada sem auditoria e alteração válida com auditoria; verificar que passam
+## 1. Documentos
 
-## 2. Xano — especialidades e sintomas
+- [ ] 1.1 Atualizar `docs/domain-model.md` e `docs/project-overview.md`:
+  - Sala, com vínculo `medico.sala_id` e desativação que desfaz o vínculo;
+  - Recepção/Triagem, com login junto;
+  - plantão noturno e regra de remoção;
+  - parâmetros e faixas editáveis.
 
-- [ ] 2.1 [Xano] Criar a tabela `especialidade` e os endpoints de listagem (autenticado; só ativas para quem não é ADMINISTRADOR), criação, edição e ativar/desativar (ADMINISTRADOR), todos auditados; não implementar fallback por especialidade alternativa; verificar com os testes 2.4
-- [ ] 2.2 [Xano] Criar as tabelas `sintoma` e `sintoma_especialidade` e os endpoints equivalentes, incluindo `PUT sintomas/{id}/especialidades`, com recusa de especialidade inativa; verificar com os testes 2.4
-- [ ] 2.3 [Xano] Criar a função `carga_inicial` e o endpoint `POST admin/carga-inicial` (D7); verificar que duas execuções seguidas não duplicam registros
-- [ ] 2.4 Escrever `tests/api/test_cadastros.py` cobrindo sigla (2, 3 e 4 letras, com número, minúscula convertida), duplicidades sem diferenciar caixa, pontuações 0/1/3/4, especialidade inativa na relação, desativação, auditoria de edição e 403 para os outros perfis; verificar que passam
+  Verificar com `openspec validate add-cadastros-administrador`
 
-## 3. Xano — médicos e disponibilidade
+## 2. Xano — esquema e funções puras
 
-- [ ] 3.1 [Xano] Refatorar o cadastro de `medico` para editar atomicamente seus vínculos N:N em `medico_especialidade` (tabela já existente), além dos vínculos 1:1 a `usuario` e do vínculo Médico–Sala; verificar criação/edição/remoção de duas especialidades próprias e auditoria nos testes 3.4
-- [ ] 3.2 [Xano] Criar a tabela `disponibilidade_medico`, a variável `FUSO_HORARIO` e os endpoints de criar, alterar e remover período (ADMINISTRADOR, auditados) e `GET medicos/me/disponibilidade` (MEDICO, só leitura) (D3); verificar com os testes 3.4
-- [ ] 3.3 [Xano] Criar a consulta de Médicos elegíveis considerando usuário/Médico ativo, disponibilidade, plantão e sessão/status operacional, retornando os IDs de especialidades próprias sem usá-los como filtro absoluto; verificar PAUSA/AUSENTE e EM_ATENDIMENTO com os testes 3.4
-- [ ] 3.4 Escrever `tests/api/test_disponibilidade.py` cobrindo vínculos 1:1 e N:N (duas especialidades, edição e unicidade), elegibilidade e cobertura por sessão/status, período inválido, sobreposição, Médico/usuário inativo, valores-limite 06:59/07:00/18:59/19:00 no fuso oficial, pausa/plantão encerrado, Sala e 403 do Médico ao alterar disponibilidade; verificar que passam
-- [ ] 3.5 Exportar o XanoScript das seções 1–3 para `backend/xano/` e verificar que os arquivos estão no repositório
+- [ ] 2.1 Tabelas novas `sala` e `recepcao_triagem` e campo `sala_id` em `medico` (D5). Verificar com `xano_validate_xanoscript` e com a comparação de campos contra o servidor
+- [ ] 2.2 Funções puras com testes inline:
+  - `cadastros/periodo_plantao` (D6): diurno, noturno, fim igual ao início, formato inválido;
+  - `cadastros/regra_parametro` (D7): limites e chaves internas e desconhecidas;
+  - `cadastros/faixa_sobrepoe` (D8): sobreposição, encostadas, extremos abertos, condição diferente.
 
-## 4. Reflex — telas administrativas
+  Verificar com `xano_validate_xanoscript`
 
-- [ ] 4.1 [Reflex] Criar o componente `tabela_cadastro` (D8) e a página `/admin/especialidades`; verificar criação, sigla inválida e permissões
-- [ ] 4.2 [Reflex] Criar a página `/admin/sintomas` com filtro por grupo, pontuação 1–3 e destinos conforme catálogo; verificar limites e ausência de cores fixas
-- [ ] 4.3 [Reflex] Criar páginas administrativas para cadastro vinculado de Médico e Recepção/Triagem, Sala e agenda, com edição das várias especialidades próprias do Médico; verificar vínculos 1:1/N:N, CRM/CPF e distinção entre especialidade e Sala
-- [ ] 4.4 [Reflex] Criar a página `/admin/disponibilidade` (seletor de data, lista de períodos por médico, criar/editar/remover); verificar manualmente o registro, a sobreposição e a remoção
-- [ ] 4.5 [Reflex] Criar a página `/admin/parametros` e o link das novas telas no menu do `/admin`; verificar manualmente a alteração válida e a recusa fora do limite
-- [ ] 4.6 [Reflex] Criar a página somente leitura "Minha agenda" em `/medico`; verificar manualmente que o médico vê os próprios períodos e não tem ações de edição
-- [ ] 4.7 Adicionar ao README o roteiro de verificação manual da seção 4 e o passo da carga inicial; verificar executando-o
+## 3. Xano — endpoints (grupo Cadastros, ADMINISTRADOR, transação e auditoria)
 
-## 5. Integração e documentação
+- [ ] 3.1 Especialidades: `PATCH especialidades/{id}` (nome e descrição) e `PATCH especialidades/{id}/ativo`, com as recusas `ESPECIALIDADE_COM_FICHAS` e especialidade padrão. `GET especialidades` já existe
+- [ ] 3.2 Sintomas: `GET sintomas` (todos, com destinos), `POST sintomas`, `PATCH sintomas/{id}` e `PATCH sintomas/{id}/ativo`
+- [ ] 3.3 Médicos: `GET medicos`, `POST medicos` (cria o login), `PATCH medicos/{id}` e `PATCH medicos/{id}/ativo` (login junto; recusa com ficha CHAMADO) (D3, D4)
+- [ ] 3.4 Recepção/Triagem: `GET recepcao`, `POST recepcao`, `PATCH recepcao/{id}` e `PATCH recepcao/{id}/ativo` (D3, D5)
+- [ ] 3.5 Salas: `GET salas`, `POST salas`, `PATCH salas/{id}` e `PATCH salas/{id}/ativo` (desfaz o vínculo com médicos)
+- [ ] 3.6 Plantões:
+  - `GET disponibilidade` (por dia);
+  - `POST disponibilidade`;
+  - `PATCH disponibilidade/{id}`;
+  - `DELETE disponibilidade/{id}` (só não iniciado);
+  - `GET medicos/me/disponibilidade` (MEDICO) (D6).
+- [ ] 3.7 Parâmetros e faixas:
+  - `GET parametros` (com limites);
+  - `PATCH parametros/{chave}` generalizado (D7), mantendo o reinício do ciclo;
+  - `GET faixas`;
+  - `PATCH faixas/{id}` (D8).
+- [ ] 3.8 Validar todos os arquivos com `xano_validate_xanoscript`; publicar na `v1` (`--dry-run` antes; o PO roda o push) e rodar `xano unit_test run_all`
 
-- [ ] 5.1 Verificação ponta a ponta: executar a carga inicial, cadastrar um médico de Cardiologia, registrar a disponibilidade para agora e conferir em `GET especialidades/disponiveis` que Cardiologia aparece e que a auditoria registrou as operações
-- [ ] 5.2 Conferir `docs/domain-model.md` (Especialidade, Sintoma, Médico, Disponibilidade, Parâmetros e Histórico) com as tabelas criadas e ajustar o que divergir
+## 4. Reflex
+
+- [ ] 4.1 `XANO_CADASTROS_API_URL` no `.env.example`; menu do Administrador e área inicial com atalhos (D9)
+- [ ] 4.2 Componente `tabela_cadastro` e páginas `/admin/especialidades`, `/admin/sintomas` e `/admin/salas`
+- [ ] 4.3 Páginas `/admin/medicos` e `/admin/recepcao` (login junto, várias especialidades, sala)
+- [ ] 4.4 Página `/admin/disponibilidade` (seletor de dia, lista e formulário)
+- [ ] 4.5 Página `/admin/parametros` (parâmetros e faixas)
+- [ ] 4.6 "Meus plantões" na tela do Médico, só leitura
+- [ ] 4.7 Testes de estado das telas com a API simulada; verificar que a suíte unitária passa e que o app compila e abre
+
+## 5. Verificação ponta a ponta
+
+- [ ] 5.1 Roteiro manual com o Administrador logado:
+  - criar uma sala, um médico com duas especialidades e sala, e um plantão para agora;
+  - como Médico, ver "Plantão vigente", ficar disponível e chamar;
+  - ajustar um parâmetro e uma faixa;
+  - desativar a sala e conferir que o médico ficou sem sala;
+  - conferir os eventos na auditoria.
