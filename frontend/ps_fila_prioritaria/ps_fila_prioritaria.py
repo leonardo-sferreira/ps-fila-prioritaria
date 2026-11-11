@@ -22,6 +22,7 @@ from ps_fila_prioritaria.estados.fila_pre_triagem import FilaTicketsState
 from ps_fila_prioritaria.estados.medico import ImpressaoMedicoState, MedicoState
 from ps_fila_prioritaria.estados.plantao import PlantaoState
 from ps_fila_prioritaria.estados.totem import TotemState
+from ps_fila_prioritaria.estados.usuarios import UsuariosState
 from ps_fila_prioritaria.paginas.areas import area_admin
 from ps_fila_prioritaria.paginas.autenticacao import (
     index,
@@ -50,6 +51,7 @@ from ps_fila_prioritaria.paginas.pacientes import pagina_recepcao_pacientes
 from ps_fila_prioritaria.paginas.plantao import area_recepcao
 from ps_fila_prioritaria.paginas.privacidade import privacidade
 from ps_fila_prioritaria.paginas.totem import totem
+from ps_fila_prioritaria.paginas.usuarios import pagina_usuarios
 
 
 app = rx.App(stylesheets=["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap", "/tema.css"])
@@ -101,5 +103,6 @@ for _pagina, _rota, _titulo, _estado in [
     (pagina_salas, "/admin/salas", "Salas", SalasState),
     (pagina_plantoes, "/admin/disponibilidade", "Plantões", PlantoesState),
     (pagina_parametros, "/admin/parametros", "Parâmetros", ParametrosState),
+    (pagina_usuarios, "/admin/usuarios", "Usuários", UsuariosState),
 ]:
     app.add_page(_pagina, route=_rota, title=_titulo, on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), _estado.carregar])

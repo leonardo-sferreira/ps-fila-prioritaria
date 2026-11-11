@@ -67,14 +67,25 @@
 - [x] 3B.4 [Documentação] Exportar o XanoScript revisado da autenticação para `backend/xano/` e registrar a verificação da recuperação de acesso nesta change, sem editar o README
   - Evidência (11/11/2026): `auth_login_verificar_post.xs`, `auth_logout_post.xs` e `me_status_patch.xs` conferidos com os documentos publicados na `v1`; função sintética `auth/teste_sessao_unica.xs` publicada e exportada com GUID.
 
-## 4. Xano — gestão de usuários
+## 4. Xano — gestão de usuários (revisada pelo PO em 11/11/2026, D14)
 
-- [ ] 4.1 [Xano] Implementar `GET usuarios` (somente ADMINISTRADOR), com filtros opcionais de `perfil` e `ativo`, sem retornar `password`; verificar com os testes 4.5
-- [ ] 4.2 [Xano] Implementar `POST usuarios` com as validações de nome, formato e unicidade do e-mail (case-insensitive), perfil válido e senha de 8 ou mais caracteres; verificar com os testes 4.5
-- [ ] 4.3 [Xano] Implementar `PATCH usuarios/{id}` (nome, e-mail, perfil) e `PUT usuarios/{id}/senha`, com as mesmas validações e a regra do último administrador ao trocar de perfil (D9); verificar com os testes 4.5
-- [ ] 4.4 [Xano] Implementar `PATCH usuarios/{id}/ativo`, que recusa desativar a si mesmo e desativar o último administrador ativo (D9); verificar com os testes 4.5
-- [ ] 4.5 Escrever `tests/api/test_gestao_usuarios.py` cobrindo: 403 para Recepção/Triagem e Médico em cada operação, listagem sem senha, filtros, criação válida seguida de login, e-mail duplicado com outra caixa, dados inválidos, edição, troca de perfil valendo na próxima requisição, redefinição de senha (a antiga para de funcionar), senha curta, desativação invalidando o token existente, reativação, autodesativação e último administrador; usar usuários `teste_` desativados no teardown; verificar que `pytest tests/api` passa por completo
-- [ ] 4.6 Exportar o XanoScript para `backend/xano/` e verificar que os arquivos estão no repositório
+- [x] 4.1 [Xano] `GET usuarios` (só ADMINISTRADOR): todos os usuários com nome, e-mail, perfil e situação, sem `password`
+- [x] 4.2 [Xano] `POST usuarios`: cria só **Administrador** (nome, e-mail único sem diferenciar maiúsculas, senha de 8 ou mais), auditado sem a senha
+- [x] 4.3 [Xano] `PATCH usuarios/{id}` (nome e e-mail de administrador) e `PATCH usuarios/{id}/ativo` (só administradores; recusa a si mesmo e o último administrador ativo, D9)
+- [x] 4.4 [Xano] `PATCH usuarios/{id}/perfil` (D14):
+  - desativa o cadastro antigo e reativa ou cria o novo, com os dados exigidos;
+  - recusa o próprio perfil, o último administrador e o médico com ficha CHAMADO;
+  - auditado.
+
+  Com a função `usuarios/deixa_sem_admin`. Verificar com `xano_validate_xanoscript`
+  - Evidência (11/11/2026): `api/cadastros/usuarios_get.xs`, `usuarios_post.xs`, `usuarios_id_patch.xs`, `usuarios_id_ativo_patch.xs`, `usuarios_id_perfil_patch.xs` e `function/usuarios/deixa_sem_admin.xs` (3 testes inline) válidos no `xano_validate_xanoscript`; `--dry-run` na `v1` mostra só 6 criações.
+- [x] 4.5 Testes:
+  - teste inline da regra de último administrador;
+  - testes de estado da tela com a API simulada.
+
+  Verificar que a suíte unitária passa
+  - Evidência (11/11/2026): 3 testes inline em `usuarios/deixa_sem_admin` (rodam no `unit_test run_all` após o push); 10 testes de estado em `frontend/tests/test_usuarios_state.py` passando; suíte do frontend com 235 aprovados. Só falham os testes de API que fazem login com as contas de teste de Recepção e Médico (credencial), sem relação com esta tarefa.
+- [ ] 4.6 Publicar na `v1` (`--dry-run` antes; o PO roda o push) e rodar `xano unit_test run_all`
 
 ## 5. Reflex — login, sessão e rotas
 
@@ -87,12 +98,19 @@
 - [x] 5.4 [Reflex] Criar as páginas iniciais `/recepcao`, `/medico` e `/admin` com nome, perfil e botão "Sair", protegidas por `on_load=verificar_sessao`; verificar manualmente: sem login → `/login`; perfil errado → área do próprio perfil; "Sair" → `/login`; "voltar" após sair → `/login`
   - Evidência: `/recepcao` sem login mostra o login (verificado em navegador headless); roteiro manual completo executado pelo PO em 25/10/2026. As telas `/recepcao/pacientes` e `/recepcao/ficha/[id]` também ficaram protegidas para Recepção/Triagem.
 
-## 6. Reflex — gestão de usuários
+## 6. Reflex — gestão de usuários (revisada pelo PO em 11/11/2026, D14)
 
-- [ ] 6.1 [Reflex] Criar a página `/admin/usuarios` com tabela (nome, e-mail, perfil, situação) e filtros de perfil e situação, protegida para ADMINISTRADOR; verificar manualmente a listagem e os filtros
-- [ ] 6.2 [Reflex] Criar o formulário de criação e edição de usuário, com as mensagens de validação da API exibidas no campo correspondente; verificar manualmente a criação, o e-mail duplicado e a senha curta
-- [ ] 6.3 [Reflex] Adicionar as ações "Redefinir senha" e "Ativar/Desativar", com confirmação e mensagens de erro (autodesativação, último administrador); verificar manualmente cada caso
-- [ ] 6.4 Adicionar ao README o roteiro de verificação manual das seções 5 e 6 e verificar executando-o do início ao fim
+- [x] 6.1 [Reflex] Página `/admin/usuarios` (aba "Usuários" no menu do Administrador):
+  - tabela com nome, e-mail, perfil e situação, filtros de perfil e situação e busca;
+  - protegida para ADMINISTRADOR.
+
+  Verificar que o app compila e abre
+- [x] 6.2 [Reflex] "Novo administrador", edição de administrador e "Ativar/Desativar" (só em administradores; médicos e Recepção apontam para os cadastros), com as mensagens da API
+- [x] 6.3 [Reflex] "Trocar perfil" em qualquer usuário, exceto o próprio:
+  - o diálogo pede os dados do perfil novo (CRM e especialidades para Médico; CPF para Recepção/Triagem);
+  - confirmação antes de salvar.
+  - Evidência (11/11/2026): `estados/usuarios.py` e `paginas/usuarios.py`; aba "Usuários" em `ABAS_ADMIN`; rota protegida por `verificar_sessao("ADMINISTRADOR")`; mensagens `ULTIMO_ADMINISTRADOR`, `PROPRIO_PERFIL` e `USUARIO_EDITADO_NOS_CADASTROS` em `comum.py`; página renderiza e `reflex compile --dry` concluiu.
+- [ ] 6.4 Roteiro manual das seções 5 e 6 executado pelo PO
 
 ## 6A. Redefinição de senha pelo próprio usuário (D12)
 
@@ -115,5 +133,5 @@
 
 ## 7. Integração e documentação
 
-- [ ] 7.1 Verificação ponta a ponta: o Administrador cria um usuário Médico, o Médico faz login e vê a própria área, o Administrador o desativa e a próxima ação do Médico o leva a `/login`; verificar executando o fluxo com a app rodando e confirmando as sessões no Xano
+- [ ] 7.1 Verificação ponta a ponta: o Administrador cria um usuário Médico (pelos cadastros), o Médico faz login e vê a própria área, o Administrador troca o perfil dele para Recepção/Triagem e a próxima requisição já usa o novo perfil, e depois o desativa e a próxima ação o leva a `/login`; verificar executando o fluxo com a app rodando e confirmando as sessões no Xano
 - [ ] 7.2 Atualizar `docs/domain-model.md` (Usuário e Sessão) com o que foi implementado e verificar que ele bate com as tabelas do Xano

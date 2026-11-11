@@ -24,6 +24,17 @@ query "medicos/{medico_id}/ativo" verb=PATCH {
       error = "Médico não encontrado."
     }
 
+    db.get usuario {
+      field_name = "id"
+      field_value = $anterior.usuario_id
+    } as $login_atual
+
+    // Depois de uma troca de perfil o cadastro antigo fica só como histórico: não mexe mais no login (D14).
+    precondition ($login_atual.perfil == "MEDICO") {
+      error_type = "inputerror"
+      error = "CADASTRO_DE_OUTRO_PERFIL"
+    }
+
     conditional {
       if (!$input.ativo) {
         db.query ficha_atendimento {

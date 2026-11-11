@@ -23,6 +23,17 @@ query "recepcao/{recepcao_id}/ativo" verb=PATCH {
       error = "Cadastro não encontrado."
     }
 
+    db.get usuario {
+      field_name = "id"
+      field_value = $anterior.usuario_id
+    } as $login_atual
+
+    // Depois de uma troca de perfil o cadastro antigo fica só como histórico: não mexe mais no login (D14).
+    precondition ($login_atual.perfil == "RECEPCAO_TRIAGEM") {
+      error_type = "inputerror"
+      error = "CADASTRO_DE_OUTRO_PERFIL"
+    }
+
     db.transaction {
       stack {
         db.edit recepcao_triagem {
