@@ -33,6 +33,12 @@ query "medicos/{medico_id}" verb=PATCH {
       field_value = $anterior.usuario_id
     } as $login_anterior
 
+    // Depois de uma troca de perfil o cadastro antigo fica só como histórico: não mexe mais no login (D14).
+    precondition ($login_anterior.perfil == "MEDICO") {
+      error_type = "inputerror"
+      error = "CADASTRO_DE_OUTRO_PERFIL"
+    }
+
     precondition (($input.nome|strlen) >= 3) {
       error_type = "inputerror"
       error = "Informe o nome do médico."

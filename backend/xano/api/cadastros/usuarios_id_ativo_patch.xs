@@ -63,6 +63,17 @@ query "usuarios/{usuario_id}/ativo" verb=PATCH {
         function.run "registrar_alteracao" {
           input = {usuario_id: $usuario.id, tipo_evento: ($input.ativo ? "ADMINISTRADOR_ATIVADO" : "ADMINISTRADOR_DESATIVADO"), entidade: "USUARIO", registro_id: $anterior.id, valor_anterior: {ativo: $anterior.ativo}, valor_novo: {ativo: $input.ativo}}
         } as $auditoria
+
+        // Confere de novo, já com a gravação feita: duas desativações simultâneas não podem zerar os administradores.
+        db.query usuario {
+          where = $db.usuario.perfil == "ADMINISTRADOR" && $db.usuario.ativo == true
+          return = {type: "count"}
+        } as $admins_depois
+
+        precondition ($admins_depois > 0) {
+          error_type = "inputerror"
+          error = "ULTIMO_ADMINISTRADOR"
+        }
       }
     }
   }

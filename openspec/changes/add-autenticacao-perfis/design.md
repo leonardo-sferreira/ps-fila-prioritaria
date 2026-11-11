@@ -83,6 +83,11 @@ As duas validações ficam nos endpoints de edição, desativação e troca de p
   - médico com ficha CHAMADO pendente.
 
   As validações reaproveitam as funções dos cadastros (`cadastros/email_livre`, `cadastros/especialidades_validas`, `cadastros/sala_valida`, `pacientes/normalizar_cpf`).
+
+  Ajustes da revisão de código (11/11/2026):
+  - o cadastro novo herda a situação do login (`usuario.ativo`): trocar o perfil não reativa ninguém;
+  - a contagem de administradores ativos é refeita dentro da transação, depois da gravação, para que duas trocas ou desativações simultâneas não zerem os administradores;
+  - o cadastro do perfil antigo fica só como histórico: `PATCH medicos/{id}`, `medicos/{id}/ativo`, `recepcao/{id}` e `recepcao/{id}/ativo` recusam com `CADASTRO_DE_OUTRO_PERFIL` quando o login já tem outro perfil.
 - **Sem efeito retroativo na sessão:** o `auth/verificar_acesso` já lê o perfil do usuário a cada requisição, então a troca vale na próxima chamada.
 
 ### D10. Primeiro administrador criado manualmente

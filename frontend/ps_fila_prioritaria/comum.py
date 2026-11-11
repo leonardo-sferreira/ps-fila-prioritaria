@@ -56,6 +56,7 @@ MENSAGENS_ERRO_API = {
     "ULTIMO_ADMINISTRADOR": "O sistema precisa de ao menos um administrador ativo. Ative ou crie outro antes.",
     "PROPRIO_PERFIL": "Você não pode trocar o próprio perfil. Peça a outro administrador.",
     "USUARIO_EDITADO_NOS_CADASTROS": "Médicos e Recepção/Triagem são editados e ativados nos cadastros próprios.",
+    "CADASTRO_DE_OUTRO_PERFIL": "Este cadastro é de um perfil antigo do usuário e fica só como histórico. Gerencie o acesso em Usuários.",
 }
 
 

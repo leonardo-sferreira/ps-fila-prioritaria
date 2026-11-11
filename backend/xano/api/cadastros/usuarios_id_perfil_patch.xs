@@ -152,7 +152,7 @@ query "usuarios/{usuario_id}/perfil" verb=PATCH {
           }
         }
 
-        // 2. Reativa ou cria o cadastro do perfil novo.
+        // 2. Reativa ou cria o cadastro do perfil novo, com a mesma situação do login.
         conditional {
           if ($input.perfil == "MEDICO") {
             conditional {
@@ -160,12 +160,12 @@ query "usuarios/{usuario_id}/perfil" verb=PATCH {
                 db.edit medico {
                   field_name = "id"
                   field_value = $medico_existente.id
-                  data = {registro_profissional: $input.crm, sala_id: $sala_id, ativo: true}
+                  data = {registro_profissional: $input.crm, sala_id: $sala_id, ativo: $anterior.ativo}
                 } as $medico_novo
               }
               else {
                 db.add medico {
-                  data = {usuario_id: $anterior.id, registro_profissional: $input.crm, sala_id: $sala_id, ativo: true}
+                  data = {usuario_id: $anterior.id, registro_profissional: $input.crm, sala_id: $sala_id, ativo: $anterior.ativo}
                 } as $medico_novo
               }
             }
@@ -179,12 +179,12 @@ query "usuarios/{usuario_id}/perfil" verb=PATCH {
                 db.edit recepcao_triagem {
                   field_name = "id"
                   field_value = $recepcao_existente.id
-                  data = {cpf: $cpf, especialidade_referencia_id: $referencia, ativo: true}
+                  data = {cpf: $cpf, especialidade_referencia_id: $referencia, ativo: $anterior.ativo}
                 } as $recepcao_nova
               }
               else {
                 db.add recepcao_triagem {
-                  data = {usuario_id: $anterior.id, cpf: $cpf, especialidade_referencia_id: $referencia, ativo: true}
+                  data = {usuario_id: $anterior.id, cpf: $cpf, especialidade_referencia_id: $referencia, ativo: $anterior.ativo}
                 } as $recepcao_nova
               }
             }
@@ -199,8 +199,19 @@ query "usuarios/{usuario_id}/perfil" verb=PATCH {
         } as $editado
 
         function.run "registrar_alteracao" {
-          input = {usuario_id: $usuario.id, tipo_evento: "PERFIL_ALTERADO", entidade: "USUARIO", registro_id: $anterior.id, valor_anterior: {perfil: $anterior.perfil}, valor_novo: {perfil: $input.perfil, especialidade_ids: $proprias, sala_id: $sala_id, especialidade_referencia_id: $referencia}}
+          input = {usuario_id: $usuario.id, tipo_evento: "PERFIL_ALTERADO", entidade: "USUARIO", registro_id: $anterior.id, valor_anterior: {perfil: $anterior.perfil}, valor_novo: {perfil: $input.perfil, crm: (($input.perfil == "MEDICO") ? $input.crm : null), especialidade_ids: $proprias, sala_id: $sala_id, especialidade_referencia_id: $referencia}}
         } as $auditoria
+
+        // 4. Confere de novo, já com a gravação feita: duas trocas simultâneas não podem zerar os administradores.
+        db.query usuario {
+          where = $db.usuario.perfil == "ADMINISTRADOR" && $db.usuario.ativo == true
+          return = {type: "count"}
+        } as $admins_depois
+
+        precondition ($admins_depois > 0) {
+          error_type = "inputerror"
+          error = "ULTIMO_ADMINISTRADOR"
+        }
       }
     }
   }
