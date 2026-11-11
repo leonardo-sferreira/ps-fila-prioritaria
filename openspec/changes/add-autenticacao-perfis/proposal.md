@@ -3,7 +3,7 @@
 | Campo | Valor |
 |---|---|
 | Change | `add-autenticacao-perfis` |
-| Sprint e entrega | Sprint 1, segunda 05/10 (`autenticacao`). `gestao-usuarios` ainda sem sprint |
+| Sprint e entrega | Sprint 1, segunda 05/10 (`autenticacao`). `gestao-usuarios`: Sprint 4 (revisada em 11/11/2026) |
 | Fatias no Trello | [Setup] Base técnica · Fatia 1 — Login |
 | Dupla | Leonardo Machado (API e dados) · Nicolas (tela) |
 | Depende de | — (primeira change) |
@@ -24,8 +24,8 @@ Todas as telas do sistema (triagem, fila do médico, administração) dependem d
 - Logout, que encerra a sessão do usuário.
 - Controle de acesso por perfil aplicado **no backend**: endpoints protegidos rejeitam requisições sem token, com token inválido ou expirado, de usuário inativo ou de perfil não autorizado.
 - Registro de sessão (login, logout e expiração), distinto do status operacional e do encerramento do plantão, que são tratados em `add-acompanhamento-administrador`. O Médico pode entrar novamente se perder o acesso; a nova sessão começa sem disponibilidade e exige ação explícita para receber chamadas (decisão do PO em 11/11/2026, substitui D16 de 10/11/2026).
-- Gestão de usuários pelo Administrador: listar, criar, editar (nome, e-mail, perfil), redefinir senha e ativar/desativar.
-- **Redefinição de senha pelo próprio usuário ("Esqueci minha senha")**, com código de verificação de 6 dígitos enviado por e-mail (decisão do PO em 25/10/2026). O código vale por 10 minutos, pode ser reenviado após 60 segundos e aceita até 5 tentativas. A resposta é a mesma para e-mail cadastrado ou não, e a nova senha encerra as sessões abertas. A redefinição pelo Administrador continua existindo.
+- Gestão de usuários pelo Administrador (revisada pelo PO em 11/11/2026): listar todos os usuários; criar, editar e ativar/desativar **administradores** (médicos e Recepção/Triagem são mantidos pelos cadastros, que criam o login junto); e **trocar o perfil** de qualquer usuário, exceto o próprio, pedindo os dados que o novo perfil exige (CRM e especialidades para Médico; CPF para Recepção/Triagem). O Administrador **não redefine** a senha de outros: cada um usa "Esqueci minha senha".
+- **Redefinição de senha pelo próprio usuário ("Esqueci minha senha")**, com código de verificação de 6 dígitos enviado por e-mail (decisão do PO em 25/10/2026). O código vale por 10 minutos, pode ser reenviado após 60 segundos e aceita até 5 tentativas. A resposta é a mesma para e-mail cadastrado ou não, e a nova senha encerra as sessões abertas. Por decisão do PO em 11/11/2026, é o único caminho para trocar a senha depois da criação.
 - Criação do primeiro Administrador por procedimento documentado, já que ainda não existe usuário para criá-lo pela tela.
 - Estrutura inicial do projeto: app Reflex, workspace Xano e testes de API.
 
@@ -68,4 +68,5 @@ _Nenhuma (não existem specs anteriores)._
 - [x] Cadastrar `BREVO_REMETENTE` (e-mail verificado na Brevo) no Xano: feito em 25/10/2026. · DECIDIDO PO
 - [x] Código de verificação por e-mail também no login, com as mesmas regras da redefinição (10 min, reenvio em 60 s, 5 tentativas): decidido pelo PO em 25/10/2026. · DECIDIDO PO
 - [ ] Registrar no Confluence e no documento de requisitos: o código no login não está no RF01. · PENDENTE PO
-- [ ] Registrar no Confluence: o RF39 prevê só a redefinição pelo Administrador. · PENDENTE PO
+- [ ] Registrar no Confluence: o RF39 previa a redefinição pelo Administrador; por decisão do PO em 11/11/2026, a troca de senha é só pelo "Esqueci minha senha". · PENDENTE PO
+- [x] `gestao-usuarios` revisada pelo PO em 11/11/2026: só administradores e troca de perfil (sem redefinição de senha pelo Administrador). A visualização das telas de outros perfis ("visualizar como") e o painel do Administrador ficam em `add-acompanhamento-administrador`.

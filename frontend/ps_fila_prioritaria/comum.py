@@ -52,6 +52,10 @@ MENSAGENS_ERRO_API = {
     "IDADES_INCOERENTES": "As idades precisam ficar em ordem: criança < tabela adulta ≤ idoso.",
     "LIMIARES_INCOERENTES": "O limiar da Amarela precisa ser menor que o da Vermelha.",
     "FAIXA_SOBREPOSTA": "Esta faixa se sobrepõe a outra do mesmo sinal vital.",
+    # Gestão de usuários (add-autenticacao-perfis, D9/D14).
+    "ULTIMO_ADMINISTRADOR": "O sistema precisa de ao menos um administrador ativo. Ative ou crie outro antes.",
+    "PROPRIO_PERFIL": "Você não pode trocar o próprio perfil. Peça a outro administrador.",
+    "USUARIO_EDITADO_NOS_CADASTROS": "Médicos e Recepção/Triagem são editados e ativados nos cadastros próprios.",
 }
 
 

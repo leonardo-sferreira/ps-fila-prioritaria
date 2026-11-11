@@ -59,7 +59,31 @@ backend/xano/                   XanoScript versionado (tabelas, funções, endpo
 - **Alternativa descartada:** a estrutura original desta change (`pages/`, `state/`, `tests/api/` na raiz), que criaria pastas sem uso imediato e duplicaria o que já existe.
 
 ### D9. Regras de "último administrador" e "desativar a si mesmo" no backend
-As duas validações ficam nos endpoints de edição e desativação no Xano, não só na tela.
+As duas validações ficam nos endpoints de edição, desativação e troca de perfil no Xano, não só na tela. A função pura `usuarios/deixa_sem_admin` recebe os IDs dos administradores ativos e o usuário afetado e diz se sobraria algum.
+
+### D14. Gestão de usuários revisada (decisão do PO em 11/11/2026)
+- **Escopo:**
+  - `GET usuarios` lista todos;
+  - `POST usuarios` e `PATCH usuarios/{id}` valem só para o perfil `ADMINISTRADOR` (os outros perfis são mantidos pelos cadastros, que criam o login junto);
+  - `PATCH usuarios/{id}/ativo` vale só para administradores (os outros são ativados/desativados pelos cadastros, junto com o médico ou a Recepção/Triagem).
+  - Não há redefinição de senha pelo Administrador.
+- **Troca de perfil:** `PATCH usuarios/{id}/perfil` recebe o perfil novo e os dados que ele exige:
+  - Médico: `crm`, `especialidade_ids` e `sala_id` opcional;
+  - Recepção/Triagem: `cpf` e `especialidade_referencia_id` opcional.
+
+  Na mesma transação:
+  1. Desativa o cadastro do perfil antigo (`medico` ou `recepcao_triagem`).
+  2. Reativa e atualiza o cadastro do perfil novo, se o usuário já o teve (as tabelas têm `usuario_id` único), ou o cria.
+  3. Grava o perfil no `usuario`.
+  4. Audita a troca.
+
+  Recusas:
+  - o próprio perfil;
+  - a troca que deixaria o sistema sem Administrador ativo;
+  - médico com ficha CHAMADO pendente.
+
+  As validações reaproveitam as funções dos cadastros (`cadastros/email_livre`, `cadastros/especialidades_validas`, `cadastros/sala_valida`, `pacientes/normalizar_cpf`).
+- **Sem efeito retroativo na sessão:** o `auth/verificar_acesso` já lê o perfil do usuário a cada requisição, então a troca vale na próxima chamada.
 
 ### D10. Primeiro administrador criado manualmente
 O primeiro Administrador é inserido direto na tabela `usuario`, pelo painel do Xano, seguindo um passo documentado no README. Não haverá endpoint público de cadastro.
