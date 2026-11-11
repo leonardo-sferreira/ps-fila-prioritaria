@@ -58,7 +58,10 @@ Revisada em 11/11/2026 (decisões do PO: escopo completo do card; o cadastro de 
   - `PATCH faixas/{id}` (D8).
   - Evidência (11/11/2026): `GET parametros`, `PATCH parametros/{chave}` generalizado (mantém o `guid` e o reinício do ciclo da fila médica), `GET faixas` e `PATCH faixas/{id}`.
 
-- [ ] 3.8 Validar todos os arquivos com `xano_validate_xanoscript`; publicar na `v1` (`--dry-run` antes; o PO roda o push) e rodar `xano unit_test run_all`
+- [x] 3.8 Validar todos os arquivos com `xano_validate_xanoscript`; publicar na `v1` (`--dry-run` antes; o PO roda o push) e rodar `xano unit_test run_all`
+  - Evidência (11/11/2026): o `--dry-run` mostrou 2 tabelas criadas, `medico` com ADD_FIELD, 8 funções e 26 endpoints criados e 1 atualizado, sem remoções; o PO publicou os 41 arquivos.
+  - O `unit_test run_all` pegou uma falha em `faixa_sobrepoe`: o Xano compara de forma frouxa (`false == null` e `0 == null` são verdadeiros), então a glicemia sem gravidade colidia com a com gravidade. Corrigido com `is_null` (também no `PATCH faixas/{id}`) e com um teste novo para limite 0.
+  - Depois da republicação: **102 passando, 0 falhas**.
 
 ## 4. Reflex
 
