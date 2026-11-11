@@ -86,6 +86,14 @@ def _texto_sinal(valor: Any) -> str:
     return str(valor).replace(".", ",")
 
 
+def _texto_sinal_medido(valor: Any) -> str:
+    """Valor de sinal vital salvo na ficha. 0 nunca é medida válida (o Xano recusa) e é o que o banco grava
+    quando o campo ficou vazio, então aparece como campo vazio, com o exemplo e o aviso de preenchimento."""
+    if valor == 0:
+        return ""
+    return _texto_sinal(valor)
+
+
 def _normalizar_texto(texto: str) -> str:
     """Compara nomes de sintomas sem diferenciar maiúsculas, acentos e espaços extras (como o Xano)."""
     sem_acento = unicodedata.normalize("NFKD", texto).encode("ascii", "ignore").decode("ascii")
@@ -269,7 +277,7 @@ class FichaState(rx.State):
             {"descricao": str(livre.get("descricao") or ""), "pontuacao": int(livre.get("pontuacao") or 0)}
             for livre in (dados.get("sintomas_livres") or [])
         ]
-        self.sinais = {campo: _texto_sinal(ficha.get(campo)) for campo in CAMPOS_SINAIS_VITAIS}
+        self.sinais = {campo: _texto_sinal_medido(ficha.get(campo)) for campo in CAMPOS_SINAIS_VITAIS}
         self.sinais_salvos = dict(self.sinais)
         self.referencias_sinais = _referencias_sinais(dados.get("referencias_sinais"))
         self.glicemia_gravidade = bool(ficha.get("glicemia_sinais_gravidade"))

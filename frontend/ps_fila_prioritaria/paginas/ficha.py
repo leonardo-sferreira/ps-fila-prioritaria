@@ -11,7 +11,6 @@ from ps_fila_prioritaria.componentes import (
     COR_ERRO,
     COR_FUNDO,
     COR_SECUNDARIA,
-    COR_SUCESSO,
     COR_SUPERFICIE,
     COR_TEXTO,
     botao_secundario,
@@ -83,13 +82,13 @@ def rotulo_secao(texto: str) -> rx.Component:
 
 
 def icone_situacao_sinal(campo: str) -> rx.Component:
-    """Mostra se o campo ainda não foi preenchido, foi alterado sem salvar ou já está salvo."""
-    situacao = FichaState.situacao_sinais[campo]
-    return rx.match(
-        situacao,
-        ("vazio", rx.tooltip(rx.icon("circle-dashed", size=16, color=COR_SECUNDARIA, aria_label="Não preenchido"), content="Não preenchido")),
-        ("alterado", rx.tooltip(rx.icon("pencil", size=16, color=COR_ALERTA, aria_label="Alterado, falta salvar"), content="Alterado, falta salvar")),
-        rx.tooltip(rx.icon("circle-check", size=16, color=COR_SUCESSO, aria_label="Salvo"), content="Salvo"),
+    """Aviso no campo que ainda precisa ser preenchido; some quando a triagem digita o valor.
+    A glicemia é opcional e não recebe o aviso."""
+    if campo == "glicemia":
+        return rx.fragment()
+    return rx.cond(
+        FichaState.situacao_sinais[campo] == "vazio",
+        rx.tooltip(rx.icon("circle-alert", size=16, color=COR_ALERTA, aria_label="Preencher este campo"), content="Preencher este campo"),
     )
 
 
@@ -298,11 +297,6 @@ def classificacao_ficha() -> rx.Component:
             checked=FichaState.gestante,
             on_change=FichaState.set_gestante,
             size="2",
-        ),
-        rx.text(
-            "Escala de simulação acadêmica (Azul 0–4, Amarela 5–9, Vermelha 10 ou mais; item de 3 pontos gera Vermelha). Não é protocolo clínico.",
-            size="1",
-            color=COR_SECUNDARIA,
         ),
         spacing="2",
         width="100%",

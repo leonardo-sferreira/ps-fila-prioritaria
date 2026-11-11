@@ -80,9 +80,14 @@ function "classificacao/avaliar_ficha" {
 
     var $pontos_sintomas { value = ($sintomas|map:$$.pontuacao)|merge:($sintomas_livres|map:$$.pontuacao) }
 
+    // 0 gravado pelo banco em campo vazio volta a ser "não medido" (classificacao/sinais_da_ficha).
+    function.run "classificacao/sinais_da_ficha" {
+      input = {ficha: $ficha}
+    } as $sinais_ficha
+
     function.run "classificacao/pontuar" {
       input = {
-        sinais         : {pa_sistolica: $ficha.pa_sistolica, fc: $ficha.fc, fr: $ficha.fr, temperatura: $ficha.temperatura, spo2: $ficha.spo2, glicemia: $ficha.glicemia, glicemia_sinais_gravidade: $ficha.glicemia_sinais_gravidade}
+        sinais         : $sinais_ficha
         gestante       : $ficha.gestante == true
         idade          : $idade
         pontos_sintomas: $pontos_sintomas
