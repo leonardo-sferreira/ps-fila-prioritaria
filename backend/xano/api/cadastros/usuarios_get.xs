@@ -38,4 +38,5 @@ query usuarios verb=GET {
   }
 
   response = $lista
+  guid = "Rx5xq6D72yrttfhm8bQGxPqvCuE"
 }
