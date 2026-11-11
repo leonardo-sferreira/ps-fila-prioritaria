@@ -31,7 +31,7 @@ from ps_fila_prioritaria.paginas.privacidade import privacidade
 from ps_fila_prioritaria.paginas.totem import totem
 
 
-app = rx.App(stylesheets=["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"])
+app = rx.App(stylesheets=["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap", "/tema.css"])
 app.add_page(index, route="/", on_load=AuthState.ir_para_inicio)
 app.add_page(login, route="/login", title="Login")
 app.add_page(login_codigo, route="/login/codigo", title="Código de acesso", on_load=AuthState.exigir_login_pendente)

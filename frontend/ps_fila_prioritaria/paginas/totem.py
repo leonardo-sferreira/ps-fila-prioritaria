@@ -3,12 +3,13 @@
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
-    COR_AZUL,
+    COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
     COR_MARINHO,
     COR_SECUNDARIA,
+    COR_SUPERFICIE,
     COR_TEXTO,
     cabecalho,
 )
@@ -19,7 +20,7 @@ from ps_fila_prioritaria.estados.totem import TotemState
 TIPOS_TOTEM = [
     ("PEDIATRICO", "C", "Pediátrico", "#6554C0", "Crianças de até 11 anos."),
     ("PREFERENCIAL", "P", "Preferencial", "#ED8B00", "Pessoas com 60 anos ou mais, gestantes e demais pessoas com direito a atendimento preferencial."),
-    ("NORMAL", "N", "Normal", COR_AZUL, "Todos os demais pacientes."),
+    ("NORMAL", "N", "Normal", "#1565C0", "Todos os demais pacientes."),
 ]
 
 
@@ -42,7 +43,7 @@ def cartao_tipo_totem(tipo: str, letra: str, nome: str, cor: str, descricao: str
         ),
         on_click=TotemState.emitir(tipo),
         cursor="pointer",
-        background="white",
+        background=COR_SUPERFICIE,
         border=f"1px solid {COR_BORDA}",
         border_top=f"6px solid {cor}",
         border_radius="12px",
@@ -77,7 +78,7 @@ def aviso_totem() -> rx.Component:
                     color=COR_SECUNDARIA,
                     text_align="center",
                 ),
-                rx.button("Concluir", on_click=TotemState.concluir, size="4", background=COR_AZUL, width="100%"),
+                rx.button("Concluir", on_click=TotemState.concluir, size="4", background=COR_AZUL_BOTAO, width="100%"),
                 align="center",
                 spacing="4",
             ),
@@ -85,7 +86,7 @@ def aviso_totem() -> rx.Component:
                 rx.center(rx.text("!", weight="bold", size="7", color=COR_ERRO), width="72px", height="72px", border_radius="50%", background=f"{COR_ERRO}1F"),
                 rx.text(TotemState.erro, weight="bold", size="6", color=COR_TEXTO, text_align="center"),
                 rx.text("Toque em Voltar para tentar de novo ou procure a recepção.", size="3", color=COR_SECUNDARIA, text_align="center"),
-                rx.button("Voltar", on_click=TotemState.concluir, size="4", background=COR_AZUL, width="100%"),
+                rx.button("Voltar", on_click=TotemState.concluir, size="4", background=COR_AZUL_BOTAO, width="100%"),
                 align="center",
                 spacing="4",
             ),
@@ -94,7 +95,7 @@ def aviso_totem() -> rx.Component:
     return rx.cond(
         TotemState.emitindo | (TotemState.codigo != "") | (TotemState.erro != ""),
         rx.center(
-            rx.box(conteudo, background="white", border_radius="16px", padding="40px", width="min(100%, 480px)", box_shadow="0 8px 24px rgba(0, 0, 0, 0.18)"),
+            rx.box(conteudo, background=COR_SUPERFICIE, border_radius="16px", padding="40px", width="min(100%, 480px)", box_shadow="0 8px 24px rgba(0, 0, 0, 0.18)"),
             position="fixed",
             inset="0",
             background="rgba(0, 0, 0, 0.45)",

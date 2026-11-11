@@ -5,12 +5,14 @@ from typing import Any
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
-    COR_AZUL,
+    COR_ALERTA,
+    COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
     COR_SECUNDARIA,
     COR_SUCESSO,
+    COR_SUPERFICIE,
     COR_TEXTO,
     botao_secundario,
     cabecalho,
@@ -86,7 +88,7 @@ def icone_situacao_sinal(campo: str) -> rx.Component:
     return rx.match(
         situacao,
         ("vazio", rx.tooltip(rx.icon("circle-dashed", size=16, color=COR_SECUNDARIA, aria_label="Não preenchido"), content="Não preenchido")),
-        ("alterado", rx.tooltip(rx.icon("pencil", size=16, color="#B45309", aria_label="Alterado, falta salvar"), content="Alterado, falta salvar")),
+        ("alterado", rx.tooltip(rx.icon("pencil", size=16, color=COR_ALERTA, aria_label="Alterado, falta salvar"), content="Alterado, falta salvar")),
         rx.tooltip(rx.icon("circle-check", size=16, color=COR_SUCESSO, aria_label="Salvo"), content="Salvo"),
     )
 
@@ -270,7 +272,7 @@ def cartao_prioridade(codigo: str, nome: str, descricao: str, cor: str) -> rx.Co
         rx.cond(calculada_diferente, rx.badge("calculada", color_scheme="gray", variant="outline", margin_top="4px")),
         border=rx.cond(atual, f"2px solid {cor}", f"1px solid {COR_BORDA}"),
         border_left=f"6px solid {cor}",
-        background=rx.cond(atual, f"{cor}14", "white"),
+        background=rx.cond(atual, f"{cor}14", COR_SUPERFICIE),
         border_radius="8px",
         padding="12px 16px",
         flex="1",
@@ -332,7 +334,7 @@ def dialogo_ajuste_prioridade() -> rx.Component:
                 rx.cond(FichaState.ajuste_erro != "", rx.text(FichaState.ajuste_erro, size="2", color=COR_ERRO)),
                 rx.hstack(
                     rx.dialog.close(botao_secundario("Cancelar")),
-                    rx.button("Confirmar ajuste", on_click=FichaState.confirmar_ajuste, loading=FichaState.ajustando, size="3", background=COR_AZUL),
+                    rx.button("Confirmar ajuste", on_click=FichaState.confirmar_ajuste, loading=FichaState.ajustando, size="3", background=COR_AZUL_BOTAO),
                     justify="end",
                     spacing="3",
                     width="100%",
@@ -406,7 +408,7 @@ def recepcao_ficha() -> rx.Component:
                                         botao_secundario("Ajustar prioridade (justificativa obrigatória)", on_click=FichaState.abrir_ajuste),
                                         rx.hstack(
                                             botao_secundario("Salvar ficha", on_click=FichaState.salvar, loading=FichaState.salvando),
-                                            rx.button("Confirmar e gerar senha", on_click=FichaState.confirmar_triagem, loading=FichaState.confirmando, size="3", background=COR_AZUL, min_width="220px"),
+                                            rx.button("Confirmar e gerar senha", on_click=FichaState.confirmar_triagem, loading=FichaState.confirmando, size="3", background=COR_AZUL_BOTAO, min_width="220px"),
                                             spacing="3",
                                             wrap="wrap",
                                         ),
@@ -428,7 +430,7 @@ def recepcao_ficha() -> rx.Component:
                                                 rx.text("Triagem confirmada: senha ", rx.text.strong(FichaState.senha_ficha), " · ", FichaState.especialidade_ficha, size="2"),
                                             ),
                                             rx.spacer(),
-                                            rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="1", background=COR_AZUL),
+                                            rx.button("Reimprimir comprovante", on_click=FichaState.reimprimir, size="1", background=COR_AZUL_BOTAO),
                                             rx.cond(
                                                 FichaState.aviso_senha != "",
                                                 rx.icon_button(rx.icon("x", size=14), on_click=FichaState.fechar_aviso_senha, variant="ghost", size="1", aria_label="Fechar aviso"),

@@ -6,11 +6,13 @@ import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
     COR_AZUL,
+    COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
     COR_SECUNDARIA,
     COR_SUCESSO,
+    COR_SUPERFICIE,
     COR_TEXTO,
     botao_secundario,
     cabecalho,
@@ -75,7 +77,7 @@ def cartao_chamado(ticket: dict[str, Any]) -> rx.Component:
                 ),
                 rx.cond(
                     presente,
-                    rx.button("Identificar paciente", on_click=FilaTicketsState.identificar(ticket["id"]), size="3", background=COR_AZUL),
+                    rx.button("Identificar paciente", on_click=FilaTicketsState.identificar(ticket["id"]), size="3", background=COR_AZUL_BOTAO),
                     rx.button("Marcar presente", on_click=FilaTicketsState.acao(ticket["id"], "PRESENTE"), size="3", background=COR_SUCESSO),
                 ),
                 spacing="3",
@@ -117,7 +119,7 @@ def resumo_tipo(item: dict[str, Any]) -> rx.Component:
         padding="6px 14px",
         border=f"1px solid {COR_BORDA}",
         border_radius="999px",
-        background="white",
+        background=COR_SUPERFICIE,
     )
 
 
@@ -139,7 +141,7 @@ def pagina_fila_tickets() -> rx.Component:
             rx.center(
                 rx.vstack(
                     rx.hstack(
-                        rx.button("Chamar próximo", on_click=FilaTicketsState.proximo, size="3", background=COR_AZUL, min_width="200px"),
+                        rx.button("Chamar próximo", on_click=FilaTicketsState.proximo, size="3", background=COR_AZUL_BOTAO, min_width="200px"),
                         botao_secundario("Atualizar", on_click=FilaTicketsState.carregar),
                         rx.spacer(),
                         rx.foreach(FilaTicketsState.resumo_tipos, resumo_tipo),

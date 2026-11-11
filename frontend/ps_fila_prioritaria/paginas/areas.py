@@ -5,12 +5,13 @@ from typing import Any
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
-    COR_AZUL,
+    COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
     COR_SECUNDARIA,
     COR_SUCESSO,
+    COR_SUPERFICIE,
     COR_TEXTO,
     botao_secundario,
     cabecalho,
@@ -35,7 +36,7 @@ def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Compon
                     conteudo,
                     spacing="3",
                     padding="28px 32px",
-                    background="white",
+                    background=COR_SUPERFICIE,
                     border=f"1px solid {COR_BORDA}",
                     border_radius="12px",
                     width="min(100%, 772px)",
@@ -57,7 +58,7 @@ def area_recepcao() -> rx.Component:
         "RECEPÇÃO/TRIAGEM",
         "Recepção/Triagem",
         rx.vstack(
-            rx.link(rx.button("Fila de pré-triagem", size="3", background=COR_AZUL), href="/recepcao/fila"),
+            rx.link(rx.button("Fila de pré-triagem", size="3", background=COR_AZUL_BOTAO), href="/recepcao/fila"),
             rx.button("Identificar paciente sem ticket", size="3", variant="outline", on_click=PacienteState.iniciar_sem_ticket),
             rx.link(rx.button("Fichas do dia", size="3", variant="outline"), href="/recepcao/fichas"),
         ),
