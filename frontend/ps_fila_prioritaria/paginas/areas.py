@@ -5,7 +5,6 @@ from typing import Any
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
-    COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
@@ -20,7 +19,6 @@ from ps_fila_prioritaria.componentes import (
 )
 from ps_fila_prioritaria.estados.autenticacao import AuthState
 from ps_fila_prioritaria.estados.expiracao import ExpiracaoState
-from ps_fila_prioritaria.estados.pacientes import PacienteState
 
 
 def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Component) -> rx.Component:
@@ -48,19 +46,6 @@ def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Compon
             font_family="Inter, sans-serif",
             min_height="100vh",
             width="100%",
-        ),
-    )
-
-
-def area_recepcao() -> rx.Component:
-    return area_inicial(
-        "RECEPCAO_TRIAGEM",
-        "RECEPÇÃO/TRIAGEM",
-        "Recepção/Triagem",
-        rx.vstack(
-            rx.link(rx.button("Fila de pré-triagem", size="3", background=COR_AZUL_BOTAO), href="/recepcao/fila"),
-            rx.button("Identificar paciente sem ticket", size="3", variant="outline", on_click=PacienteState.iniciar_sem_ticket),
-            rx.link(rx.button("Fichas do dia", size="3", variant="outline"), href="/recepcao/fichas"),
         ),
     )
 
