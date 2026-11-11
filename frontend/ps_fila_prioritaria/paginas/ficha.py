@@ -93,15 +93,10 @@ def icone_situacao_sinal(campo: str) -> rx.Component:
 
 
 def campo_sinal(rotulo: str, campo: str, exemplo: str) -> rx.Component:
+    # Rótulo em cima, referência embaixo do campo: com a referência ao lado do rótulo, os rótulos longos quebravam
+    # a linha e desalinhavam os campos da mesma fileira.
     return rx.vstack(
-        rx.hstack(
-            rx.text(rotulo, size="1", weight="medium", color=COR_SECUNDARIA),
-            rx.text(FichaState.referencias_sinais[campo], size="1", color=COR_SECUNDARIA),
-            justify="between",
-            gap="8px",
-            wrap="wrap",
-            width="100%",
-        ),
+        rx.text(rotulo, size="1", weight="medium", color=COR_SECUNDARIA, white_space="nowrap", overflow="hidden", text_overflow="ellipsis", max_width="100%"),
         rx.input(
             rx.input.slot(icone_situacao_sinal(campo), side="right"),
             value=FichaState.sinais[campo],
@@ -111,6 +106,8 @@ def campo_sinal(rotulo: str, campo: str, exemplo: str) -> rx.Component:
             size="3",
             width="100%",
         ),
+        # Altura fixa mesmo sem referência, para todos os campos da fileira terminarem na mesma linha.
+        rx.text(FichaState.referencias_sinais[campo], size="1", color=COR_SECUNDARIA, min_height="16px"),
         spacing="1",
         width="100%",
     )
@@ -290,7 +287,7 @@ def classificacao_ficha() -> rx.Component:
         ),
         rx.cond(
             FichaState.aviso_classificacao != "",
-            rx.callout(FichaState.aviso_classificacao, icon="triangle-alert", color_scheme="amber", size="1", width="100%"),
+            rx.text(FichaState.aviso_classificacao, size="2", color=COR_ALERTA),
         ),
         rx.checkbox(
             "Gestante — idoso e criança são identificados automaticamente pela data de nascimento",
