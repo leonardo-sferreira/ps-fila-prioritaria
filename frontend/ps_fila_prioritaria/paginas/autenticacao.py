@@ -6,12 +6,16 @@ import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
     COR_AZUL,
+    COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
     COR_SECUNDARIA,
     COR_SUCESSO,
+    COR_SUCESSO_FUNDO,
+    COR_SUPERFICIE,
     COR_TEXTO,
+    botao_tema,
     campo_rotulado,
     campo_senha,
     carregando,
@@ -37,7 +41,7 @@ def cartao_acesso(icone: rx.Component, titulo: str, subtitulo: rx.Component | st
         align="center",
         spacing="3",
         padding="40px 20px",
-        background="white",
+        background=COR_SUPERFICIE,
         border=f"1px solid {COR_BORDA}",
         border_radius="16px",
         box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",
@@ -49,6 +53,7 @@ def cartao_acesso(icone: rx.Component, titulo: str, subtitulo: rx.Component | st
 def fundo_acesso(conteudo: rx.Component) -> rx.Component:
     """Fundo das páginas públicas, com o rodapé e o link do aviso de privacidade (add-privacidade, D2)."""
     return rx.center(
+        rx.box(botao_tema(), position="absolute", top="16px", right="16px"),
         rx.vstack(
             conteudo,
             rx.hstack(
@@ -67,6 +72,7 @@ def fundo_acesso(conteudo: rx.Component) -> rx.Component:
         font_family="Inter, sans-serif",
         min_height="100vh",
         padding="24px 16px",
+        position="relative",
         width="100%",
     )
 
@@ -79,7 +85,7 @@ def mensagens_acesso(mensagem: rx.Var, aviso: rx.Var | None = None) -> rx.Compon
 
 
 def botao_principal(texto: str, ocupado: rx.Var) -> rx.Component:
-    return rx.button(texto, type="submit", loading=ocupado, size="3", background=COR_AZUL, width="100%")
+    return rx.button(texto, type="submit", loading=ocupado, size="3", background=COR_AZUL_BOTAO, width="100%")
 
 
 def link_acao(texto: str, **props: Any) -> rx.Component:
@@ -208,8 +214,8 @@ def senha_nova() -> rx.Component:
 def senha_sucesso() -> rx.Component:
     # A4 — Senha redefinida.
     return cartao_acesso(
-        rx.center(rx.icon("check", size=28, color=COR_SUCESSO), width="64px", height="64px", border_radius="50%", background="#E8F5E9"),
+        rx.center(rx.icon("check", size=28, color=COR_SUCESSO), width="64px", height="64px", border_radius="50%", background=COR_SUCESSO_FUNDO),
         "Senha redefinida",
         "Sua senha foi alterada. A senha anterior deixou de funcionar; entre com a nova senha.",
-        rx.link(rx.button("Ir para o login", size="3", background=COR_AZUL, width="100%"), href="/login", width="100%"),
+        rx.link(rx.button("Ir para o login", size="3", background=COR_AZUL_BOTAO, width="100%"), href="/login", width="100%"),
     )

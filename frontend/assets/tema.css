@@ -1,0 +1,48 @@
+/* Tema claro/escuro do Prioriza. As cores das telas usam estas variáveis (ver componentes.py);
+   o Reflex põe a classe "dark" no <html> quando o modo escuro está ativo. */
+:root {
+  --ps-marinho: #123C6B;
+  --ps-azul: #1565C0;
+  --ps-azul-botao: #1565C0;
+  --ps-fundo: #F3F5F7;
+  --ps-superficie: #FFFFFF;
+  --ps-borda: #DDE3E8;
+  --ps-texto: #1A2027;
+  --ps-secundaria: #66707A;
+  --ps-sucesso: #2E7D32;
+  --ps-sucesso-fundo: #E8F5E9;
+  --ps-erro: #C62828;
+  --ps-alerta: #B45309;
+  --ps-destaque: #E8F0FB;
+  --ps-hover: #F7F9FB;
+}
+
+.dark {
+  --ps-marinho: #0B2545;
+  /* Azul de texto/links (contraste 5,7 nos cartões) e de fundo de botão (5,2 com texto branco). */
+  --ps-azul: #5B9BEA;
+  --ps-azul-botao: #2563EB;
+  --ps-fundo: #111418;
+  --ps-superficie: #1B2026;
+  --ps-borda: #2E363F;
+  --ps-texto: #E6EAEE;
+  --ps-secundaria: #9AA4AE;
+  --ps-sucesso: #66BB6A;
+  --ps-sucesso-fundo: #1E3323;
+  --ps-erro: #EF5350;
+  --ps-alerta: #F59E0B;
+  --ps-destaque: #1D2C40;
+  --ps-hover: #222932;
+}
+
+/* Papel é sempre claro: comprovante e ficha impressa saem iguais nos dois modos. */
+@media print {
+  :root, .dark {
+    --ps-fundo: #FFFFFF;
+    --ps-superficie: #FFFFFF;
+    --ps-borda: #DDE3E8;
+    --ps-texto: #000000;
+    --ps-secundaria: #444444;
+  }
+  .dark body { color: #000000; }
+}

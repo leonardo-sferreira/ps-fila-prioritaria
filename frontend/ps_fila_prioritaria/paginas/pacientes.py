@@ -3,12 +3,14 @@
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
-    COR_AZUL,
+    COR_ALERTA,
+    COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
     COR_SECUNDARIA,
     COR_SUCESSO,
+    COR_SUPERFICIE,
     COR_TEXTO,
     botao_secundario,
     cabecalho,
@@ -47,7 +49,7 @@ def mensagem_identificacao() -> rx.Component:
     cor = rx.cond(
         PacienteState.erro,
         COR_ERRO,
-        rx.cond(na_fila, "#B45309", rx.cond(PacienteState.paciente_encontrado, COR_SUCESSO, COR_SECUNDARIA)),
+        rx.cond(na_fila, COR_ALERTA, rx.cond(PacienteState.paciente_encontrado, COR_SUCESSO, COR_SECUNDARIA)),
     )
     return rx.cond(
         PacienteState.mensagem != "",
@@ -78,7 +80,7 @@ def rodape_identificacao() -> rx.Component:
                                 "Abrir ficha atual",
                                 on_click=PacienteState.abrir_ficha_atual,
                                 size="3",
-                                background=COR_AZUL,
+                                background=COR_AZUL_BOTAO,
                                 min_width="240px",
                             ),
                             rx.button(
@@ -86,13 +88,13 @@ def rodape_identificacao() -> rx.Component:
                                 on_click=PacienteState.continuar_atendimento,
                                 loading=PacienteState.abrindo_ficha,
                                 size="3",
-                                background=COR_AZUL,
+                                background=COR_AZUL_BOTAO,
                                 min_width="240px",
                             ),
                         ),
                         spacing="3",
                     ),
-                    rx.button("Salvar cadastro", on_click=PacienteState.cadastrar, size="3", background=COR_AZUL, min_width="240px"),
+                    rx.button("Salvar cadastro", on_click=PacienteState.cadastrar, size="3", background=COR_AZUL_BOTAO, min_width="240px"),
                 ),
                 align="center",
                 spacing="3",
@@ -129,7 +131,7 @@ def recepcao_pacientes() -> rx.Component:
                                 max_width="342px",
                                 color_scheme=rx.cond(PacienteState.erro, "red", "gray"),
                             ),
-                            rx.button("Pesquisar", on_click=PacienteState.buscar, size="3", background=COR_AZUL, min_width="160px"),
+                            rx.button("Pesquisar", on_click=PacienteState.buscar, size="3", background=COR_AZUL_BOTAO, min_width="160px"),
                             spacing="4",
                             width="100%",
                         ),
@@ -145,7 +147,7 @@ def recepcao_pacientes() -> rx.Component:
                 ),
                 rodape_identificacao(),
                 spacing="0",
-                background="white",
+                background=COR_SUPERFICIE,
                 border=f"1px solid {COR_BORDA}",
                 border_radius="12px",
                 box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",

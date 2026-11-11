@@ -8,6 +8,7 @@ from ps_fila_prioritaria.componentes import (
     COR_BORDA,
     COR_ERRO,
     COR_FUNDO,
+    COR_HOVER,
     COR_SECUNDARIA,
     COR_TEXTO,
     botao_secundario,
@@ -77,7 +78,7 @@ def linha_ficha(ficha: dict[str, Any]) -> rx.Component:
         width="100%",
         padding="10px 16px",
         border_bottom=f"1px solid {COR_BORDA}",
-        _hover={"background": "#F7F9FB"},
+        _hover={"background": COR_HOVER},
     )
 
 

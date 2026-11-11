@@ -4,8 +4,10 @@ import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
     COR_AZUL,
+    COR_AZUL_BOTAO,
     COR_FUNDO,
     COR_SECUNDARIA,
+    COR_SUPERFICIE,
     botao_secundario,
     cabecalho,
     cartao_painel,
@@ -28,7 +30,7 @@ def area_medico() -> rx.Component:
                     botao_secundario("Ausente", on_click=MedicoState.definir_status("AUSENTE"), disabled=MedicoState.ocupado | (MedicoState.status_operacional == "AUSENTE")),
                     rx.spacer(),
                     botao_secundario("Atualizar", on_click=MedicoState.carregar),
-                    rx.button("Chamar próximo", on_click=MedicoState.chamar, disabled=MedicoState.ocupado | MedicoState.tem_ficha | ~MedicoState.apto, background=COR_AZUL),
+                    rx.button("Chamar próximo", on_click=MedicoState.chamar, disabled=MedicoState.ocupado | MedicoState.tem_ficha | ~MedicoState.apto, background=COR_AZUL_BOTAO),
                     width="100%", align="center", wrap="wrap", spacing="3",
                 ),
                 rx.cond(MedicoState.status_operacional == "INDISPONÍVEL", rx.callout("Para receber chamadas, escolha ‘Ficar disponível’ quando estiver pronto para atender.", color_scheme="blue", width="100%")),
@@ -41,7 +43,7 @@ def area_medico() -> rx.Component:
                         rx.text("Paciente: ", MedicoState.ficha_atual["nome"], size="3"),
                         rx.text("Oportunidade ", MedicoState.ficha_atual["oportunidade"], " · tentativa ", MedicoState.ficha_atual["tentativa"], size="2"),
                         rx.hstack(
-                            rx.button("Repetir chamada", on_click=MedicoState.repetir, disabled=MedicoState.ocupado, background=COR_AZUL),
+                            rx.button("Repetir chamada", on_click=MedicoState.repetir, disabled=MedicoState.ocupado, background=COR_AZUL_BOTAO),
                             rx.button("Compareceu", on_click=MedicoState.compareceu, disabled=MedicoState.ocupado, color_scheme="green"),
                             rx.button("Registrar desistência", on_click=MedicoState.pedir_desistencia, disabled=MedicoState.ocupado, color_scheme="red", variant="outline"),
                             rx.link(botao_secundario("Imprimir ficha"), href="/medico/ficha/" + MedicoState.ficha_atual["id"].to_string() + "/imprimir", target="_blank"),
@@ -101,7 +103,7 @@ def pagina_impressao_medico() -> rx.Component:
                     rx.text("SpO₂: ", ImpressaoMedicoState.spo2),
                     rx.text("Glicemia: ", ImpressaoMedicoState.glicemia),
                     rx.hstack(rx.button("Imprimir", on_click=rx.call_script("window.print()")), rx.link("Voltar", href="/medico"), class_name="nao-imprimir"),
-                    spacing="3", width="min(100%, 800px)", padding="32px", background="white",
+                    spacing="3", width="min(100%, 800px)", padding="32px", background=COR_SUPERFICIE,
                 ), rx.text("Carregando ficha..."))),
         padding="24px", background=COR_FUNDO, min_height="100vh",
     ))

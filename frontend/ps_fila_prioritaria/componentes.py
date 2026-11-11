@@ -8,33 +8,62 @@ from ps_fila_prioritaria.estados.autenticacao import AuthState
 from ps_fila_prioritaria.estados.pacientes import PacienteState
 
 
-# Cores do protótipo no Figma (telas 3 e 3a–3e).
-COR_MARINHO = "#123C6B"
+# Cores do protótipo no Figma (telas 3 e 3a–3e), como variáveis CSS: os valores do modo claro e do escuro
+# ficam em assets/tema.css. Cores clínicas (Vermelha/Amarela/Azul) e dos tipos de ticket não mudam.
+COR_MARINHO = "var(--ps-marinho)"
 
 
-COR_AZUL = "#1565C0"
+COR_AZUL = "var(--ps-azul)"
 
 
-COR_FUNDO = "#F3F5F7"
+# Fundo de botão: no escuro precisa ser mais fechado que o azul de texto para o branco ter contraste.
+COR_AZUL_BOTAO = "var(--ps-azul-botao)"
 
 
-COR_BORDA = "#DDE3E8"
+COR_FUNDO = "var(--ps-fundo)"
 
 
-COR_TEXTO = "#1A2027"
+COR_BORDA = "var(--ps-borda)"
 
 
-COR_SECUNDARIA = "#66707A"
+COR_TEXTO = "var(--ps-texto)"
 
 
-COR_SUCESSO = "#2E7D32"
+COR_SECUNDARIA = "var(--ps-secundaria)"
 
 
-COR_ERRO = "#C62828"
+COR_SUCESSO = "var(--ps-sucesso)"
+
+
+COR_ERRO = "var(--ps-erro)"
+
+
+# Fundo de cartões e barras (antes "white"), destaque/hover do menu e das linhas, e alerta em âmbar.
+COR_SUPERFICIE = "var(--ps-superficie)"
+COR_DESTAQUE = "var(--ps-destaque)"
+COR_HOVER = "var(--ps-hover)"
+COR_ALERTA = "var(--ps-alerta)"
+COR_SUCESSO_FUNDO = "var(--ps-sucesso-fundo)"
+
+
+def botao_tema(cor: str = COR_SECUNDARIA) -> rx.Component:
+    """Alterna entre modo claro e escuro; a escolha fica salva no navegador."""
+    return rx.icon_button(
+        rx.color_mode_cond(light=rx.icon("moon", size=18), dark=rx.icon("sun", size=18)),
+        on_click=rx.toggle_color_mode,
+        variant="ghost",
+        size="2",
+        color=cor,
+        cursor="pointer",
+        aria_label=rx.color_mode_cond(light="Ativar modo escuro", dark="Ativar modo claro"),
+        title=rx.color_mode_cond(light="Modo escuro", dark="Modo claro"),
+        class_name="nao-imprimir",
+    )
 
 
 def sessao_no_cabecalho() -> rx.Component:
     return rx.hstack(
+        botao_tema("#CCDEF0"),
         rx.text(AuthState.nome, size="2", color="#CCDEF0"),
         rx.button("Sair", on_click=AuthState.sair, variant="outline", size="2", color="white", border_color="rgba(255, 255, 255, 0.4)"),
         align="center",
@@ -54,7 +83,7 @@ def cabecalho(titulo: str, subtitulo: str, com_sessao: bool = True) -> rx.Compon
         ),
         rx.spacer(),
         # Telas públicas (Totem) não têm sessão da equipe.
-        *([sessao_no_cabecalho()] if com_sessao else []),
+        *([sessao_no_cabecalho()] if com_sessao else [botao_tema("#CCDEF0")]),
         rx.vstack(
             # Relógio do navegador, atualizado a cada segundo no fuso do PS.
             rx.moment(format="DD/MM/YYYY", interval=1000, tz="America/Sao_Paulo", color="#CCDEF0", font_size="14px", font_weight="500"),
@@ -109,9 +138,9 @@ def aba_menu(nome: str, rota: str, ativa: bool) -> rx.Component:
     conteudo = rx.box(
         rx.text(nome, size="2", weight="bold" if ativa else "medium", color=COR_AZUL if ativa else COR_SECUNDARIA),
         padding="12px 16px",
-        background="#E8F0FB" if ativa else "transparent",
+        background=COR_DESTAQUE if ativa else "transparent",
         border_bottom=f"2px solid {COR_AZUL}" if ativa else "2px solid transparent",
-        _hover={"background": "#E8F0FB"},
+        _hover={"background": COR_DESTAQUE},
     )
     if rota == "/recepcao/pacientes":
         # Identificação a partir do menu começa sem ticket (o ticket chega pela fila, em "Identificar").
@@ -124,7 +153,7 @@ def menu_recepcao(rota_ativa: str = "") -> rx.Component:
         *[aba_menu(nome, rota, rota == rota_ativa) for nome, rota in ABAS_RECEPCAO],
         spacing="1",
         align="end",
-        background="white",
+        background=COR_SUPERFICIE,
         border_bottom=f"1px solid {COR_BORDA}",
         padding="0 32px",
         width="100%",
@@ -193,14 +222,20 @@ def logo_ps() -> rx.Component:
 
 def logo_prioriza_completo() -> rx.Component:
     """Logo com o nome, usado só no login (Figma: Marca/Logo Prioriza, versão colorida)."""
-    return rx.image(src="/logo/logo-prioriza.svg", alt="Prioriza · Fila de atendimento", width="260px", height="80px")
+    # No modo escuro, a versão branca do logo (o nome em azul-marinho some no fundo escuro).
+    return rx.image(
+        src=rx.color_mode_cond(light="/logo/logo-prioriza.svg", dark="/logo/logo-prioriza-branco.svg"),
+        alt="Prioriza · Fila de atendimento",
+        width="260px",
+        height="80px",
+    )
 
 
 def cartao_painel(*filhos: rx.Component, **props: Any) -> rx.Component:
     props.setdefault("width", "100%")
     return rx.box(
         *filhos,
-        background="white",
+        background=COR_SUPERFICIE,
         border=f"1px solid {COR_BORDA}",
         border_radius="12px",
         box_shadow="0 2px 8px rgba(18, 60, 107, 0.06)",

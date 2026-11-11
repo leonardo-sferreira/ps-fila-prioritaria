@@ -13,7 +13,7 @@ from ps_fila_prioritaria.estados.pacientes import PacienteState
 
 
 # Nome e cor de cada tipo na fila de pré-triagem (mesmas cores do Totem, tela 1/2 do Figma).
-COR_SECUNDARIA_FILA = "#66707A"
+COR_SECUNDARIA_FILA = "var(--ps-secundaria)"
 
 
 APARENCIA_TIPO_TICKET = {

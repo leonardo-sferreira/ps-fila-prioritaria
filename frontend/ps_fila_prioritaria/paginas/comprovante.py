@@ -3,7 +3,7 @@
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
-    COR_AZUL,
+    COR_AZUL_BOTAO,
     COR_FUNDO,
     COR_SECUNDARIA,
     botao_secundario,
@@ -46,7 +46,7 @@ def comprovante_senha() -> rx.Component:
             ),
         ),
         rx.hstack(
-            rx.button("Imprimir", on_click=rx.call_script("window.print()"), size="3", background=COR_AZUL),
+            rx.button("Imprimir", on_click=rx.call_script("window.print()"), size="3", background=COR_AZUL_BOTAO),
             rx.link(botao_secundario("Voltar à ficha"), href="/recepcao/ficha/" + ComprovanteState.ficha_id.to_string()),
             rx.link(botao_secundario("Nova identificação"), href="/recepcao"),
             spacing="3",
