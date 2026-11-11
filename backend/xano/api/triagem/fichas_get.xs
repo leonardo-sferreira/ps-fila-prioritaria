@@ -1,4 +1,4 @@
-// Fichas do dia da Recepção/Triagem (add-fichas-do-dia, D1): não finalizadas de qualquer data e finalizadas com
+// Fichas do dia da Recepção/Triagem (add-fichas-do-dia, D1); o Administrador também lê, para o dashboard (add-acompanhamento-administrador, D6): não finalizadas de qualquer data e finalizadas com
 // chegada hoje (America/Sao_Paulo), da mais recente para a mais antiga. Sem CPF, sintomas ou sinais vitais.
 query "fichas" verb=GET {
   api_group = "Triagem"
@@ -10,7 +10,7 @@ query "fichas" verb=GET {
 
   stack {
     function.run "auth/verificar_acesso" {
-      input = {usuario_id: $auth.id, perfis_permitidos: ["RECEPCAO_TRIAGEM"]}
+      input = {usuario_id: $auth.id, perfis_permitidos: ["RECEPCAO_TRIAGEM", "ADMINISTRADOR"]}
     } as $usuario
 
     var $inicio_do_dia {

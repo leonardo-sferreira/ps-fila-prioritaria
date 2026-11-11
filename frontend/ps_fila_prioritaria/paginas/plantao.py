@@ -129,10 +129,9 @@ def bloco_espera() -> rx.Component:
     )
 
 
-def etapa(item: dict[str, Any], indice: rx.Var) -> rx.Component:
-    """Uma etapa do percurso do paciente; a seta à esquerda liga à etapa anterior."""
-    return rx.link(
-        rx.hstack(
+def etapa(item: dict[str, Any], indice: rx.Var, com_link: bool = True) -> rx.Component:
+    """Uma etapa do percurso do paciente; a seta à esquerda liga à etapa anterior. Sem link no Administrador."""
+    conteudo = rx.hstack(
             rx.cond(indice > 0, rx.icon("chevron-right", size=16, color=COR_BORDA, flex_shrink="0")),
             rx.vstack(
                 rx.text(item["quantidade"], font_size="36px", weight="bold", color=COR_TEXTO, style=NUMERO),
@@ -147,25 +146,22 @@ def etapa(item: dict[str, Any], indice: rx.Var) -> rx.Component:
             align="center",
             spacing="2",
             width="100%",
-        ),
-        href=item["rota"],
-        underline="none",
-        width="100%",
-    )
+        )
+    return rx.link(conteudo, href=item["rota"], underline="none", width="100%") if com_link else conteudo
 
 
-def percurso() -> rx.Component:
+def percurso(com_links: bool = True) -> rx.Component:
     return painel(
         rx.vstack(
             rx.hstack(
                 rotulo("Percurso do dia"),
                 rx.spacer(),
-                rx.text("do Totem à conclusão · toque para abrir", size="1", color=COR_SECUNDARIA),
+                rx.text("do Totem à conclusão" + (" · toque para abrir" if com_links else ""), size="1", color=COR_SECUNDARIA),
                 width="100%",
                 align="center",
             ),
             rx.grid(
-                rx.foreach(PlantaoState.etapas, etapa),
+                rx.foreach(PlantaoState.etapas, lambda item, indice: etapa(item, indice, com_links)),
                 columns=rx.breakpoints(initial="2", sm="3", md="5"),
                 gap="16px",
                 width="100%",
@@ -260,7 +256,8 @@ def chegadas_por_hora() -> rx.Component:
     )
 
 
-def painel_plantao() -> rx.Component:
+def painel_plantao(extras: tuple[rx.Component, ...] = (), com_links: bool = True) -> rx.Component:
+    """Painel do plantão. O Administrador acrescenta blocos depois da espera e vê o percurso sem links (D6)."""
     return rx.vstack(
         rx.hstack(
             rx.vstack(
@@ -281,7 +278,8 @@ def painel_plantao() -> rx.Component:
         ),
         rx.cond(PlantaoState.mensagem != "", rx.text(PlantaoState.mensagem, size="2", color=COR_ERRO)),
         bloco_espera(),
-        percurso(),
+        *extras,
+        percurso(com_links),
         rx.grid(
             por_especialidade(),
             chegadas_por_hora(),

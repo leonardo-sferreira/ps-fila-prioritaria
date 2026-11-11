@@ -1,55 +1,11 @@
-"""Áreas iniciais de cada perfil."""
+"""Cartão de fichas e tickets parados (add-expiracao-24h), usado na tela inicial do Administrador."""
 
 from typing import Any
 
 import reflex as rx
 
-from ps_fila_prioritaria.componentes import (
-    COR_BORDA,
-    COR_ERRO,
-    COR_FUNDO,
-    COR_SECUNDARIA,
-    COR_SUCESSO,
-    COR_SUPERFICIE,
-    COR_TEXTO,
-    botao_secundario,
-    cabecalho,
-    menu_admin,
-    menu_recepcao,
-    protegido,
-)
-from ps_fila_prioritaria.estados.autenticacao import AuthState
+from ps_fila_prioritaria.componentes import COR_BORDA, COR_ERRO, COR_SECUNDARIA, COR_SUCESSO, COR_TEXTO, botao_secundario
 from ps_fila_prioritaria.estados.expiracao import ExpiracaoState
-
-
-def area_inicial(perfil: str, titulo: str, nome_perfil: str, conteudo: rx.Component) -> rx.Component:
-    return protegido(
-        perfil,
-        rx.box(
-            cabecalho(titulo, f"Área inicial — {nome_perfil}"),
-            *([menu_recepcao("/recepcao")] if perfil == "RECEPCAO_TRIAGEM" else []),
-            *([menu_admin("/admin")] if perfil == "ADMINISTRADOR" else []),
-            rx.center(
-                rx.vstack(
-                    rx.text("Olá, ", AuthState.nome, weight="bold", size="5", color=COR_TEXTO),
-                    rx.text(f"Perfil: {nome_perfil}", size="2", color=COR_SECUNDARIA),
-                    conteudo,
-                    spacing="3",
-                    padding="28px 32px",
-                    background=COR_SUPERFICIE,
-                    border=f"1px solid {COR_BORDA}",
-                    border_radius="12px",
-                    width="min(100%, 772px)",
-                ),
-                padding="40px 16px",
-                width="100%",
-            ),
-            background=COR_FUNDO,
-            font_family="Inter, sans-serif",
-            min_height="100vh",
-            width="100%",
-        ),
-    )
 
 
 def linha_parada(item: dict[str, Any]) -> rx.Component:
@@ -105,7 +61,6 @@ def dialogo_dispensa() -> rx.Component:
 def cartao_parados() -> rx.Component:
     """Dispensa por prazo (add-expiracao-24h, D6): prévia do que passou do prazo e dispensa com confirmação."""
     return rx.vstack(
-        rx.divider(),
         rx.hstack(
             rx.vstack(
                 rx.text("Fichas e tickets parados", weight="bold", size="4", color=COR_TEXTO),
@@ -152,14 +107,4 @@ def cartao_parados() -> rx.Component:
         dialogo_dispensa(),
         spacing="3",
         width="100%",
-        padding_top="8px",
-    )
-
-
-def area_admin() -> rx.Component:
-    return area_inicial(
-        "ADMINISTRADOR",
-        "ADMINISTRADOR",
-        "Administrador",
-        cartao_parados(),
     )

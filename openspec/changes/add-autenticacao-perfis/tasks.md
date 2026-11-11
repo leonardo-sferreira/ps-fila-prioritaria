@@ -85,7 +85,8 @@
 
   Verificar que a suíte unitária passa
   - Evidência (11/11/2026): 3 testes inline em `usuarios/deixa_sem_admin` (rodam no `unit_test run_all` após o push); 10 testes de estado em `frontend/tests/test_usuarios_state.py` passando; suíte do frontend com 235 aprovados. Só falham os testes de API que fazem login com as contas de teste de Recepção e Médico (credencial), sem relação com esta tarefa.
-- [ ] 4.6 Publicar na `v1` (`--dry-run` antes; o PO roda o push) e rodar `xano unit_test run_all`
+- [x] 4.6 Publicar na `v1` (`--dry-run` antes; o PO roda o push) e rodar `xano unit_test run_all`
+  - Evidência (11/11/2026): o PO publicou os 10 documentos na `v1` (6 criados, 4 atualizados; GUIDs sincronizadas no repositório); `xano unit_test run_all`: 105 passaram, 0 falharam, incluindo os 3 de `usuarios/deixa_sem_admin`.
 
 ## 5. Reflex — login, sessão e rotas
 

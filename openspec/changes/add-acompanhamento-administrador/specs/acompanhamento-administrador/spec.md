@@ -71,3 +71,22 @@ A tela de acompanhamento DEVE se atualizar automaticamente em até 10 segundos, 
 #### Scenario: Nova ficha aparece sozinha
 - **QUANDO** uma ficha nova é aberta enquanto o Administrador está com a fila geral aberta
 - **ENTÃO** ela aparece na lista em até 10 segundos
+
+### Requirement: Dashboard do plantão para o Administrador
+A tela inicial do Administrador DEVE mostrar o mesmo painel do plantão da Recepção/Triagem e, além dele, os indicadores do dia (atendidas, desistências, canceladas e espera média da fila médica atual) e a equipe com sessão ativa, com perfil e status operacional. O painel DEVE ser só de consulta e se atualizar sozinho em até 30 segundos.
+
+#### Scenario: Administrador abre a tela inicial
+- **QUANDO** o Administrador entra em `/admin` com fichas na fila e pessoas logadas
+- **ENTÃO** vê o painel do plantão, os indicadores do dia e a equipe com o status de cada pessoa
+
+#### Scenario: Leitura liberada só para consulta
+- **QUANDO** o Administrador consulta as fichas e os tickets do dia
+- **ENTÃO** o backend responde com os dados, mas continua recusando ao Administrador qualquer ação de triagem
+
+#### Scenario: Equipe só para o Administrador
+- **QUANDO** um Médico ou Recepção/Triagem consulta a equipe logada
+- **ENTÃO** o backend responde como acesso negado
+
+#### Scenario: Sessão encerrada sai da equipe
+- **QUANDO** uma pessoa faz logout ou a sessão expira
+- **ENTÃO** ela deixa de aparecer na equipe na próxima atualização

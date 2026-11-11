@@ -217,4 +217,5 @@ query "usuarios/{usuario_id}/perfil" verb=PATCH {
   }
 
   response = {id: $editado.id, perfil: $editado.perfil, ativo: $editado.ativo}
+  guid = "f55F7NYPBtL7kJY4yQJvxfUmeNI"
 }

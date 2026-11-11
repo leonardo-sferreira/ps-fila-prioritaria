@@ -4,6 +4,7 @@ import reflex as rx
 
 from ps_fila_prioritaria.componentes import carregando
 from ps_fila_prioritaria.estados.autenticacao import AuthState, SenhaState
+from ps_fila_prioritaria.estados.equipe import EquipeState
 from ps_fila_prioritaria.estados.cadastros import (
     EspecialidadesState,
     MedicosState,
@@ -23,7 +24,6 @@ from ps_fila_prioritaria.estados.medico import ImpressaoMedicoState, MedicoState
 from ps_fila_prioritaria.estados.plantao import PlantaoState
 from ps_fila_prioritaria.estados.totem import TotemState
 from ps_fila_prioritaria.estados.usuarios import UsuariosState
-from ps_fila_prioritaria.paginas.areas import area_admin
 from ps_fila_prioritaria.paginas.autenticacao import (
     index,
     login,
@@ -44,6 +44,7 @@ from ps_fila_prioritaria.paginas.cadastros import (
 )
 from ps_fila_prioritaria.paginas.comprovante import pagina_comprovante
 from ps_fila_prioritaria.paginas.ficha import pagina_recepcao_ficha
+from ps_fila_prioritaria.paginas.painel_admin import area_admin
 from ps_fila_prioritaria.paginas.medico import area_medico, pagina_impressao_medico
 from ps_fila_prioritaria.paginas.fichas_do_dia import pagina_fichas_do_dia
 from ps_fila_prioritaria.paginas.fila_pre_triagem import pagina_fila_tickets
@@ -68,7 +69,7 @@ app.add_page(carregando, route="/sair/inatividade", title="Sessão encerrada", o
 app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), PlantaoState.carregar])
 app.add_page(area_medico, route="/medico", title="Médico", on_load=[AuthState.verificar_sessao("MEDICO"), MedicoState.carregar, MeusPlantoesState.carregar])
 app.add_page(pagina_impressao_medico, route="/medico/ficha/[id]/imprimir", title="Imprimir ficha", on_load=[AuthState.verificar_sessao("MEDICO"), ImpressaoMedicoState.carregar_da_rota])
-app.add_page(area_admin, route="/admin", title="Administrador", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), ExpiracaoState.carregar])
+app.add_page(area_admin, route="/admin", title="Administrador", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), PlantaoState.carregar, EquipeState.carregar, ExpiracaoState.carregar])
 app.add_page(
     pagina_recepcao_pacientes,
     route="/recepcao/pacientes",

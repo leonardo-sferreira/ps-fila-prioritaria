@@ -30,4 +30,5 @@ function "usuarios/deixa_sem_admin" {
     input = {admins_ativos: [7], usuario_id: 3}
     expect.to_be_false ($response)
   }
+  guid = "BsdlhSx37U2thyXyc1hgPt2dD8U"
 }
