@@ -54,6 +54,18 @@ class EvidenceRunnerTest(unittest.TestCase):
             self.assertEqual(cases[0]["motivo"], "401 != 200")
             self.assertNotIn("secreto", (directory / "pytest.xml").read_text(encoding="utf-8"))
 
+    def test_coleta_resultado_playwright_com_sufixo_navegador(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "pytest.xml").write_text(
+                '<testsuite><testcase classname="tests.e2e.test_publico" '
+                'name="test_login_abre_aviso_e_volta[chromium]" time="0.2"/></testsuite>',
+                encoding="utf-8",
+            )
+            cases = [{"id": "CT-REFLEX-1", "node": "tests/e2e/test_publico.py::test_login_abre_aviso_e_volta", "status": "NOT_RUN", "duracao_segundos": 0.0, "motivo": "", "resultado_obtido": "Não executado"}]
+            collect_pytest_results(directory, cases)
+            self.assertEqual(cases[0]["status"], "PASS")
+
     def test_guardiao_recusa_host_de_producao_e_sem_confirmacao(self):
         with patch.dict("os.environ", {}, clear=True):
             self.assertIn("Confirmação", controlled_gate())

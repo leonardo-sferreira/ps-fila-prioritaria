@@ -17,7 +17,7 @@ def test_login_abre_aviso_e_volta(page: Page) -> None:
     expect(page.get_by_role("button", name="Entrar")).to_be_visible()
     page.get_by_role("link", name="Aviso de privacidade").click()
     expect(page).to_have_url(BASE + "/privacidade")
-    expect(page.get_by_text("Dados da equipe")).to_be_visible()
+    expect(page.get_by_role("heading", name="Dados da equipe")).to_be_visible()
     page.get_by_role("link", name="Voltar ao login").click()
     expect(page.get_by_role("button", name="Entrar")).to_be_visible()
 
