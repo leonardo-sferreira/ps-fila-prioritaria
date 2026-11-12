@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -18,7 +19,12 @@ from run_test_evidence import ROOT, clean
 
 FRONTEND = ROOT / "frontend"
 OUTPUT = ROOT / "test-evidence" / "e2e"
-BASE_URL = "http://127.0.0.1:3000"
+
+
+def free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
 
 
 def run_evidence(base_url: str | None) -> int:
@@ -44,12 +50,14 @@ def main() -> int:
 
     env = os.environ.copy()
     env["CI"] = "1"
+    port = free_port()
+    base_url = f"http://127.0.0.1:{port}"
     process = None
     try:
         with server_log.open("w", encoding="utf-8") as stream:
             try:
                 process = subprocess.Popen(
-                    [reflex, "run", "--env", "prod", "--frontend-port", "3000"],
+                    [reflex, "run", "--env", "prod", "--frontend-port", str(port)],
                     cwd=FRONTEND, env=env, stdout=stream, stderr=subprocess.STDOUT,
                     start_new_session=True,
                 )
@@ -60,7 +68,7 @@ def main() -> int:
             ready = False
             while time.monotonic() < deadline and process.poll() is None:
                 try:
-                    with urlopen(BASE_URL + "/login", timeout=2) as response:
+                    with urlopen(base_url + "/login", timeout=2) as response:
                         ready = response.status == 200
                 except (OSError, URLError):
                     pass
@@ -70,7 +78,7 @@ def main() -> int:
             if not ready:
                 print("Reflex não ficou pronto; E2E registrado como NOT_RUN.", flush=True)
                 return run_evidence(None)
-            return run_evidence(BASE_URL)
+            return run_evidence(base_url)
     finally:
         if process is not None and process.poll() is None:
             try:
