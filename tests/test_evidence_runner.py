@@ -6,14 +6,17 @@ Os dados desta suite testam apenas o gerador; não representam resultados do pro
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests/api"))
 from run_test_evidence import clean, collect_http_results, collect_pytest_results, controlled_gate, execution_status, github_summary_write, junit_write, markdown_write  # noqa: E402
 from pytest_http_evidence import _route  # noqa: E402
+from test_ordenacao import executar  # noqa: E402
 
 
 class EvidenceRunnerTest(unittest.TestCase):
@@ -65,6 +68,14 @@ class EvidenceRunnerTest(unittest.TestCase):
             cases = [{"id": "CT-REFLEX-1", "node": "tests/e2e/test_publico.py::test_login_abre_aviso_e_volta", "status": "NOT_RUN", "duracao_segundos": 0.0, "motivo": "", "resultado_obtido": "Não executado"}]
             collect_pytest_results(directory, cases)
             self.assertEqual(cases[0]["status"], "PASS")
+
+    def test_funcao_xano_repete_apos_limite_temporario(self):
+        limitado = SimpleNamespace(returncode=2, stderr="Your plan only supports 25 requests per 20 seconds.", stdout="")
+        aprovado = SimpleNamespace(returncode=0, stderr="", stdout='{"status":"ok","result":{"id":1}}')
+        with patch("test_ordenacao.time.sleep") as espera, patch("test_ordenacao.subprocess.run", side_effect=[limitado, aprovado]) as cli:
+            self.assertEqual(executar("fila/proxima_ficha", fichas=[]), {"id": 1})
+        self.assertEqual(cli.call_count, 2)
+        self.assertEqual([chamada.args[0] for chamada in espera.call_args_list], [2.5, 21])
 
     def test_guardiao_recusa_host_de_producao_e_sem_confirmacao(self):
         with patch.dict("os.environ", {}, clear=True):
