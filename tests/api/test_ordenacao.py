@@ -24,15 +24,19 @@ def ficha(identificador, cor, chegada, *, condicao="NENHUMA", fila_em=None, stat
 
 def executar(nome, **entrada):
     # A instância Free também limita as chamadas do CLI (25 por 20 s nesta conta).
-    time.sleep(2.5)
-    processo = subprocess.run(
-        ["xano", "function", "run", nome, "--json", "-", "--branch", "v1", "-p", PERFIL],
-        input=json.dumps(entrada),
-        text=True,
-        capture_output=True,
-        timeout=30,
-        check=False,
-    )
+    for tentativa in range(4):
+        time.sleep(2.5 if tentativa == 0 else 21)
+        processo = subprocess.run(
+            ["xano", "function", "run", nome, "--json", "-", "--branch", "v1", "-p", PERFIL],
+            input=json.dumps(entrada),
+            text=True,
+            capture_output=True,
+            timeout=30,
+            check=False,
+        )
+        resposta_cli = processo.stderr or processo.stdout
+        if not processo.returncode or "plan only supports" not in resposta_cli.lower() or tentativa == 3:
+            break
     if processo.returncode:
         raise AssertionError(f"{nome}: {processo.stderr or processo.stdout}")
     resposta = json.loads(processo.stdout)
