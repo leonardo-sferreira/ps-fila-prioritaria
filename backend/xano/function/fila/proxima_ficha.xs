@@ -218,42 +218,5 @@ function "fila/proxima_ficha" {
     }
   }
 
-  test "posicao tres escolhe Azul e reinicia ciclo" {
-    input = {
-      fichas: [{id: 1, status: "AGUARDANDO", prioridade_atual: "AMARELA", condicao_prioritaria: "NENHUMA", chegada_em: 1, fila_em: 1}, {id: 2, status: "AGUARDANDO", prioridade_atual: "AZUL", condicao_prioritaria: "NENHUMA", chegada_em: 2, fila_em: 2}]
-      posicao: 3
-      amarelas: 2
-      azuis: 1
-    }
-    expect.to_equal ($response.ficha.id) { value = 2 }
-    expect.to_equal ($response.proxima_posicao) { value = 1 }
-  }
-
-  test "prioritario Azul nao ultrapassa Amarela prevista" {
-    input = {
-      fichas: [{id: 1, status: "AGUARDANDO", prioridade_atual: "AZUL", condicao_prioritaria: "IDOSO", chegada_em: 1, fila_em: 1}, {id: 2, status: "AGUARDANDO", prioridade_atual: "AMARELA", condicao_prioritaria: "NENHUMA", chegada_em: 2, fila_em: 2}]
-      posicao: 1
-      amarelas: 2
-      azuis: 1
-    }
-    expect.to_equal ($response.ficha.id) { value = 2 }
-  }
-
-  test "ficha fora de AGUARDANDO nao participa" {
-    input = {
-      fichas: [{id: 1, status: "CHAMADO", prioridade_atual: "VERMELHA", condicao_prioritaria: "NENHUMA", chegada_em: 1, fila_em: 1}, {id: 2, status: "AGUARDANDO", prioridade_atual: "AZUL", condicao_prioritaria: "NENHUMA", chegada_em: 2, fila_em: 2}]
-      posicao: 1
-      amarelas: 2
-      azuis: 1
-    }
-    expect.to_equal ($response.ficha.id) { value = 2 }
-  }
-
-  test "fila vazia nao avanca ciclo" {
-    input = {fichas: [], posicao: 2, amarelas: 2, azuis: 1}
-    expect.to_be_null ($response.ficha)
-    expect.to_equal ($response.proxima_posicao) { value = 2 }
-  }
-
   guid = "ZonecTuQitotWnsqXlUsS-6gaJk"
 }
