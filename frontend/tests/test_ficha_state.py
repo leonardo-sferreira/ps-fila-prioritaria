@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import httpx
 
-from ps_fila_prioritaria.ps_fila_prioritaria import ComprovanteState, FichaState, sintomas_disponiveis
+from ps_fila_prioritaria.ps_fila_prioritaria import ComprovanteState, FichaState, comprovante_senha, sintomas_disponiveis
 
 REQUISITAR = "ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar"
 
@@ -534,16 +534,27 @@ class ComprovanteFalso:
 
 
 class TestComprovante(unittest.TestCase):
+    def test_comprovante_renderizado_nao_expoe_dados_pessoais_ou_clinicos(self) -> None:
+        arvore = str(comprovante_senha().render()).lower()
+        self.assertIn("80mm", arvore)
+        for campo_proibido in ("cpf", "nome", "nascimento", "telefone", "sintoma", "sinal vital"):
+            self.assertNotIn(campo_proibido, arvore)
+
     def test_carrega_so_os_campos_do_comprovante(self) -> None:
         estado = ComprovanteFalso()
         corpo = {"senha": "A-CAR-001", "prioridade": "AMARELA", "especialidade": {"nome": "Cardiologia", "sigla": "CAR"},
-                 "chegada_em": 1794155580000}
+                 "chegada_em": 1794155580000, "nome": "Pessoa de Teste", "cpf": "12345678901",
+                 "data_nascimento": "1980-01-01", "sintomas": ["dor de teste"],
+                 "sinais_vitais": {"fc": 80}, "paciente": {"nome": "Pessoa de Teste"}}
         with _api(Resposta(200, corpo)) as requisitar:
             asyncio.run(estado.carregar("10"))
         self.assertEqual(requisitar.call_args.args[:3], ("GET", "XANO_TRIAGEM_API_URL", "/fichas/10/comprovante"))
         self.assertEqual((estado.senha, estado.prioridade, estado.especialidade), ("A-CAR-001", "Amarela", "Cardiologia"))
         self.assertEqual(estado.entrada, "08/11/2026 13:33")
         self.assertFalse(hasattr(estado, "nome") or hasattr(estado, "cpf"))
+        estado_publicado = repr({chave: valor for chave, valor in vars(estado).items() if chave != "auth"})
+        for dado_privado in ("Pessoa de Teste", "12345678901", "1980-01-01", "dor de teste", "fc"):
+            self.assertNotIn(dado_privado, estado_publicado)
 
     def test_ficha_sem_senha_ativa_mostra_mensagem(self) -> None:
         estado = ComprovanteFalso()

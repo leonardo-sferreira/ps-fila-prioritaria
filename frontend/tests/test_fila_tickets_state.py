@@ -58,8 +58,37 @@ class TestFilaTicketsState(unittest.TestCase):
         asyncio.run(estado.identificar(7))
         self.assertEqual(estado.paciente.ticket_id, 7)
 
+    def test_marcar_presente_envia_acao_e_atualiza_ticket(self):
+        estado = EstadoFalso()
+        resposta_atualizada = {"tickets": [
+            {"id": 7, "tipo": "NORMAL", "numero": 1, "status": "CHAMADO", "presente": True},
+        ]}
+        with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", side_effect=[
+            Resposta({}), Resposta(resposta_atualizada),
+        ]) as requisitar:
+            asyncio.run(estado.acao(7, "PRESENTE"))
+        self.assertEqual(requisitar.call_args_list[0].args[2], "/tickets/7/acao")
+        self.assertEqual(requisitar.call_args_list[0].kwargs["json"], {"acao": "PRESENTE"})
+        self.assertTrue(estado.tickets[0]["presente"])
+        self.assertEqual(estado.mensagem, "Operação registrada.")
+
 
 class TestApresentacaoFila(unittest.TestCase):
+    def test_resumo_conta_somente_aguardando_por_tipo(self):
+        estado = EstadoFalso()
+        estado.tickets = [
+            {"tipo": "PEDIATRICO", "status": "AGUARDANDO"},
+            {"tipo": "PEDIATRICO", "status": "CHAMADO"},
+            {"tipo": "PREFERENCIAL", "status": "AGUARDANDO"},
+            {"tipo": "PREFERENCIAL", "status": "DESISTENCIA"},
+            {"tipo": "NORMAL", "status": "AGUARDANDO"},
+            {"tipo": "NORMAL", "status": "AGUARDANDO"},
+        ]
+        resumo = FilaTicketsState.computed_vars["resumo_tipos"]._fget(estado)
+        self.assertEqual([(item["nome"], item["quantidade"]) for item in resumo], [
+            ("Pediátrico", 1), ("Preferencial", 1), ("Normal", 2),
+        ])
+
     def test_ticket_do_totem_ganha_tipo_cor_e_hora_de_brasilia(self):
         estado = EstadoFalso()
         corpo = {
