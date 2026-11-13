@@ -4,7 +4,7 @@ Esta página acompanha somente os cards de teste **101 a 106**, abertos na lista
 
 ## Como obter a evidência
 
-O CI produz `roteiros-sprint5.md` dentro do artifact `evidencias-consolidadas`. O arquivo reúne os testes técnicos por roteiro em frases curtas e mostra quantos testes de cada tipo sustentam cada verificação. `resumo.md` e `resultados.json` guardam os nomes e identificadores dos casos para auditoria detalhada.
+O CI produz `roteiros-sprint5.md` dentro do artifact `evidencias-consolidadas`. O arquivo reúne os testes técnicos por roteiro em frases curtas e mostra quantos testes de cada tipo sustentam cada verificação. `resumo.md` e `resultados.json` guardam os nomes e identificadores dos casos para auditoria detalhada. No JSON, os campos de leitura humana usam frases em português; `node`, `id` e `assertions` preservam a rastreabilidade técnica.
 
 Para gerar o mesmo resumo localmente, depois de executar as suites existentes:
 
