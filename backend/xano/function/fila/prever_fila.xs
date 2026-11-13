@@ -78,5 +78,41 @@ function "fila/prever_fila" {
     }
   }
 
+  test "limite um retorna apenas a proxima senha" {
+    input = {
+      fichas: [{id: 1, status: "AGUARDANDO", prioridade_atual: "AMARELA", condicao_prioritaria: "NENHUMA", chegada_em: 1, fila_em: 1, senha: "A-CAR-001"}, {id: 2, status: "AGUARDANDO", prioridade_atual: "AMARELA", condicao_prioritaria: "NENHUMA", chegada_em: 2, fila_em: 2, senha: "A-CAR-002"}, {id: 3, status: "AGUARDANDO", prioridade_atual: "AZUL", condicao_prioritaria: "NENHUMA", chegada_em: 3, fila_em: 3, senha: "B-CAR-003"}]
+      posicao: 1
+      amarelas: 2
+      azuis: 1
+      limite: 1
+    }
+    expect.to_equal ($response) {
+      value = [{senha: "A-CAR-001", cor: "AMARELA"}]
+    }
+  }
+
+  test "nova Vermelha aparece primeiro sem perder ciclo" {
+    input = {
+      fichas: [{id: 1, status: "AGUARDANDO", prioridade_atual: "AMARELA", condicao_prioritaria: "NENHUMA", chegada_em: 1, fila_em: 1, senha: "A-CAR-001"}, {id: 2, status: "AGUARDANDO", prioridade_atual: "VERMELHA", condicao_prioritaria: "NENHUMA", chegada_em: 2, fila_em: 2, senha: "V-CAR-002"}]
+      posicao: 2
+      amarelas: 2
+      azuis: 1
+      limite: 2
+    }
+    expect.to_equal ($response) {
+      value = [{senha: "V-CAR-002", cor: "VERMELHA"}, {senha: "A-CAR-001", cor: "AMARELA"}]
+    }
+  }
+
+  test "limite zero e recusado" {
+    input = {fichas: [], posicao: 1, amarelas: 2, azuis: 1, limite: 0}
+    expect.to_throw
+  }
+
+  test "limite vinte e um e recusado" {
+    input = {fichas: [], posicao: 1, amarelas: 2, azuis: 1, limite: 21}
+    expect.to_throw
+  }
+
   guid = "2GHWqk9TvNgi-M_2t0mGbZwZxm4"
 }

@@ -51,5 +51,21 @@ function "fila/avaliar_cobertura" {
     }
   }
 
+  test "usuario e medico inativos nao cobrem" {
+    input = {medicos: [{id: 1, medico_ativo: false, usuario_ativo: true, plantao_vigente: true, sessao_ativa: true, status: "DISPONIVEL", especialidade_ids: [1]}, {id: 2, medico_ativo: true, usuario_ativo: false, plantao_vigente: true, sessao_ativa: true, status: "DISPONIVEL", especialidade_ids: [2]}]}
+    expect.to_be_empty ($response.medicos)
+    expect.to_be_empty ($response.especialidade_ids)
+  }
+
+  test "sem plantao ou sessao ativa nao cobre" {
+    input = {medicos: [{id: 1, medico_ativo: true, usuario_ativo: true, plantao_vigente: false, sessao_ativa: true, status: "DISPONIVEL", especialidade_ids: [1]}, {id: 2, medico_ativo: true, usuario_ativo: true, plantao_vigente: true, sessao_ativa: false, status: "DISPONIVEL", especialidade_ids: [2]}]}
+    expect.to_be_empty ($response.especialidade_ids)
+  }
+
+  test "medico com duas especialidades cobre ambas sem duplicar" {
+    input = {medicos: [{id: 1, medico_ativo: true, usuario_ativo: true, plantao_vigente: true, sessao_ativa: true, status: "DISPONIVEL", especialidade_ids: [1, 2]}, {id: 2, medico_ativo: true, usuario_ativo: true, plantao_vigente: true, sessao_ativa: true, status: "EM_ATENDIMENTO", especialidade_ids: [2]}]}
+    expect.to_equal ($response.especialidade_ids) { value = [1, 2] }
+  }
+
   guid = "ena6Xv7Lc-kFmtNJFBACr3RlQEY"
 }
