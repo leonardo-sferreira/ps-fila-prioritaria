@@ -25,7 +25,7 @@ jobs:
       - name: Verificar gerador de evidencias
         run: |
           mkdir -p test-evidence/reflex
-          python -m pytest -q tests/test_evidence_runner.py --junitxml=test-evidence/reflex/gerador.xml
+          python -m pytest -q tests/test_evidence_runner.py tests/test_roteiros_sprint5.py --junitxml=test-evidence/reflex/gerador.xml
       - name: Executar testes locais Reflex
         if: always()
         run: python scripts/run_test_evidence.py --suite reflex --output test-evidence/reflex --require-execution

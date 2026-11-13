@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 
 from run_test_evidence import execution_status, github_summary_write, junit_write, markdown_write
+from roteiros_sprint5 import gerar_relatorio
 
 
 def main() -> int:
@@ -47,6 +48,7 @@ def main() -> int:
     (args.output / "resultados.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     junit_write(cases, args.output / "resultados.xml", "consolidado")
     markdown_write(data, args.output / "resumo.md")
+    (args.output / "roteiros-sprint5.md").write_text(gerar_relatorio(data), encoding="utf-8")
     if os.getenv("GITHUB_STEP_SUMMARY"):
         github_summary_write(data, Path(os.environ["GITHUB_STEP_SUMMARY"]))
     counts = Counter(case["status"] for case in cases)
