@@ -96,6 +96,21 @@ class EvidenceRunnerTest(unittest.TestCase):
             collect_pytest_results(directory, cases)
             self.assertEqual(cases[0]["status"], "PASS")
 
+    def test_coleta_distingue_nomes_iguais_em_modulos_diferentes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "pytest.xml").write_text(
+                '<testsuite><testcase classname="tests.test_expiracao_state" name="test_sessao_expirada" time="0.1"/>'
+                '<testcase classname="tests.test_plantao_state" name="test_sessao_expirada" time="0.2"/></testsuite>',
+                encoding="utf-8",
+            )
+            cases = [
+                {"id": "CT-1", "node": "frontend/tests/test_expiracao_state.py::test_sessao_expirada", "status": "NOT_RUN", "motivo": ""},
+                {"id": "CT-2", "node": "frontend/tests/test_plantao_state.py::test_sessao_expirada", "status": "NOT_RUN", "motivo": ""},
+            ]
+            collect_pytest_results(directory, cases)
+            self.assertEqual([case["status"] for case in cases], ["PASS", "PASS"])
+
     def test_funcao_xano_repete_apos_limite_temporario(self):
         limitado = SimpleNamespace(returncode=2, stderr="Your plan only supports 25 requests per 20 seconds.", stdout="")
         aprovado = SimpleNamespace(returncode=0, stderr="", stdout='{"status":"ok","result":{"id":1}}')

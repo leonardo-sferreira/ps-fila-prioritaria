@@ -141,8 +141,24 @@ ROTEIROS = (
                 "frontend/tests/test_senha_state.py::test_codigo_invalido_mostra_a_mensagem_da_tela_a2b",
                 "frontend/tests/test_senha_state.py::test_reenvio_avisa_e_reinicia_o_contador",
             ), "Confirmar o fluxo com e-mail real e limites de tempo."),
-            verificacao("Usuários, cadastros, parâmetros e acompanhamento", (),
-                       "As telas e APIs administrativas previstas ainda não foram entregues nesta branch."),
+            verificacao("Usuários, troca de perfil e permissões", (
+                "frontend/tests/test_usuarios_state.py::test_filtro_por_perfil_situacao_e_busca",
+                "frontend/tests/test_usuarios_state.py::test_criar_admin_envia_senha_e_edicao_nao",
+                "frontend/tests/test_usuarios_state.py::test_trocar_perfil_mostra_erro_do_ultimo_admin_e_mantem_dialogo",
+            ), "Confirmar criação, troca de perfil e autorização na API real."),
+            verificacao("Cadastros, parâmetros e plantões", (
+                "frontend/tests/test_cadastros_state.py::test_especialidade_nova_envia_sigla_em_maiusculas_e_edicao_nao_envia_sigla",
+                "frontend/tests/test_cadastros_state.py::test_sintoma_converte_pontuacao_e_mantem_ordem_dos_destinos",
+                "frontend/tests/test_cadastros_state.py::test_plantao_sobreposto_mostra_a_mensagem",
+                "frontend/tests/test_cadastros_state.py::test_parametro_nao_numerico_nem_chama_a_api",
+            ), "Conferir as operações e os limites nas APIs reais e nas telas."),
+            verificacao("Dashboard do plantão do Administrador", (
+                "frontend/tests/test_painel_admin.py::test_indicadores_do_dia",
+                "frontend/tests/test_painel_admin.py::test_equipe_conta_medicos_por_status",
+                "frontend/tests/test_plantao_state.py::test_na_espera_soma_pre_triagem_e_fila_medica",
+            ), "Conferir os indicadores com dados reais do plantão."),
+            verificacao("Acompanhamento completo da fila, equipe, fichas e auditoria", (),
+                       "As consultas e telas de acompanhamento detalhado ainda estão pendentes na change ativa."),
         ),
     },
 )

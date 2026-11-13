@@ -428,17 +428,20 @@ def collect_pytest_results(out: Path, cases: list[dict]) -> None:
     if not xml.exists():
         return
     tree = ET.parse(xml)
-    by_key = {c["node"].split("::")[-1]: c for c in cases}
+    by_key = {(Path(c["node"].split("::")[0]).stem, c["node"].split("::")[-1]): c for c in cases}
     seen = set()
     for entry in tree.iter("testcase"):
         name = entry.get("name", "")
-        cls = entry.get("classname", "").split(".")[-1]
-        key = f"{cls}.{name}" if cls and (cls.startswith("Test") or cls.endswith("Test")) else name
-        case = by_key.get(key) or by_key.get(name)
+        parts = entry.get("classname", "").split(".")
+        cls = parts[-1]
+        is_class = cls.startswith("Test") or cls.endswith("Test")
+        module = parts[-2] if is_class and len(parts) > 1 else cls
+        key = f"{cls}.{name}" if is_class else name
+        case = by_key.get((module, key))
         if case is None and "[" in name:
             # pytest-playwright acrescenta o navegador ao nome do caso.
             base = name.split("[", 1)[0]
-            case = by_key.get(f"{cls}.{base}") or by_key.get(base)
+            case = by_key.get((module, f"{cls}.{base}" if is_class else base))
         if case is None:
             continue
         seen.add(case["id"])

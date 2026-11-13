@@ -65,7 +65,7 @@ class TestFilaTicketsState(unittest.TestCase):
         resposta_atualizada = {"tickets": [
             {"id": 7, "tipo": "NORMAL", "numero": 1, "status": "CHAMADO", "presente": True},
         ]}
-        with patch("ps_fila_prioritaria.ps_fila_prioritaria.api.requisitar", side_effect=[
+        with patch("ps_fila_prioritaria.api.requisitar", side_effect=[
             Resposta({}), Resposta(resposta_atualizada),
         ]) as requisitar:
             asyncio.run(estado.acao(7, "PRESENTE"))
