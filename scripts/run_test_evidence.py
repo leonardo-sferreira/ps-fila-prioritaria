@@ -511,6 +511,19 @@ def preflight_xano() -> str | None:
     return None
 
 
+def executar_teste_nativo(record_id: str, profile: str, env: dict[str, str]) -> tuple[subprocess.CompletedProcess[str], dict]:
+    command = ["xano", "unit_test", "run", record_id, "-p", profile, "--branch", "v1", "-o", "json"]
+    for attempt, timeout in enumerate((50, 90)):
+        try:
+            proc = subprocess.run(command, env=env, text=True, capture_output=True, timeout=timeout, check=False)
+            return proc, json.loads(proc.stdout)
+        except (subprocess.TimeoutExpired, json.JSONDecodeError):
+            if attempt:
+                raise
+            time.sleep(2.5)
+    raise AssertionError("Tentativas nativas esgotadas")
+
+
 def run_native(cases: list[dict]) -> list[str]:
     native = [case for case in cases if case["tipo"] == "unitario_nativo"]
     if not native:
@@ -543,8 +556,7 @@ def run_native(cases: list[dict]) -> list[str]:
             started = time.perf_counter()
             time.sleep(2.5)
             try:
-                proc = subprocess.run(["xano", "unit_test", "run", str(record["id"]), "-p", profile, "--branch", "v1", "-o", "json"], env=env, text=True, capture_output=True, timeout=50, check=False)
-                output = json.loads(proc.stdout)
+                proc, output = executar_teste_nativo(str(record["id"]), profile, env)
                 statuses = [str(item.get("status", "")).lower() for item in output.get("results", [])]
                 case["duracao_segundos"] = round(time.perf_counter() - started, 3)
                 if proc.returncode == 0 and output.get("status") == "ok" and statuses and all(status == "pass" for status in statuses):

@@ -4,6 +4,7 @@ Os dados desta suite testam apenas o gerador; não representam resultados do pro
 """
 
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 from types import SimpleNamespace
@@ -14,12 +15,21 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests/api"))
-from run_test_evidence import clean, collect_http_results, collect_pytest_results, controlled_gate, execution_status, github_summary_write, identifier, junit_write, markdown_write, native_cases, source_cases  # noqa: E402
+from run_test_evidence import clean, collect_http_results, collect_pytest_results, controlled_gate, executar_teste_nativo, execution_status, github_summary_write, identifier, junit_write, markdown_write, native_cases, source_cases  # noqa: E402
 from pytest_http_evidence import _route  # noqa: E402
 from test_ordenacao import executar  # noqa: E402
 
 
 class EvidenceRunnerTest(unittest.TestCase):
+    def test_timeout_transitorio_do_cli_xano_repete_sem_mudar_o_caso(self):
+        aprovado = SimpleNamespace(returncode=0, stdout='{"status":"ok","results":[{"status":"pass"}]}')
+        with patch("run_test_evidence.subprocess.run", side_effect=[subprocess.TimeoutExpired("xano", 50), aprovado]) as cli, patch("run_test_evidence.time.sleep") as espera:
+            proc, result = executar_teste_nativo("teste-1", "ps-impacta", {})
+        self.assertEqual(proc.returncode, 0)
+        self.assertEqual(result["results"][0]["status"], "pass")
+        self.assertEqual([call.kwargs["timeout"] for call in cli.call_args_list], [50, 90])
+        espera.assert_called_once_with(2.5)
+
     def test_resultado_json_tem_texto_legivel_sem_alterar_rastreabilidade(self):
         root = Path(__file__).resolve().parents[1]
         source = source_cases(root / "frontend/tests/test_auth_state.py", "Reflex", "unitario", False)
