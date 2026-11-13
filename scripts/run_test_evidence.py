@@ -88,6 +88,55 @@ def identifier(node: str, component: str) -> str:
     return f"CT-{prefix}-{hashlib.sha256(node.encode()).hexdigest()[:10].upper()}"
 
 
+def titulo_legivel(value: str) -> str:
+    """Apresenta o nome de um teste sem alterar seu identificador técnico."""
+    title = re.sub(r"\s+", " ", value.removeprefix("test_").replace("_", " ")).strip()
+    accents = {
+        "nao": "não", "codigo": "código", "area": "área", "medico": "médico",
+        "clinico": "clínico", "publico": "público", "autenticacao": "autenticação",
+        "classificacao": "classificação", "priorizacao": "priorização",
+        "posicao": "posição", "proxima": "próxima", "invalido": "inválido",
+        "sessao": "sessão", "numero": "número", "historico": "histórico",
+        "recepcao": "recepção", "urgencia": "urgência", "saida": "saída",
+        "critico": "crítico", "responsavel": "responsável", "alteracao": "alteração",
+        "conexao": "conexão", "reavaliacao": "reavaliação", "selecao": "seleção",
+        "pagina": "página", "usuario": "usuário", "permissao": "permissão",
+    }
+    title = re.sub(r"\b(?:" + "|".join(accents) + r")\b", lambda match: accents[match.group().lower()], title, flags=re.I)
+    title = re.sub(r"\b(cpf|api|id|http|url|cli)\b", lambda match: match.group().upper(), title, flags=re.I)
+    title = re.sub(r"\bxano\b", "Xano", title, flags=re.I)
+    title = re.sub(r"\breflex\b", "Reflex", title, flags=re.I)
+    return title[:1].upper() + title[1:]
+
+
+def frase_legivel(value: str) -> str:
+    title = titulo_legivel(value)
+    return title if not title or title.endswith((".", "!", "?")) else title + "."
+
+
+def expectativa_nativa(name: str, checks: list[str]) -> str:
+    labels = {
+        "PA_SISTOLICA": "PA sistólica", "FC": "FC", "FR": "FR",
+        "TEMPERATURA": "Temperatura", "SPO2": "SpO2", "GLICEMIA": "Glicemia",
+    }
+    readable = []
+    for check in checks:
+        match = re.fullmatch(r"expect\.(to_equal|to_be_true|to_be_false|to_be_null)\s*\(\$response\.([\w.]+)\)(?:\s*=\s*(.+))?", check)
+        if not match:
+            continue
+        operation, field, value = match.groups()
+        if operation == "to_equal" and (not value or value.startswith(("[", "{"))):
+            continue
+        if value and "REDACTED" in value:
+            continue
+        label = labels.get(field.rsplit(".", 1)[-1], titulo_legivel(field.rsplit(".", 1)[-1]).lower())
+        value = {"to_be_true": "verdadeiro", "to_be_false": "falso", "to_be_null": "nulo"}.get(operation, value)
+        value = {"true": "verdadeiro", "false": "falso", "null": "nulo"}.get(value, value)
+        readable.append(f"{label} = {value}")
+    title = titulo_legivel(name).rstrip(".")
+    return clean(f"{title}. Valores esperados: {'; '.join(readable)}." if readable else frase_legivel(title))
+
+
 def http_metadata(func: ast.AST, filename: str, helpers: dict[str, ast.AST]) -> tuple[list[str], list[str], list[int], list[str]]:
     methods, routes, statuses, fields = set(), set(), set(), []
     if filename == "test_api_totem.py":
@@ -143,6 +192,8 @@ def source_cases(path: Path, component: str, kind: str, external: bool, blocked:
             continue
         for name, func in members:
             full = f"{relative}::{name}"
+            title = titulo_legivel(func.name)
+            objective = titulo_legivel(ast.get_docstring(func) or title)
             assertions = []
             for item in ast.walk(func):
                 if isinstance(item, ast.Assert):
@@ -167,13 +218,13 @@ def source_cases(path: Path, component: str, kind: str, external: bool, blocked:
                 candidate = f"openspec/changes/{SPEC_CHANGE[spec]}/specs/{spec}/spec.md"
                 spec_path = candidate if (ROOT / candidate).exists() else None
             cases.append({
-                "id": identifier(full, component), "node": full, "nome": name.replace("test_", "").replace("_", " "),
-                "objetivo": clean(ast.get_docstring(func) or name.replace("test_", "").replace("_", " ")),
+                "id": identifier(full, component), "node": full, "nome": title,
+                "objetivo": clean(objective),
                 "tipo": kind, "componente": component, "requisito": spec_path,
                 "rastreabilidade_formal": "não verificada no Confluence" if spec_path else "não identificada",
                 "precondicoes": "ambiente isolado comprovado e autorização explícita" if blocked else ("perfil CLI Xano autenticado; funções puras" if external else "dependências Python instaladas; mocks locais quando usados"),
                 "entradas": f"Definidas no código em {relative}:{func.lineno}",
-                "resultado_esperado": clean(ast.get_docstring(func) or "; ".join(assertions[:3]) or "As assertions do caso devem passar"),
+                "resultado_esperado": clean(frase_legivel(objective)),
                 "assertions": assertions,
                 "dependencia_externa": external, "classe_seguranca": "escrita_isolada" if blocked else "nao_mutavel",
                 "motivo_bloqueio": blocked,
@@ -236,10 +287,10 @@ def native_cases() -> list[dict]:
             relative = str(path.relative_to(ROOT))
             node = f"{relative}::{name}"
             cases.append({
-                "id": identifier(node, "Xano"), "node": node, "nome": name, "objetivo": name,
+                "id": identifier(node, "Xano"), "node": node, "nome": titulo_legivel(name), "objetivo": titulo_legivel(name),
                 "tipo": "unitario_nativo", "componente": "Xano", "requisito": f"openspec/specs/{spec}/spec.md" if spec else None,
                 "rastreabilidade_formal": "não verificada no Confluence", "precondicoes": "Unit test nativo publicado na branch v1; função pura revisada localmente",
-                "entradas": clean(input_line, 500), "resultado_esperado": f"{name}; expectativas nativas: {', '.join(checks)}",
+                "entradas": clean(input_line, 500), "resultado_esperado": expectativa_nativa(name, checks),
                 "assertions": [clean(check, 180) for check in checks],
                 "dependencia_externa": True, "classe_seguranca": "nao_mutavel", "motivo_bloqueio": "",
                 "metodo_http": None, "endpoint": None, "status_http_esperado": None, "status_http_real": None,
@@ -407,7 +458,7 @@ def collect_pytest_results(out: Path, cases: list[dict]) -> None:
         else:
             case["status"] = "PASS"
             case["motivo"] = ""
-            case["resultado_obtido"] = "Assertions executadas e satisfeitas pelo pytest"
+            case["resultado_obtido"] = "Verificações do pytest aprovadas."
     for case in cases:
         if case["id"] not in seen:
             case["motivo"] = "Não coletado pelo pytest; consulte pytest.log"
@@ -498,7 +549,7 @@ def run_native(cases: list[dict]) -> list[str]:
                 case["duracao_segundos"] = round(time.perf_counter() - started, 3)
                 if proc.returncode == 0 and output.get("status") == "ok" and statuses and all(status == "pass" for status in statuses):
                     case["status"] = "PASS"
-                    case["resultado_obtido"] = f"{len(statuses)} resultado(s) nativo(s) PASS"
+                    case["resultado_obtido"] = "Verificações nativas do Xano aprovadas."
                 elif any(status in {"fail", "failed"} for status in statuses):
                     case["status"] = "FAIL"
                     case["resultado_obtido"] = f"Status nativo: {statuses}"

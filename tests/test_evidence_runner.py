@@ -14,12 +14,29 @@ import xml.etree.ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tests/api"))
-from run_test_evidence import clean, collect_http_results, collect_pytest_results, controlled_gate, execution_status, github_summary_write, junit_write, markdown_write  # noqa: E402
+from run_test_evidence import clean, collect_http_results, collect_pytest_results, controlled_gate, execution_status, github_summary_write, identifier, junit_write, markdown_write, native_cases, source_cases  # noqa: E402
 from pytest_http_evidence import _route  # noqa: E402
 from test_ordenacao import executar  # noqa: E402
 
 
 class EvidenceRunnerTest(unittest.TestCase):
+    def test_resultado_json_tem_texto_legivel_sem_alterar_rastreabilidade(self):
+        root = Path(__file__).resolve().parents[1]
+        source = source_cases(root / "frontend/tests/test_auth_state.py", "Reflex", "unitario", False)
+        case = next(case for case in source if case["node"].endswith("test_senha_correta_vai_para_o_codigo_sem_token_e_sem_guardar_a_senha"))
+        self.assertEqual(case["id"], identifier(case["node"], "Reflex"))
+        self.assertEqual(case["nome"], "Senha correta vai para o código sem token e sem guardar a senha")
+        self.assertEqual(case["resultado_esperado"], case["nome"] + ".")
+        self.assertTrue(case["assertions"])
+        self.assertNotIn("estado.token ==", case["resultado_esperado"])
+
+        native = next(case for case in native_cases() if case["nome"].startswith("Bordas 1:"))
+        self.assertEqual(native["id"], identifier(native["node"], "Xano"))
+        self.assertTrue(native["resultado_esperado"].startswith(native["nome"] + ". Valores esperados: "))
+        self.assertIn("PA sistólica = 3", native["resultado_esperado"])
+        self.assertTrue(native["assertions"])
+        self.assertNotIn("expect.to_equal", native["resultado_esperado"])
+
     def test_junit_representa_falha_erro_e_nao_execucao(self):
         with tempfile.TemporaryDirectory() as tmp:
             xml = Path(tmp) / "resultados.xml"
