@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import httpx
 
-from ps_fila_prioritaria.estados.expiracao import ExpiracaoState
+from ps_fila_prioritaria.estados.expiracao import ORDEM_MAIOR_TEMPO, ORDEM_MENOR_TEMPO, ExpiracaoState, recortar_pagina, total_paginas
 
 REQUISITAR = "ps_fila_prioritaria.api.requisitar"
 
@@ -49,6 +49,7 @@ class EstadoFalso:
         self.confirmacao_aberta = False
         self.mensagem = ""
         self.erro = False
+        self.pagina = 1
         self.auth = AuthFalso()
 
     async def get_state(self, estado):
@@ -80,10 +81,12 @@ def test_previa_prepara_fichas_e_tickets() -> None:
     assert requisitar.call_args.args == ("GET", "XANO_TRIAGEM_API_URL", "/expiracao")
     assert requisitar.call_args.kwargs["token"] == "token-admin"
     assert estado.fichas == [
-        {"id": 7, "identificacao": "Sem senha", "situacao": "Em triagem", "horario": "08/11/2026 13:33"},
-        {"id": 9, "identificacao": "A-NEU-002", "situacao": "Aguardando", "horario": "08/11/2026 13:33"},
+        {"id": 7, "identificacao": "Sem senha", "tipo": "Ficha", "situacao": "Em triagem", "horario": "08/11/2026 13:33", "instante": 1794155580.0},
+        {"id": 9, "identificacao": "A-NEU-002", "tipo": "Ficha", "situacao": "Aguardando", "horario": "08/11/2026 13:33", "instante": 1794155580.0},
     ]
-    assert estado.tickets == [{"id": 3, "identificacao": "N-031", "situacao": "Chamado", "horario": "08/11/2026 13:33"}]
+    assert estado.tickets == [
+        {"id": 3, "identificacao": "N-031", "tipo": "Ticket", "situacao": "Chamado", "horario": "08/11/2026 13:33", "instante": 1794155580.0}
+    ]
     assert estado.horas == 24 and not estado.erro and not estado.carregando
 
 
@@ -143,3 +146,45 @@ def test_perfil_recusado_nao_altera_nada() -> None:
     with _api(Resposta(403, {"message": "Acesso negado."})):
         asyncio.run(estado.dispensar())
     assert estado.erro and estado.fichas == []
+
+
+def _itens(quantidade: int) -> list[dict]:
+    """Itens com instantes crescentes: o de índice 0 é o mais antigo (maior tempo parado)."""
+    return [{"identificacao": f"P-{i:03d}", "instante": 1000 + i} for i in range(quantidade)]
+
+
+def _ids(itens: list[dict]) -> list[str]:
+    return [item["identificacao"] for item in itens]
+
+
+def test_paginacao_limites_de_10() -> None:
+    assert total_paginas(0, 10) == 1
+    assert total_paginas(10, 10) == 1
+    assert total_paginas(11, 10) == 2
+    assert _ids(recortar_pagina(_itens(10), 1, 10, ORDEM_MAIOR_TEMPO)) == _ids(_itens(10))
+    assert _ids(recortar_pagina(_itens(11), 2, 10, ORDEM_MAIOR_TEMPO)) == ["P-010"]
+
+
+def test_paginacao_troca_de_tamanho() -> None:
+    assert len(recortar_pagina(_itens(25), 1, 25, ORDEM_MAIOR_TEMPO)) == 25
+    assert total_paginas(26, 25) == 2
+    assert len(recortar_pagina(_itens(26), 1, 50, ORDEM_MAIOR_TEMPO)) == 26
+
+
+def test_ordem_maior_e_menor_tempo() -> None:
+    itens = list(reversed(_itens(3)))
+    assert _ids(recortar_pagina(itens, 1, 10, ORDEM_MAIOR_TEMPO)) == ["P-000", "P-001", "P-002"]
+    assert _ids(recortar_pagina(itens, 1, 10, ORDEM_MENOR_TEMPO)) == ["P-002", "P-001", "P-000"]
+
+
+def test_pagina_fora_do_intervalo_fica_no_limite() -> None:
+    assert _ids(recortar_pagina(_itens(11), 9, 10, ORDEM_MAIOR_TEMPO)) == ["P-010"]
+    assert len(recortar_pagina(_itens(11), 0, 10, ORDEM_MAIOR_TEMPO)) == 10
+
+
+def test_recarregar_volta_para_a_primeira_pagina() -> None:
+    estado = EstadoFalso()
+    estado.pagina = 3
+    with _api(Resposta(200, PREVIA)):
+        asyncio.run(estado.carregar())
+    assert estado.pagina == 1

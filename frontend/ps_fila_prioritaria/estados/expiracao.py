@@ -6,11 +6,15 @@ import httpx
 import reflex as rx
 
 from ps_fila_prioritaria import api
-from ps_fila_prioritaria.comum import _data_hora_brasilia, _mensagem_erro, formatar_ticket
+from ps_fila_prioritaria.comum import _data_hora_brasilia, _mensagem_erro, _timestamp_segundos, formatar_ticket
 from ps_fila_prioritaria.estados.autenticacao import AuthState
 from ps_fila_prioritaria.estados.fichas_do_dia import NOME_SITUACAO
 
 NOME_SITUACAO_TICKET = {"AGUARDANDO": "Aguardando", "CHAMADO": "Chamado"}
+TAMANHOS_PAGINA = ["10", "25", "50"]
+ORDEM_MAIOR_TEMPO = "Maior tempo parado"
+ORDEM_MENOR_TEMPO = "Menor tempo parado"
+ORDENS = [ORDEM_MAIOR_TEMPO, ORDEM_MENOR_TEMPO]
 
 
 def _linha_ficha(ficha: dict[str, Any]) -> dict[str, Any]:
@@ -18,8 +22,10 @@ def _linha_ficha(ficha: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": int(ficha.get("id") or 0),
         "identificacao": str(ficha.get("senha") or "Sem senha"),
+        "tipo": "Ficha",
         "situacao": NOME_SITUACAO.get(status, status or "—"),
         "horario": _data_hora_brasilia(ficha.get("chegada_em")),
+        "instante": _timestamp_segundos(ficha.get("chegada_em")) or 0,
     }
 
 
@@ -28,9 +34,23 @@ def _linha_ticket(ticket: dict[str, Any]) -> dict[str, Any]:
     return {
         "id": int(ticket.get("id") or 0),
         "identificacao": formatar_ticket(ticket.get("tipo"), ticket.get("numero")),
+        "tipo": "Ticket",
         "situacao": NOME_SITUACAO_TICKET.get(status, status or "—"),
         "horario": _data_hora_brasilia(ticket.get("emitido_em")),
+        "instante": _timestamp_segundos(ticket.get("emitido_em")) or 0,
     }
+
+
+def total_paginas(total: int, tamanho: int) -> int:
+    return max(1, -(-total // tamanho))
+
+
+def recortar_pagina(itens: list[dict[str, Any]], pagina: int, tamanho: int, ordem: str) -> list[dict[str, Any]]:
+    """Ordena pelo tempo parado (maior tempo = mais antigo primeiro) e devolve só a página pedida."""
+    ordenados = sorted(itens, key=lambda item: (item["instante"], item["identificacao"]), reverse=ordem == ORDEM_MENOR_TEMPO)
+    pagina = min(max(1, pagina), total_paginas(len(itens), tamanho))
+    inicio = (pagina - 1) * tamanho
+    return ordenados[inicio : inicio + tamanho]
 
 
 class ExpiracaoState(rx.State):
@@ -44,10 +64,38 @@ class ExpiracaoState(rx.State):
     confirmacao_aberta: bool = False
     mensagem: str = ""
     erro: bool = False
+    pagina: int = 1
+    tamanho_pagina: str = TAMANHOS_PAGINA[0]
+    ordem: str = ORDEM_MAIOR_TEMPO
 
     @rx.var
     def total(self) -> int:
         return len(self.fichas) + len(self.tickets)
+
+    @rx.var
+    def total_paginas(self) -> int:
+        return total_paginas(self.total, int(self.tamanho_pagina))
+
+    @rx.var
+    def itens_pagina(self) -> list[dict[str, Any]]:
+        """Fichas e tickets juntos, ordenados pelo tempo parado, recortados na página atual."""
+        return recortar_pagina(self.fichas + self.tickets, self.pagina, int(self.tamanho_pagina), self.ordem)
+
+    def set_tamanho_pagina(self, tamanho: str) -> None:
+        if tamanho in TAMANHOS_PAGINA:
+            self.tamanho_pagina = tamanho
+            self.pagina = 1
+
+    def set_ordem(self, ordem: str) -> None:
+        if ordem in ORDENS:
+            self.ordem = ordem
+            self.pagina = 1
+
+    def pagina_anterior(self) -> None:
+        self.pagina = max(1, self.pagina - 1)
+
+    def proxima_pagina(self) -> None:
+        self.pagina = min(total_paginas(len(self.fichas) + len(self.tickets), int(self.tamanho_pagina)), self.pagina + 1)
 
     @rx.var
     def texto_confirmacao(self) -> str:
@@ -77,6 +125,7 @@ class ExpiracaoState(rx.State):
         self.fichas = [_linha_ficha(ficha) for ficha in (corpo.get("fichas") or [])]
         self.tickets = [_linha_ticket(ticket) for ticket in (corpo.get("tickets") or [])]
         self.horas = int(corpo.get("horas_expiracao") or 0)
+        self.pagina = 1
 
     async def carregar(self) -> None:
         """Prévia: só lista o que passou do prazo; em caso de erro mantém a última lista."""

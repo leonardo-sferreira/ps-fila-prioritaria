@@ -5,12 +5,13 @@ from typing import Any
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import COR_BORDA, COR_ERRO, COR_SECUNDARIA, COR_SUCESSO, COR_TEXTO, botao_secundario
-from ps_fila_prioritaria.estados.expiracao import ExpiracaoState
+from ps_fila_prioritaria.estados.expiracao import ORDENS, TAMANHOS_PAGINA, ExpiracaoState
 
 
 def linha_parada(item: dict[str, Any]) -> rx.Component:
     return rx.hstack(
         rx.text(item["identificacao"], size="2", weight="bold", color=COR_TEXTO, width="110px"),
+        rx.badge(item["tipo"], color_scheme=rx.cond(item["tipo"] == "Ficha", "blue", "gray"), variant="outline", size="1"),
         rx.badge(item["situacao"], color_scheme="gray", size="1"),
         rx.spacer(),
         rx.text(item["horario"], size="2", color=COR_SECUNDARIA),
@@ -21,15 +22,35 @@ def linha_parada(item: dict[str, Any]) -> rx.Component:
     )
 
 
-def lista_parados(titulo: str, itens: rx.Var) -> rx.Component:
-    return rx.cond(
-        itens.length() > 0,
-        rx.vstack(
-            rx.text(titulo, size="1", weight="medium", color=COR_SECUNDARIA),
-            rx.foreach(itens, linha_parada),
-            spacing="1",
-            width="100%",
+def controles_lista() -> rx.Component:
+    """Ordem e quantidade por página; trocar qualquer um volta à página 1."""
+    return rx.hstack(
+        rx.select(ORDENS, value=ExpiracaoState.ordem, on_change=ExpiracaoState.set_ordem, size="2"),
+        rx.spacer(),
+        rx.text("Por página", size="2", color=COR_SECUNDARIA),
+        rx.select(TAMANHOS_PAGINA, value=ExpiracaoState.tamanho_pagina, on_change=ExpiracaoState.set_tamanho_pagina, size="2"),
+        align="center",
+        spacing="2",
+        wrap="wrap",
+        width="100%",
+    )
+
+
+def paginacao() -> rx.Component:
+    return rx.hstack(
+        botao_secundario("Anterior", on_click=ExpiracaoState.pagina_anterior, disabled=ExpiracaoState.pagina <= 1),
+        rx.text(
+            "Página " + ExpiracaoState.pagina.to_string() + " de " + ExpiracaoState.total_paginas.to_string(),
+            size="2",
+            color=COR_SECUNDARIA,
         ),
+        botao_secundario(
+            "Próxima", on_click=ExpiracaoState.proxima_pagina, disabled=ExpiracaoState.pagina >= ExpiracaoState.total_paginas
+        ),
+        justify="center",
+        align="center",
+        spacing="3",
+        width="100%",
     )
 
 
@@ -98,9 +119,10 @@ def cartao_parados() -> rx.Component:
             ExpiracaoState.total == 0,
             rx.text("Nenhuma ficha ou ticket parado.", size="2", color=COR_SECUNDARIA),
             rx.vstack(
-                lista_parados("FICHAS", ExpiracaoState.fichas),
-                lista_parados("TICKETS DO TOTEM", ExpiracaoState.tickets),
-                spacing="4",
+                controles_lista(),
+                rx.vstack(rx.foreach(ExpiracaoState.itens_pagina, linha_parada), spacing="1", width="100%"),
+                paginacao(),
+                spacing="3",
                 width="100%",
             ),
         ),

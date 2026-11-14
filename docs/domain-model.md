@@ -183,6 +183,7 @@ Período em que um médico está disponível: médico, data, horário inicial e 
 
 - Horários no fuso America/Sao_Paulo; quando o fim é menor ou igual ao início, o período termina no dia seguinte (plantão noturno), com no máximo 24 horas.
 - Não pode haver sobreposição entre períodos do mesmo médico (intervalos semiabertos: um período pode começar quando o outro termina).
+- O Administrador pode registrar uma escala 12x36 de uma vez: o mesmo horário a cada 2 dias, da data inicial até a data final (no máximo 90 dias). Cada dia vira um período próprio; se algum se sobrepuser, nenhum é criado.
 - Período não iniciado pode ser alterado ou removido; período iniciado só pode ter o fim ajustado e nunca é removido.
 - O Médico consulta os próprios períodos, sem alterá-los.
 

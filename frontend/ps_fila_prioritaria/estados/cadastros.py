@@ -379,7 +379,7 @@ class PlantoesState(rx.State):
 
     def abrir_novo(self) -> None:
         self.editando_id, self.editando_iniciado, self.erro_form, self.dialogo_aberto = 0, False, "", True
-        self.form = {"medico_id": "", "data": self.data, "hora_inicio": "07:00", "hora_fim": "19:00"}
+        self.form = {"medico_id": "", "data": self.data, "hora_inicio": "07:00", "hora_fim": "19:00", "repetir": False, "data_fim": ""}
 
     def abrir_edicao(self, plantao: dict[str, Any]) -> None:
         self.editando_id, self.editando_iniciado, self.erro_form, self.dialogo_aberto = int(plantao["id"]), bool(plantao.get("iniciado")), "", True
@@ -393,13 +393,19 @@ class PlantoesState(rx.State):
         if not self.editando_id and not medico.isdigit():
             self.erro_form = "Escolha o médico."
             return
+        if not self.editando_id and self.form.get("repetir") and not self.form.get("data_fim"):
+            self.erro_form = "Informe até quando vai a escala."
+            return
         corpo = {"data": self.form.get("data", ""), "hora_inicio": self.form.get("hora_inicio", ""), "hora_fim": self.form.get("hora_fim", "")}
         self.salvando, self.erro_form = True, ""
         try:
             if self.editando_id:
                 ok, resposta = await chamar(self, "PATCH", f"/disponibilidade/{self.editando_id}", json=corpo)
             else:
-                ok, resposta = await chamar(self, "POST", "/disponibilidade", json={**corpo, "medico_id": int(medico)})
+                novo = {**corpo, "medico_id": int(medico)}
+                if self.form.get("repetir"):
+                    novo["data_fim"] = str(self.form.get("data_fim") or "")
+                ok, resposta = await chamar(self, "POST", "/disponibilidade", json=novo)
         finally:
             self.salvando = False
         if not ok:
@@ -407,7 +413,8 @@ class PlantoesState(rx.State):
             return
         self.dialogo_aberto = False
         await self.carregar()
-        self.mensagem = "Plantão salvo."
+        criados = int((resposta or {}).get("criados") or 1) if isinstance(resposta, dict) else 1
+        self.mensagem = f"{criados} plantões criados na escala 12x36." if criados > 1 else "Plantão salvo."
 
     async def remover(self, plantao_id: int) -> None:
         ok, resposta = await chamar(self, "DELETE", f"/disponibilidade/{int(plantao_id)}")
