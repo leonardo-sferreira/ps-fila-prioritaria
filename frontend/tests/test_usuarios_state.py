@@ -27,11 +27,12 @@ async def _nada():
     return None
 
 
-def test_linha_usuario_marca_admin_e_rota_do_cadastro():
+def test_linha_usuario_marca_admin_e_cadastro_incompleto():
     linhas = [u.linha_usuario(x) for x in USUARIOS]
     assert [l["perfil_nome"] for l in linhas] == ["Administrador", "Médico", "Recepção/Triagem"]
     assert [l["admin"] for l in linhas] == [True, False, False]
-    assert [l["rota_cadastro"] for l in linhas] == ["", "/admin/medicos", "/admin/recepcao"]
+    # Carla é Recepção sem cadastro (sem recepcao_id): precisa completar o CPF em Editar.
+    assert [l["pendente"] for l in linhas] == [False, False, True]
 
 
 def test_filtro_por_perfil_situacao_e_busca():
@@ -58,11 +59,37 @@ def test_corpo_troca_para_admin_leva_so_o_perfil():
     assert u.corpo_troca({"perfil": "ADMINISTRADOR", "crm": "x", "cpf": "y"}) == {"perfil": "ADMINISTRADOR"}
 
 
-def test_criar_admin_envia_senha_e_edicao_nao():
-    estado = _estado(form={"nome": "Nova", "email": "nova@ps.com.br", "senha": "12345678"})
-    assert u.UsuariosState._corpo(estado) == {"nome": "Nova", "email": "nova@ps.com.br", "senha": "12345678"}
+def test_criar_admin_envia_senha_e_perfil_e_edicao_nao():
+    estado = _estado(form={"nome": "Nova", "email": "nova@ps.com.br", "senha": "12345678", "perfil": "ADMINISTRADOR"})
+    assert u.UsuariosState._corpo(estado) == {"nome": "Nova", "email": "nova@ps.com.br", "senha": "12345678", "perfil": "ADMINISTRADOR"}
     estado.editando_id = 9
     assert u.UsuariosState._corpo(estado) == {"nome": "Nova", "email": "nova@ps.com.br"}
+
+
+def test_criar_recepcao_leva_cpf_e_referencia():
+    estado = _estado(form={"nome": "Rita", "email": "rita@ps.com.br", "senha": "12345678", "perfil": "RECEPCAO_TRIAGEM",
+                           "cpf": "123.456.789-09", "especialidade_referencia_id": "2", "crm": "ignorado"})
+    assert u.UsuariosState._corpo(estado) == {"nome": "Rita", "email": "rita@ps.com.br", "senha": "12345678", "perfil": "RECEPCAO_TRIAGEM",
+                                              "cpf": "123.456.789-09", "especialidade_referencia_id": 2}
+
+
+def test_editar_medico_leva_crm_especialidades_e_sala_sem_senha_nem_perfil():
+    estado = _estado()
+    u.UsuariosState.abrir_edicao.fn(estado, {**USUARIOS[1], "crm": "12345-SP", "especialidade_ids": [3], "sala_id": 4})
+    assert estado.editando_id == 2 and estado.form["crm"] == "12345-SP" and estado.form["sala_id"] == "4"
+    assert u.UsuariosState._corpo(estado) == {"nome": "Bruno Médico", "email": "bruno@ps.com.br", "crm": "12345-SP",
+                                              "especialidade_ids": [3], "sala_id": 4}
+
+
+def test_novo_usuario_comeca_como_recepcao():
+    estado = _estado()
+    u.UsuariosState.abrir_novo.fn(estado)
+    assert estado.form["perfil"] == "RECEPCAO_TRIAGEM" and estado.editando_id == 0
+
+
+def test_troca_oferece_administrador_para_quem_nao_e():
+    estado = _estado(troca_usuario={"perfil": "MEDICO"})
+    assert [o[0] for o in u.UsuariosState.opcoes_perfil_troca.fget(estado)] == ["RECEPCAO_TRIAGEM", "ADMINISTRADOR"]
 
 
 def test_abrir_troca_escolhe_outro_perfil_e_limpa_dados():

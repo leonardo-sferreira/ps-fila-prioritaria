@@ -224,7 +224,8 @@ def test_linha_de_parametro_com_limites() -> None:
     linha = c.linha_parametro({"chave": "HORAS_EXPIRACAO", "valor": "24", "rotulo": "Prazo", "minimo": 6, "maximo": 168, "unidade": "horas", "editavel": True, "tipo": "INTEIRO"})
     assert linha["limites"] == "6 a 168 horas" and linha["edicao"] == "24"
     padrao = c.linha_parametro({"chave": "ESPECIALIDADE_PADRAO", "valor": "2", "tipo": "ESPECIALIDADE", "editavel": True})
-    assert padrao["limites"] == "" and padrao["tipo"] == "ESPECIALIDADE"
+    assert padrao["limites"] == "Especialidade ativa" and padrao["tipo"] == "ESPECIALIDADE"
+    assert linha["descricao"] and padrao["descricao"]
 
 
 def test_parametro_nao_numerico_nem_chama_a_api() -> None:

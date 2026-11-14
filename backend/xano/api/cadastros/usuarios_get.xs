@@ -1,5 +1,6 @@
 // Todos os usuários com nome, e-mail, perfil e situação, sem senha (add-autenticacao-perfis, gestao-usuarios).
-// Para médico e Recepção/Triagem traz também o ID do cadastro, para a tela levar ao cadastro certo.
+// Para médico e Recepção/Triagem traz também o cadastro (CRM, especialidades e sala; CPF e especialidade de
+// referência), para a edição na própria tela de Usuários (revisão de 14/11/2026).
 query usuarios verb=GET {
   api_group = "Cadastros"
   auth = "usuario"
@@ -24,14 +25,19 @@ query usuarios verb=GET {
       return = {type: "list"}
     } as $recepcao
 
+    db.query medico_especialidade {
+      return = {type: "list"}
+    } as $vinculos
+
     var $lista { value = [] }
     foreach ($usuarios) {
       each as $item {
         var $medico { value = $medicos|find:($$.usuario_id == $item.id) }
         var $cadastro_recepcao { value = $recepcao|find:($$.usuario_id == $item.id) }
         var $proprio { value = $item.id == $usuario.id }
+        var $esp_medico { value = ($medico == null) ? [] : (($vinculos|filter:($$.medico_id == $medico.id))|map:$$.especialidade_id) }
         var.update $lista {
-          value = $lista|push:{id: $item.id, nome: $item.nome, email: $item.email, perfil: $item.perfil, ativo: $item.ativo, proprio: $proprio, medico_id: (($medico == null) ? null : $medico.id), recepcao_id: (($cadastro_recepcao == null) ? null : $cadastro_recepcao.id)}
+          value = $lista|push:{id: $item.id, nome: $item.nome, email: $item.email, perfil: $item.perfil, ativo: $item.ativo, proprio: $proprio, medico_id: (($medico == null) ? null : $medico.id), recepcao_id: (($cadastro_recepcao == null) ? null : $cadastro_recepcao.id), crm: (($medico == null) ? null : $medico.registro_profissional), sala_id: (($medico == null) ? null : $medico.sala_id), especialidade_ids: $esp_medico, cpf: (($cadastro_recepcao == null) ? null : $cadastro_recepcao.cpf), especialidade_referencia_id: (($cadastro_recepcao == null) ? null : $cadastro_recepcao.especialidade_referencia_id)}
         }
       }
     }

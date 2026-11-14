@@ -1,7 +1,7 @@
 """Tela de usuários do Administrador (add-autenticacao-perfis, D14).
 
-Administradores são criados, editados e ativados aqui; médicos e Recepção/Triagem têm o cadastro próprio, e a
-linha leva até ele. "Trocar perfil" vale para todos, menos o próprio usuário, e pede os dados do perfil novo.
+Qualquer perfil é criado, editado (com CRM/especialidades/sala ou CPF/referência) e ativado aqui (revisão de 14/11/2026).
+"Trocar perfil" vale para todos, menos o próprio usuário, inclusive para Administrador, e pede os dados do perfil novo.
 """
 
 from typing import Any
@@ -24,40 +24,42 @@ from ps_fila_prioritaria.paginas.cadastros import (
     texto,
 )
 
-COLUNAS = [("NOME", None), ("E-MAIL", "260px"), ("PERFIL", "150px"), ("SITUAÇÃO", "90px"), ("", "250px")]
+COLUNAS = [("NOME", None), ("E-MAIL", "260px"), ("PERFIL", "150px"), ("SITUAÇÃO", "90px"), ("", "260px")]
 
 
 def acoes_usuario(u: Any) -> rx.Component:
     e = UsuariosState
     return rx.hstack(
-        rx.cond(
-            u["admin"],
-            rx.hstack(
-                rx.button("Editar", on_click=e.abrir_edicao(u), variant="ghost", size="1", color_scheme="gray"),
-                rx.cond(
-                    ~u["proprio"],
-                    rx.cond(
-                        u["ativo"],
-                        rx.button("Desativar", on_click=e.alternar_ativo(u["id"], False), variant="ghost", size="1", color_scheme="red"),
-                        rx.button("Ativar", on_click=e.alternar_ativo(u["id"], True), variant="ghost", size="1", color_scheme="green"),
-                    ),
-                ),
-                spacing="1",
-            ),
-            rx.link(rx.button("Abrir cadastro", variant="ghost", size="1", color_scheme="gray"), href=u["rota_cadastro"]),
-        ),
+        rx.button("Editar", on_click=e.abrir_edicao(u), variant="ghost", size="1", color_scheme="gray"),
         rx.cond(
             u["proprio"],
             rx.text("Você", size="1", color=COR_SECUNDARIA, padding="0 8px"),
-            rx.button("Trocar perfil", on_click=e.abrir_troca(u), variant="ghost", size="1", color_scheme="blue"),
+            rx.hstack(
+                rx.cond(
+                    u["ativo"],
+                    rx.button("Desativar", on_click=e.alternar_ativo(u["id"], False), variant="ghost", size="1", color_scheme="red"),
+                    rx.button("Ativar", on_click=e.alternar_ativo(u["id"], True), variant="ghost", size="1", color_scheme="green"),
+                ),
+                rx.button("Trocar perfil", on_click=e.abrir_troca(u), variant="ghost", size="1", color_scheme="blue"),
+                spacing="1",
+            ),
         ),
         spacing="1",
         justify="end",
     )
 
 
+def nome_usuario(u: Any) -> rx.Component:
+    """Nome e, se faltar o cadastro do perfil (CPF ou CRM), o aviso para completar em Editar."""
+    return rx.vstack(
+        texto(u["nome"], weight="medium"),
+        rx.cond(u["pendente"], rx.text("Cadastro incompleto: complete em Editar", size="1", color=COR_ALERTA)),
+        spacing="0",
+    )
+
+
 def linha(u: Any) -> rx.Component:
-    conteudos = [texto(u["nome"], weight="medium"), texto(u["email"], color=COR_SECUNDARIA), texto(u["perfil_nome"]),
+    conteudos = [nome_usuario(u), texto(u["email"], color=COR_SECUNDARIA), texto(u["perfil_nome"]),
                  situacao(u["ativo"]), acoes_usuario(u)]
     return rx.hstack(
         *[celula(c, largura) for c, (_, largura) in zip(conteudos, COLUNAS)],
@@ -187,19 +189,36 @@ def pagina_usuarios() -> rx.Component:
     return layout_admin(
         "/admin/usuarios",
         "Usuários",
-        "Todos os acessos do sistema. Administradores são mantidos aqui; médicos e Recepção/Triagem, nos cadastros. "
-        "A senha não é redefinida pelo Administrador: cada pessoa usa \"Esqueci minha senha\".",
-        rx.flex(filtro_perfil(), barra_lista(e, "Novo administrador", "Buscar por nome ou e-mail"), gap="12px", wrap="wrap", width="100%"),
+        "Todos os acessos do sistema, de qualquer perfil: crie, edite, ative ou desative e troque o perfil aqui. "
+        "Você não pode desativar nem trocar o seu próprio perfil. A senha não é redefinida pelo Administrador: cada pessoa usa \"Esqueci minha senha\".",
+        rx.flex(filtro_perfil(), barra_lista(e, "Novo usuário", "Buscar por nome ou e-mail"), gap="12px", wrap="wrap", width="100%"),
         mensagem(e),
         tabela_usuarios(),
         dialogo(
-            e, "Novo administrador", "Editar administrador",
+            e, "Novo usuário", "Editar usuário",
+            rx.cond(
+                ~e.editando,
+                campo("Perfil", rx.select.root(
+                    rx.select.trigger(width="100%"),
+                    rx.select.content(*[rx.select.item(nome, value=valor) for valor, nome in PERFIS]),
+                    value=e.form["perfil"].to(str),
+                    on_change=lambda v: e.set_campo("perfil", v),
+                )),
+                rx.text("Perfil: ", rx.match(e.form["perfil"].to(str), *[(valor, nome) for valor, nome in PERFIS], ""),
+                        " (para mudar, use \"Trocar perfil\")", size="2", color=COR_SECUNDARIA),
+            ),
             campo("Nome", entrada(e, "nome", placeholder="Nome completo")),
             campo("E-mail de login", entrada(e, "email", type="email", placeholder="nome@ps.com.br")),
             rx.cond(
                 ~e.editando,
                 campo("Senha inicial", entrada(e, "senha", type="password", placeholder="8 ou mais caracteres"),
                       "A pessoa pode trocá-la depois em \"Esqueci minha senha\"."),
+            ),
+            rx.match(
+                e.form["perfil"].to(str),
+                ("MEDICO", campos_medico()),
+                ("RECEPCAO_TRIAGEM", campos_recepcao()),
+                rx.fragment(),
             ),
         ),
         dialogo_troca(),

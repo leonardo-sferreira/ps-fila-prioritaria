@@ -143,7 +143,7 @@ ROTEIROS = (
             ), "Confirmar o fluxo com e-mail real e limites de tempo."),
             verificacao("Usuários, troca de perfil e permissões", (
                 "frontend/tests/test_usuarios_state.py::test_filtro_por_perfil_situacao_e_busca",
-                "frontend/tests/test_usuarios_state.py::test_criar_admin_envia_senha_e_edicao_nao",
+                "frontend/tests/test_usuarios_state.py::test_criar_admin_envia_senha_e_perfil_e_edicao_nao",
                 "frontend/tests/test_usuarios_state.py::test_trocar_perfil_mostra_erro_do_ultimo_admin_e_mantem_dialogo",
             ), "Confirmar criação, troca de perfil e autorização na API real."),
             verificacao("Cadastros, parâmetros e plantões", (

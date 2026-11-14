@@ -1,7 +1,7 @@
 ## 1. Backend (Xano)
 
 - [x] 1.1 `api/cadastros/disponibilidade_post.xs`: input `data_fim?`; valida data final (≥ inicial, ≤ 90 dias); gera períodos a cada 48 h; checa sobreposição de todos antes de gravar; grava e audita na mesma transação; responde `criados`
-- [ ] 1.2 Push no workspace Xano (aguarda aval do Nicolas)
+- [x] 1.2 Push no workspace Xano (aguarda aval do Nicolas)
 
 ## 2. Frontend (Reflex)
 
@@ -15,4 +15,4 @@
 ## 4. Verificação
 
 - [x] 4.1 Testes em `tests/test_cadastros_state.py`: exige data final, envia `data_fim`, plantão único não envia
-- [ ] 4.2 Manual (após o push): criar escala de 12/11 a 18/11, 07:00–19:00, e conferir plantões em 12, 14, 16 e 18/11; repetir com um dia já ocupado e conferir que nada é criado
+- [x] 4.2 Manual (após o push): criar escala de 12/11 a 18/11, 07:00–19:00, e conferir plantões em 12, 14, 16 e 18/11; repetir com um dia já ocupado e conferir que nada é criado

@@ -273,8 +273,19 @@ class RecepcaoState(CadastroBase, OpcoesEspecialidades, rx.State):
 
     async def carregar(self) -> None:
         await CadastroBase.carregar(self)
-        self.itens = [{**r, "cpf_exibido": _cpf_mascarado(r.get("cpf")), "especialidade_referencia": r.get("especialidade_referencia") or "—"}
-                      for r in self.itens]
+        self.itens = [{**r, "cpf_exibido": _cpf_mascarado(r.get("cpf")), "especialidade_referencia": r.get("especialidade_referencia") or "—",
+                       "pendente": bool(r.get("pendente"))} for r in self.itens]
+
+    def abrir_edicao(self, item: dict[str, Any]):
+        """Login sem cadastro (sem CPF) não tem o que editar aqui: o CPF é completado em Usuários."""
+        if item.get("pendente"):
+            return rx.redirect("/admin/usuarios")
+        CadastroBase.abrir_edicao(self, item)
+
+    async def alternar_ativo(self, item_id: int, ativo: bool):
+        if not int(item_id):
+            return rx.redirect("/admin/usuarios")
+        await CadastroBase.alternar_ativo(self, item_id, ativo)
 
     async def _carregar_extras(self) -> None:
         await self._carregar_especialidades()
@@ -425,11 +436,33 @@ class PlantoesState(rx.State):
         self.mensagem = "Plantão removido."
 
 
+# O que cada parâmetro muda no atendimento, em linguagem de quem opera o PS.
+DESCRICAO_PARAMETRO = {
+    "LIMIAR_AMARELA": "Soma de pontos da triagem (sinais vitais e sintomas) a partir da qual a ficha recebe a cor Amarela.",
+    "LIMIAR_VERMELHA": "Soma de pontos a partir da qual a ficha recebe a cor Vermelha (atendimento imediato). Deve ser maior que o limiar da Amarela.",
+    "IDADE_MAXIMA_CRIANCA": "Até esta idade o paciente é tratado como criança e encaminhado para a Pediatria.",
+    "IDADE_MINIMA_TABELA_ADULTA": "A partir desta idade os sinais vitais são pontuados pela tabela de adultos.",
+    "IDADE_MINIMA_IDOSO": "A partir desta idade o paciente tem direito ao atendimento prioritário de idoso.",
+    "INTERVALO_CHAMADA_SEGUNDOS": "Tempo de espera depois da primeira chamada antes de chamar o paciente de novo.",
+    "INTERVALO_REPETICAO_SEGUNDOS": "Tempo de espera entre a segunda e a terceira chamada de um ticket.",
+    "TENTATIVAS_CHAMADA": "Quantas vezes o paciente é chamado antes de voltar para o fim da fila.",
+    "CICLO_PRE_TRIAGEM_PRIORITARIOS": "Na fila de pré-triagem, quantos tickets prioritários são chamados em cada rodada.",
+    "CICLO_PRE_TRIAGEM_NORMAIS": "Na fila de pré-triagem, quantos tickets normais são chamados em cada rodada, depois dos prioritários.",
+    "HORAS_EXPIRACAO": "Depois deste tempo sem andamento, a ficha ou o ticket aparece como parado no dashboard e pode ser dispensado.",
+    "amarelas_por_ciclo": "Na fila médica, quantas fichas Amarelas são chamadas em cada rodada.",
+    "azuis_por_ciclo": "Na fila médica, quantas fichas Azuis são chamadas em cada rodada, depois das Amarelas.",
+    "tamanho_previsao": "Quantas próximas senhas aparecem na previsão do painel da sala de espera.",
+    "ESPECIALIDADE_PADRAO": "Para onde vai a ficha quando nenhum sintoma do catálogo indica uma especialidade.",
+}
+
+
 def linha_parametro(parametro: dict[str, Any]) -> dict[str, Any]:
     minimo, maximo = parametro.get("minimo"), parametro.get("maximo")
-    limites = f"{minimo} a {maximo} {parametro.get('unidade') or ''}".strip() if minimo is not None and maximo is not None else ""
+    limites = f"{minimo} a {maximo} {parametro.get('unidade') or ''}".strip() if minimo is not None and maximo is not None else "Especialidade ativa"
     valor = str(parametro.get("valor") or "")
-    return {"chave": str(parametro.get("chave")), "valor": valor, "edicao": valor, "rotulo": str(parametro.get("rotulo") or parametro.get("chave")),
+    chave = str(parametro.get("chave"))
+    return {"chave": chave, "valor": valor, "edicao": valor, "rotulo": str(parametro.get("rotulo") or chave),
+            "descricao": DESCRICAO_PARAMETRO.get(chave, ""), "unidade": str(parametro.get("unidade") or ""),
             "limites": limites, "tipo": str(parametro.get("tipo") or "INTEIRO"), "editavel": bool(parametro.get("editavel"))}
 
 
@@ -450,7 +483,7 @@ def linha_faixa(faixa: dict[str, Any]) -> dict[str, Any]:
     condicao = faixa.get("condicao_gravidade")
     return {"id": int(faixa.get("id") or 0), "parametro": str(faixa.get("parametro")), "sinal": NOME_SINAL.get(str(faixa.get("parametro")), str(faixa.get("parametro"))),
             "minimo": minimo, "maximo": maximo, "intervalo": intervalo, "pontos": str(faixa.get("pontos")),
-            "condicao": "" if condicao is None else ("com sinais de gravidade" if condicao else "sem sinais de gravidade")}
+            "condicao": "qualquer paciente" if condicao is None else ("com sinais de gravidade" if condicao else "sem sinais de gravidade")}
 
 
 class ParametrosState(rx.State):
