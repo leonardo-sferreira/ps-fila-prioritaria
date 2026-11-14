@@ -6,7 +6,8 @@
 
 - [x] 1.1 [Xano] Conferir `backend/xano/table/historico_alteracao.xs` com o D1 e verificar que não existe endpoint de escrita, edição ou exclusão nessa tabela
 - [x] 1.2 [Xano] Função `registrar_alteracao` publicada e chamada dentro do `db.transaction` dos endpoints, com o usuário do token como responsável; validada em POST e PATCH de Pacientes (26/10/2026)
-- [ ] 1.3 [Xano] Provar o rollback (D2): falha forçada depois da auditoria não deixa nem a alteração nem o registro. Exige função temporária no workspace compartilhado (aval do Nicolas); se dispensada, registrar a limitação no design.md · PENDENTE PO
+- [x] 1.3 [Xano] Provar o rollback (D2): falha forçada depois da auditoria não deixa nem a alteração nem o registro
+  - Feito em 14/11/2026 na `v1`, com aval do Nicolas: a função temporária `teste_prova_rollback` gravou uma sala (id 2) e a auditoria dela (id 301) dentro de `db.transaction` e forçou erro em seguida; a conferência depois do erro encontrou 0 salas e 0 auditorias com o marcador `ROLLBACK_TESTE_1794693335`. A função foi removida do workspace logo após a prova.
 - [x] 1.4 Testes em `tests/api/test_base_compartilhada.py` (`AuditoriaTest`): nenhum endpoint grava no histórico diretamente, só `registrar_alteracao` grava, a auditoria fica dentro da transação e o responsável vem da sessão; verificar que passam
 
 ## 2. Fuso (D3)
