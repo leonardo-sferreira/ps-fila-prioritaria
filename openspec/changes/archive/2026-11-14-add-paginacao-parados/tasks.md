@@ -7,4 +7,4 @@
 ## 2. Verificação
 
 - [x] 2.1 Testes em `tests/test_expiracao_state.py`: 10 por padrão, limites (10, 11, 25 itens), troca de tamanho, ordem maior/menor tempo, página não passa do fim
-- [ ] 2.2 Manual: em `/admin`, com mais de 10 parados, navegar páginas, trocar para 25 e alternar a ordem
+- [x] 2.2 Manual: em `/admin`, com mais de 10 parados, navegar páginas, trocar para 25 e alternar a ordem
