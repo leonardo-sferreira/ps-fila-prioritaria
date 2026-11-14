@@ -1,30 +1,25 @@
 # Tarefas
 
-> Sem tela: esta change não tem tarefas de Reflex. As tabelas já existem; "conferir" significa comparar o `.xs` com o design, sem alterar o esquema.
+> Revisadas em 13/11/2026 (ver design.md, "Revisão de 13/11/2026"). Sem tela e sem alteração no Xano.
 
-## 1. Xano — auditoria e fuso (necessário para a Fatia 2)
+## 1. Auditoria
 
-- [x] 1.1 [Xano] Conferir `backend/xano/table/historico_alteracao.xs` com o D1 (campos e índices) e verificar no painel que não existe nenhum endpoint de escrita, edição ou exclusão nessa tabela
-- [ ] 1.2 [Xano] Criar a função `registrar_alteracao` (D1) e verificar com Run & Debug que (a) uma chamada dentro de `db.transaction` grava o registro com o usuário do token e (b) um erro forçado depois da chamada não deixa registro (D2); se a transação não estiver disponível, registrar a limitação no design.md antes de seguir
-  - Parcial (26/10/2026): a função foi publicada na `v1` e validada dentro das transações de POST e PATCH de Pacientes. O Run & Debug criou `CADASTRO` e `ALTERACAO` para o mesmo Paciente sintético com o usuário autenticado; a tabela ficou com dois registros e o PATCH no-op não criou terceiro. A falha induzida e a prova direta de rollback permanecem pendentes, pois não há ambiente isolado e não foi criada função ou endpoint temporário.
-- [ ] 1.3 [Xano] Criar a variável de ambiente `FUSO_HORARIO = America/Sao_Paulo` (D3) e verificar com Run & Debug que 02:59 UTC de 05/10 resulta no dia 04/10 no fuso do PS
-- [ ] 1.4 Escrever `tests/api/test_auditoria.py` cobrindo operação válida auditada com todos os campos, operação recusada sem auditoria e ausência de operação de escrita, edição ou exclusão de auditoria pela API; verificar que passam
+- [x] 1.1 [Xano] Conferir `backend/xano/table/historico_alteracao.xs` com o D1 e verificar que não existe endpoint de escrita, edição ou exclusão nessa tabela
+- [x] 1.2 [Xano] Função `registrar_alteracao` publicada e usada dentro do `db.transaction` (validada em Pacientes em 26/10/2026)
+- [ ] 1.3 [Xano] Prova de rollback: falha induzida depois da auditoria não deixa registro (exige função temporária e aval do dono do workspace)
+- [x] 1.4 `tests/api/test_base_compartilhada.py` (`AuditoriaTest`): só a função grava no histórico, toda chamada fica dentro da transação, responsável vem da sessão
 
-## 2. Xano — parâmetros (necessário para a Fatia 3)
+## 2. Fuso
 
-- [ ] 2.1 [Xano] Conferir `backend/xano/table/parametro.xs` com o D4 e criar a função `obter_parametro`; verificar com Run & Debug a conversão de um INTEIRO, de uma ESPECIALIDADE e o erro explícito para chave inexistente
-- [ ] 2.2 [Xano] Criar `GET parametros` (autenticado, três perfis, `verificar_acesso`) (D6); verificar com os testes 2.3
-- [ ] 2.3 Escrever `tests/api/test_parametros.py` cobrindo todos os valores iniciais do D4 depois da carga (incluindo o ciclo da fila pré-triagem, 2 : 1), consulta pelos três perfis, 401 sem token e 401 para usuário desativado com token válido; verificar que passam
+- [x] 2.1 Fuso fixo `America/Sao_Paulo` no XanoScript; teste falha se aparecer outro fuso ou a chave `FUSO_HORARIO` como parâmetro
 
-## 3. Xano — dados de referência (necessário para a Fatia 3)
+## 3. Parâmetros e dados de referência
 
-- [ ] 3.1 [Xano] Conferir os `.xs` de `especialidade`, `especialidade_alternativa`, `sintoma` e `sintoma_especialidade` com o D5 e criar a função `carga_inicial` (insere só o que falta, relações só para registros inseridos na execução, auditoria `CADASTRO` em cada inserção); verificar com Run & Debug em ambiente vazio
-- [ ] 3.2 [Xano] Criar `POST admin/carga-inicial` (ADMINISTRADOR) incluindo os parâmetros do D4; verificar com os testes 3.4
-- [ ] 3.3 [Xano] Criar `GET especialidades` e `GET sintomas` (autenticados, só ativos, campos do D6); verificar com os testes 3.4
-- [ ] 3.4 Escrever `tests/api/test_dados_referencia.py` cobrindo carga em ambiente vazio com o catálogo oficial ("Dor ou pressão no peito", grupo Cardiovascular, 2 pontos, Cardiologia), segunda execução sem duplicar, pontuação/relação alterada mantida após nova carga, 403 para Recepção/Triagem e Médico na carga, sintoma inativo fora da consulta e 401 sem token nas consultas; verificar que passam
+- [x] 3.1 [Xano] Valores iniciais criados sem sobrescrita pelas funções `inicializar_*`
+- [x] 3.2 `tests/api/test_base_compartilhada.py` (`ParametrosTest`): valores da baseline (idoso 60, criança 11, ciclos 2:1, previsão 5, 30 s, 3 chamadas, 24 h) e cada valor inicial dentro dos limites de `regra_parametro`
+- [x] 3.3 Integração: `GET parametros` sem token ou com token adulterado responde 401
 
-## 4. Integração e documentação
+## 4. Documentação
 
-- [ ] 4.1 Exportar o XanoScript das funções e endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
-- [ ] 4.2 Adicionar ao README o passo "executar a carga inicial com o primeiro Administrador" e verificar executando-o num workspace limpo
-- [ ] 4.3 Conferir `docs/domain-model.md` (Histórico_Alteração, Parâmetros de regra, Especialidade e Sintoma) com o que foi implementado, incluindo as chaves `idade_minima_idoso` e `idade_maxima_crianca`, e ajustar o que divergir
+- [x] 4.1 Proposta, design e specs alinhados ao que está publicado
+- [ ] 4.2 Decisão do PO sobre auditoria da carga automática (pergunta aberta na proposta)

@@ -65,3 +65,14 @@ Todos chamam `verificar_acesso` com os três perfis. A `add-cadastros-administra
 ## Plano de migração
 
 As tabelas já existem. Implantação: criar a variável `FUSO_HORARIO`, publicar as funções e os endpoints e executar `POST admin/carga-inicial` uma vez com o primeiro Administrador. Rollback: remover os endpoints e as funções. Os dados carregados podem ficar, pois a `add-cadastros-administrador` vai precisar deles.
+
+## Revisão de 13/11/2026
+
+As changes seguintes entregaram esta base com outro desenho. Vale o que está publicado; as decisões abaixo substituem as anteriores.
+
+- **D1 mantida.** `registrar_alteracao` é a única gravação em `historico_alteracao` e é chamada dentro do `db.transaction` de 31 endpoints. `tests/api/test_base_compartilhada.py` garante isso de forma estática: falha se um endpoint gravar no histórico diretamente, chamar a auditoria fora da transação ou usar `$input.usuario_id` como responsável.
+- **D2 parcial.** A atomicidade foi validada em POST e PATCH de Pacientes (26/10/2026). A prova de falha induzida depois da auditoria continua pendente: exige função temporária no workspace compartilhado.
+- **D3 substituída.** O fuso é fixo em `America/Sao_Paulo` no XanoScript, conforme `openspec/config.yaml` ("fuso fixo"). Não há variável `FUSO_HORARIO`. O teste falha se aparecer outro fuso.
+- **D4 substituída.** Não há `obter_parametro`; cada regra lê `parametro` pela chave, e `cadastros/regra_parametro` define tipo e limites. As chaves seguem os nomes publicados (`IDADE_MINIMA_IDOSO`, `IDADE_MAXIMA_CRIANCA`, `CICLO_PRE_TRIAGEM_PRIORITARIOS`, `CICLO_PRE_TRIAGEM_NORMAIS`, `amarelas_por_ciclo`, `azuis_por_ciclo`, `tamanho_previsao`, `ESPECIALIDADE_PADRAO` etc.).
+- **D5 substituída.** Não há `POST admin/carga-inicial`. As funções `inicializar_parametros_fila`, `classificacao/inicializar_classificacao` e `direcionamento/inicializar_direcionamento` inserem só o que falta quando a operação precisa. Os sintomas são cadastrados pelo Administrador. A carga automática não grava auditoria porque não há usuário responsável (pergunta aberta na proposta).
+- **D6 substituída.** `GET parametros` é só do Administrador (`add-cadastros-administrador`, D7). `GET especialidades` e `GET sintomas` seguem as specs `especialidades` e `sintomas`.
