@@ -9,6 +9,7 @@ from typing import Any, Callable
 import reflex as rx
 
 from ps_fila_prioritaria.componentes import (
+    COR_ALERTA,
     COR_AZUL_BOTAO,
     COR_BORDA,
     COR_ERRO,
@@ -375,8 +376,8 @@ def pagina_recepcao() -> rx.Component:
         mensagem(r),
         tabela(
             r,
-            [("NOME", None), ("E-MAIL", "240px"), ("CPF", "130px"), ("ESPECIALIDADE DE REFERÊNCIA", "200px")],
-            lambda i: [texto(i["nome"], weight="medium"), texto(i["email"], color=COR_SECUNDARIA), texto(i["cpf_exibido"]),
+            [("NOME", None), ("E-MAIL", "240px"), ("CPF", "170px"), ("ESPECIALIDADE DE REFERÊNCIA", "200px")],
+            lambda i: [texto(i["nome"], weight="medium"), texto(i["email"], color=COR_SECUNDARIA), rx.cond(i["pendente"], rx.text("Sem CPF: complete em Usuários", size="1", color=COR_ALERTA), texto(i["cpf_exibido"])),
                        texto(i["especialidade_referencia"], color=COR_SECUNDARIA)],
             "Ninguém neste filtro.",
         ),
@@ -517,7 +518,7 @@ def pagina_plantoes() -> rx.Component:
 def linha_parametro(p: Any) -> rx.Component:
     st = ParametrosState
     return rx.hstack(
-        celula(rx.vstack(texto(p["rotulo"], weight="medium"), rx.text(p["chave"], size="1", color=COR_SECUNDARIA), spacing="0"), None),
+        celula(rx.vstack(texto(p["rotulo"], weight="medium"), rx.text(p["descricao"], size="1", color=COR_SECUNDARIA), spacing="1"), None),
         celula(texto(p["limites"], color=COR_SECUNDARIA), "150px"),
         celula(
             rx.cond(
@@ -557,6 +558,16 @@ def linha_faixa(f: Any) -> rx.Component:
     )
 
 
+def cabecalho_colunas(colunas: list[tuple[str, str | None]]) -> rx.Component:
+    return rx.hstack(
+        *[celula(rx.text(rotulo, size="1", weight="bold", color=COR_SECUNDARIA, letter_spacing="0.06em"), largura) for rotulo, largura in colunas],
+        spacing="3",
+        width="100%",
+        padding="12px 16px",
+        border_bottom=f"1px solid {COR_BORDA}",
+    )
+
+
 def pagina_parametros() -> rx.Component:
     st = ParametrosState
     ff = st.faixa_form
@@ -565,10 +576,19 @@ def pagina_parametros() -> rx.Component:
         "Parâmetros e faixas",
         "Valores das regras do PS, dentro de limites seguros. O fuso horário (Brasília) não é configurável.",
         mensagem(st),
-        painel(rx.box(rx.vstack(rx.foreach(st.parametros, linha_parametro), spacing="0", min_width="700px"), overflow_x="auto", width="100%")),
+        rx.text("Parâmetros das regras", size="4", weight="bold", color=COR_TEXTO),
+        rx.text("Cada linha é uma regra do atendimento. \"Valores permitidos\" é a faixa aceita pelo sistema; \"Valor atual\" é o que "
+                "está em uso agora. Altere o valor e clique em Salvar.", size="2", color=COR_SECUNDARIA),
+        painel(rx.box(rx.vstack(
+            cabecalho_colunas([("PARÂMETRO E O QUE ELE FAZ", None), ("VALORES PERMITIDOS", "150px"), ("VALOR ATUAL", "190px"), ("", "90px")]),
+            rx.foreach(st.parametros, linha_parametro), spacing="0", min_width="700px"), overflow_x="auto", width="100%")),
         rx.text("Faixas de pontuação dos sinais vitais", size="4", weight="bold", color=COR_TEXTO, padding_top="8px"),
-        rx.text("Extremos inclusivos; não pode haver sobreposição entre faixas do mesmo sinal vital.", size="2", color=COR_SECUNDARIA),
-        painel(rx.box(rx.vstack(rx.foreach(st.faixas, linha_faixa), spacing="0", min_width="700px"), overflow_x="auto", width="100%")),
+        rx.text("Na triagem, cada sinal vital medido cai em uma faixa e soma os pontos dela ao escore da ficha. O escore total, "
+                "comparado aos limiares acima, define a cor. Extremos inclusivos; não pode haver sobreposição entre faixas do mesmo sinal vital.",
+                size="2", color=COR_SECUNDARIA),
+        painel(rx.box(rx.vstack(
+            cabecalho_colunas([("SINAL VITAL", None), ("QUANDO SE APLICA", "190px"), ("FAIXA DE VALORES", "140px"), ("PONTOS SOMADOS", "100px"), ("", "80px")]),
+            rx.foreach(st.faixas, linha_faixa), spacing="0", min_width="700px"), overflow_x="auto", width="100%")),
         rx.dialog.root(
             rx.dialog.content(
                 rx.dialog.title("Editar faixa"),

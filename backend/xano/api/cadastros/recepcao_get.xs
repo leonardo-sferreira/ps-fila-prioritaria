@@ -34,7 +34,26 @@ query recepcao verb=GET {
         var $email { value = ($login == null) ? "" : $login.email }
         var $nome_esp { value = ($esp == null) ? null : $esp.nome }
         var.update $lista {
-          value = $lista|push:{id: $cadastro.id, usuario_id: $cadastro.usuario_id, nome: $nome, email: $email, cpf: $cadastro.cpf, especialidade_referencia_id: $cadastro.especialidade_referencia_id, especialidade_referencia: $nome_esp, ativo: $cadastro.ativo}
+          value = $lista|push:{id: $cadastro.id, usuario_id: $cadastro.usuario_id, nome: $nome, email: $email, cpf: $cadastro.cpf, especialidade_referencia_id: $cadastro.especialidade_referencia_id, especialidade_referencia: $nome_esp, ativo: $cadastro.ativo, pendente: false}
+        }
+      }
+    }
+
+    // Logins de Recepção/Triagem sem cadastro (criados fora das telas): aparecem com id 0 e pendente = true,
+    // para o Administrador completar o CPF em Usuários (usuarios/{id} cria o cadastro).
+    db.query usuario {
+      where = $db.usuario.perfil == "RECEPCAO_TRIAGEM"
+      return = {type: "list"}
+    } as $logins_recepcao
+
+    foreach ($logins_recepcao) {
+      each as $login_sem {
+        conditional {
+          if (!($usuario_ids|in:$login_sem.id)) {
+            var.update $lista {
+              value = $lista|push:{id: 0, usuario_id: $login_sem.id, nome: $login_sem.nome, email: $login_sem.email, cpf: null, especialidade_referencia_id: null, especialidade_referencia: null, ativo: $login_sem.ativo, pendente: true}
+            }
+          }
         }
       }
     }

@@ -1,8 +1,9 @@
-"""Gestão de usuários do Administrador (add-autenticacao-perfis, D9/D14).
+"""Gestão de usuários do Administrador (add-autenticacao-perfis, D9/D14; revisão de 14/11/2026).
 
-Lista todos os usuários; cria e edita só Administradores (médico e Recepção/Triagem nascem nos cadastros) e troca
-o perfil de qualquer usuário, menos o próprio, pedindo os dados que o perfil novo exige. As regras (próprio
-usuário, último administrador, médico com ficha chamada) ficam no Xano; aqui só se monta o corpo e se mostra o erro.
+Lista todos os usuários e, para qualquer perfil, cria (escolhendo o perfil), edita (nome, e-mail e os dados do perfil:
+CRM, especialidades e sala do Médico; CPF e especialidade de referência da Recepção/Triagem), ativa e desativa. A troca
+de perfil, inclusive para Administrador, vale para todos menos o próprio usuário. As regras (próprio usuário, último
+administrador, médico com ficha chamada) ficam no Xano; aqui só se monta o corpo e se mostra o erro.
 """
 
 from typing import Any, ClassVar
@@ -22,26 +23,41 @@ def filtrar_usuarios(itens: list[dict[str, Any]], filtro: str, busca: str, perfi
 
 
 def linha_usuario(usuario: dict[str, Any]) -> dict[str, Any]:
-    """Usuário da API com o nome do perfil e para onde levar quando o cadastro é de médico ou Recepção."""
+    """Usuário da API com o nome do perfil; `pendente` marca Médico ou Recepção sem o cadastro do perfil."""
     perfil = str(usuario.get("perfil") or "")
-    cadastro = {"MEDICO": "/admin/medicos", "RECEPCAO_TRIAGEM": "/admin/recepcao"}.get(perfil, "")
+    pendente = (perfil == "MEDICO" and not usuario.get("medico_id")) or (perfil == "RECEPCAO_TRIAGEM" and not usuario.get("recepcao_id"))
     return {**usuario, "perfil_nome": NOME_PERFIL.get(perfil, perfil), "admin": perfil == "ADMINISTRADOR",
-            "proprio": bool(usuario.get("proprio")), "rota_cadastro": cadastro}
+            "proprio": bool(usuario.get("proprio")), "pendente": pendente}
+
+
+def _id_ou_none(valor: Any) -> int | None:
+    texto = str(valor or "")
+    return int(texto) if texto.isdigit() and texto != "0" else None
+
+
+def dados_perfil(perfil: str, form: dict[str, Any]) -> dict[str, Any]:
+    """Só os dados que o perfil exige: CRM, especialidades e sala (Médico); CPF e referência (Recepção/Triagem)."""
+    if perfil == "MEDICO":
+        return {"crm": str(form.get("crm") or ""), "especialidade_ids": list(form.get("especialidade_ids") or []),
+                "sala_id": _id_ou_none(form.get("sala_id"))}
+    if perfil == "RECEPCAO_TRIAGEM":
+        return {"cpf": str(form.get("cpf") or ""), "especialidade_referencia_id": _id_ou_none(form.get("especialidade_referencia_id"))}
+    return {}
 
 
 def corpo_troca(form: dict[str, Any]) -> dict[str, Any]:
-    """Corpo de PATCH usuarios/{id}/perfil: só os dados que o perfil novo exige."""
+    """Corpo de PATCH usuarios/{id}/perfil: o perfil novo e os dados que ele exige."""
     perfil = str(form.get("perfil") or "")
-    corpo: dict[str, Any] = {"perfil": perfil}
-    if perfil == "MEDICO":
-        sala = str(form.get("sala_id") or "")
-        corpo.update(crm=str(form.get("crm") or ""), especialidade_ids=list(form.get("especialidade_ids") or []),
-                     sala_id=int(sala) if sala.isdigit() and sala != "0" else None)
-    elif perfil == "RECEPCAO_TRIAGEM":
-        referencia = str(form.get("especialidade_referencia_id") or "")
-        corpo.update(cpf=str(form.get("cpf") or ""),
-                     especialidade_referencia_id=int(referencia) if referencia.isdigit() and referencia != "0" else None)
-    return corpo
+    return {"perfil": perfil, **dados_perfil(perfil, form)}
+
+
+def form_do_usuario(usuario: dict[str, Any]) -> dict[str, Any]:
+    """Formulário preenchido com o login e o cadastro atual do perfil."""
+    return {"nome": usuario.get("nome") or "", "email": usuario.get("email") or "", "senha": "",
+            "perfil": str(usuario.get("perfil") or "ADMINISTRADOR"), "crm": usuario.get("crm") or "",
+            "especialidade_ids": [int(i) for i in (usuario.get("especialidade_ids") or [])],
+            "sala_id": str(usuario.get("sala_id") or ""), "cpf": usuario.get("cpf") or "",
+            "especialidade_referencia_id": str(usuario.get("especialidade_referencia_id") or "")}
 
 
 class UsuariosState(CadastroBase, OpcoesEspecialidades, rx.State):
@@ -60,7 +76,7 @@ class UsuariosState(CadastroBase, OpcoesEspecialidades, rx.State):
 
     @rx.var
     def opcoes_perfil_troca(self) -> list[list[str]]:
-        """Perfis para os quais o usuário escolhido pode ir (todos menos o atual)."""
+        """Perfis para os quais o usuário escolhido pode ir (todos menos o atual, Administrador incluído)."""
         atual = self.troca_usuario.get("perfil")
         return [[valor, nome] for valor, nome in PERFIS if valor != atual]
 
@@ -80,24 +96,25 @@ class UsuariosState(CadastroBase, OpcoesEspecialidades, rx.State):
         if ok:
             self.opcoes_salas = [{"id": str(s["id"]), "nome": str(s["nome"])} for s in (corpo or []) if s.get("ativo")]
 
-    # Criar/editar Administrador (o diálogo comum dos cadastros).
+    # Criar/editar (o diálogo comum dos cadastros). Na criação o perfil é escolhido; na edição ele é o atual.
     def _form_vazio(self) -> dict[str, Any]:
-        return {"nome": "", "email": "", "senha": ""}
+        return form_do_usuario({"perfil": "RECEPCAO_TRIAGEM"})
 
     def _form_de(self, item: dict[str, Any]) -> dict[str, Any]:
-        return {"nome": item.get("nome") or "", "email": item.get("email") or "", "senha": ""}
+        return form_do_usuario(item)
 
     def _corpo(self) -> dict[str, Any]:
-        corpo = {"nome": self.form.get("nome", ""), "email": self.form.get("email", "")}
+        perfil = str(self.form.get("perfil") or "ADMINISTRADOR")
+        corpo = {"nome": self.form.get("nome", ""), "email": self.form.get("email", ""), **dados_perfil(perfil, self.form)}
         if not self.editando_id:
-            corpo["senha"] = self.form.get("senha", "")
+            corpo.update(senha=self.form.get("senha", ""), perfil=perfil)
         return corpo
 
     # Trocar perfil.
     def abrir_troca(self, usuario: dict[str, Any]) -> None:
         destino = next((v for v, _ in PERFIS if v != usuario.get("perfil")), "")
         self.troca_usuario, self.erro_troca, self.troca_aberta = dict(usuario), "", True
-        self.form = {"perfil": destino, "crm": "", "especialidade_ids": [], "sala_id": "", "cpf": "", "especialidade_referencia_id": ""}
+        self.form = {**form_do_usuario(usuario), "perfil": destino}
 
     def set_perfil_troca(self, valor: str) -> None:
         self.form = {**self.form, "perfil": valor}
