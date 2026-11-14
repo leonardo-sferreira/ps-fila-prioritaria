@@ -195,6 +195,29 @@ def test_plantao_sobreposto_mostra_a_mensagem() -> None:
     assert "sobrepõe" in estado.erro_form
 
 
+
+def test_escala_12x36_exige_data_final() -> None:
+    estado = SimpleNamespace(salvando=False, editando_id=0, erro_form="",
+                             form={"medico_id": "2", "data": "2026-11-11", "hora_inicio": "07:00", "hora_fim": "19:00", "repetir": True, "data_fim": ""})
+    asyncio.run(c.PlantoesState.salvar.fn(estado))
+    assert estado.erro_form == "Informe até quando vai a escala."
+
+
+def test_escala_12x36_envia_data_final() -> None:
+    form = {"medico_id": "2", "data": "2026-11-11", "hora_inicio": "07:00", "hora_fim": "19:00", "repetir": True, "data_fim": "2026-11-30"}
+    estado = estado_falso(c.PlantoesState, data="2026-11-11", form=form)
+    with _api(Resposta(400, {"message": "PLANTAO_SOBREPOSTO"})) as requisitar:
+        asyncio.run(c.PlantoesState.salvar.fn(estado))
+    assert requisitar.call_args.kwargs["json"]["data_fim"] == "2026-11-30"
+
+
+def test_plantao_unico_nao_envia_data_final() -> None:
+    form = {"medico_id": "2", "data": "2026-11-11", "hora_inicio": "07:00", "hora_fim": "19:00", "repetir": False, "data_fim": "2026-11-30"}
+    estado = estado_falso(c.PlantoesState, data="2026-11-11", form=form)
+    with _api(Resposta(400, {"message": "PLANTAO_SOBREPOSTO"})) as requisitar:
+        asyncio.run(c.PlantoesState.salvar.fn(estado))
+    assert "data_fim" not in requisitar.call_args.kwargs["json"]
+
 # ---------- Parâmetros e faixas ----------
 
 def test_linha_de_parametro_com_limites() -> None:

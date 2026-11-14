@@ -479,6 +479,18 @@ def pagina_plantoes() -> rx.Component:
                         gap="12px",
                         width="100%",
                     ),
+                    rx.cond(
+                        st.editando_id == 0,
+                        rx.vstack(
+                            rx.checkbox("Repetir em escala 12x36 (a cada 2 dias)", checked=st.form["repetir"].to(bool), on_change=lambda v: st.set_campo("repetir", v), size="2"),
+                            rx.cond(
+                                st.form["repetir"].to(bool),
+                                campo("Até", rx.input(type="date", value=st.form["data_fim"].to(str), on_change=lambda v: st.set_campo("data_fim", v))),
+                            ),
+                            spacing="2",
+                            width="100%",
+                        ),
+                    ),
                     rx.cond(st.editando_iniciado, rx.text("Plantão em andamento: só o horário de fim pode mudar.", size="1", color=COR_SECUNDARIA)),
                     rx.cond(st.erro_form != "", rx.text(st.erro_form, size="2", color=COR_ERRO)),
                     rx.hstack(
