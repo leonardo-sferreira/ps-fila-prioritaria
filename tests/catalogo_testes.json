@@ -11006,6 +11006,196 @@
       "adaptador_de": null
     },
     {
+      "nome": "Alteração do admin mostra evento, alvo e valores",
+      "objetivo": "A linha de auditoria mostra data/hora de Brasília, evento, registro e valores anterior e novo.",
+      "resultado_esperado": "A linha de auditoria mostra data/hora de Brasília, evento, registro e valores anterior e novo.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0252",
+      "seletor": "frontend/tests/test_auditoria_state.py::test_alteracao_do_admin_mostra_evento_alvo_e_valores",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Carga automática aparece como Sistema",
+      "objetivo": "Registro sem usuário da carga inicial aparece com responsável \"Sistema\".",
+      "resultado_esperado": "Registro sem usuário da carga inicial aparece com responsável \"Sistema\".",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0253",
+      "seletor": "frontend/tests/test_auditoria_state.py::test_carga_automatica_aparece_como_sistema",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Login e chamada traduzidos",
+      "objetivo": "Eventos de acesso e de chamada aparecem com texto legível.",
+      "resultado_esperado": "Eventos de acesso e de chamada aparecem com texto legível.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0254",
+      "seletor": "frontend/tests/test_auditoria_state.py::test_login_e_chamada_traduzidos",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Parâmetros só levam filtros preenchidos",
+      "objetivo": "A consulta envia só os filtros preenchidos e a página mínima 1.",
+      "resultado_esperado": "A consulta envia só os filtros preenchidos e a página mínima 1.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0255",
+      "seletor": "frontend/tests/test_auditoria_state.py::test_parametros_so_levam_filtros_preenchidos",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Filtro volta para a primeira página e consulta",
+      "objetivo": "Trocar um filtro consulta de novo a partir da página 1.",
+      "resultado_esperado": "Trocar um filtro consulta de novo a partir da página 1.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0256",
+      "seletor": "frontend/tests/test_auditoria_state.py::test_filtro_volta_para_a_primeira_pagina_e_consulta",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "CSV tem cabeçalho, ponto e vírgula e BOM",
+      "objetivo": "O CSV exportado abre no Excel em português: BOM, separador ; e cabeçalho fixo.",
+      "resultado_esperado": "O CSV exportado abre no Excel em português: BOM, separador ; e cabeçalho fixo.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0257",
+      "seletor": "frontend/tests/test_auditoria_state.py::test_csv_tem_cabecalho_ponto_e_virgula_e_bom",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Exportar busca todas as páginas",
+      "objetivo": "A exportação reúne todas as páginas do filtro atual, não só a aberta.",
+      "resultado_esperado": "A exportação reúne todas as páginas do filtro atual, não só a aberta.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0258",
+      "seletor": "frontend/tests/test_auditoria_state.py::test_exportar_busca_todas_as_paginas",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Endpoint nunca audita como Sistema",
+      "objetivo": "Nenhum endpoint chama registrar_alteracao com sistema: true.",
+      "resultado_esperado": "Nenhum endpoint chama registrar_alteracao com sistema: true.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0131",
+      "seletor": "tests/api/test_base_compartilhada.py::AuditoriaTest.test_endpoint_nunca_audita_como_sistema",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/specs/auditoria/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Carga automática audita cada inserção",
+      "objetivo": "Cada inserção das funções inicializar_* é auditada como Sistema.",
+      "resultado_esperado": "Cada inserção das funções inicializar_* é auditada como Sistema.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0132",
+      "seletor": "tests/api/test_base_compartilhada.py::AuditoriaTest.test_carga_automatica_audita_cada_insercao",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/specs/auditoria/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
       "nome": "Código errado não cria sessão e código certo cria",
       "objetivo": "Código de login errado não abre sessão; o código certo devolve o token e abre exatamente uma sessão.",
       "resultado_esperado": "Código de login errado não abre sessão; o código certo devolve o token e abre exatamente uma sessão.",

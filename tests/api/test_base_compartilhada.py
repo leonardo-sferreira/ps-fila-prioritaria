@@ -93,6 +93,23 @@ class AuditoriaTest(unittest.TestCase):
                     suspeitos.append(f"{arquivo.relative_to(XANO).as_posix()}:{linha}")
         self.assertEqual(suspeitos, [])
 
+    def test_endpoint_nunca_audita_como_sistema(self) -> None:
+        """`sistema: true` é só da carga automática; endpoint sempre audita o usuário autenticado."""
+        usam = [p.relative_to(XANO).as_posix() for p in _endpoints() if re.search(r"sistema\s*:\s*true", p.read_text(encoding="utf-8"))]
+        self.assertEqual(usam, [])
+
+    def test_carga_automatica_audita_cada_insercao(self) -> None:
+        """Task 4.3: cada db.add das funções inicializar_* de dados tem a sua auditoria como Sistema."""
+        cargas = ["function/inicializar_parametros_fila.xs", "function/classificacao/inicializar_classificacao.xs",
+                  "function/direcionamento/inicializar_direcionamento.xs"]
+        for caminho in cargas:
+            texto = (XANO / caminho).read_text(encoding="utf-8")
+            insercoes = len(re.findall(r"\bdb\.add\b", texto))
+            auditorias = len(re.findall(r"sistema\s*:\s*true", texto))
+            with self.subTest(caminho):
+                self.assertGreater(insercoes, 0)
+                self.assertEqual(insercoes, auditorias)
+
 
 class ParametrosTest(unittest.TestCase):
     VALORES_DA_BASELINE = {

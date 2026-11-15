@@ -27,6 +27,10 @@ def fixture_source(path, suite='xano-static', status='PASSED', commit=None, run=
     ev.new_output(path);ev.write_reports(data,path);return data
 
 
+# Casos da suíte estática no catálogo; cresce quando um teste estático novo é registrado.
+N_ESTATICA=len(ev.catalog('xano-static'))
+
+
 def run_merge(tmp, inputs, *args, suites=('xano-static',), output='out'):
     cmd=[sys.executable,str(ev.ROOT/'scripts/merge_test_evidence.py'),'--output',str(tmp/output)]
     for suite in suites:cmd+=['--expected-suite',suite]
@@ -53,7 +57,7 @@ def test_projecoes_seis_estados_sem_casos_infra_ficticios(tmp_path):
     for case,status in zip(data['casos'],ev.STATES):case.update(status=status,motivo='' if status=='PASSED' else 'Motivo sintético')
     data['diagnosticos']=[ev.diagnostic('FIXTURE','Diagnóstico sintético da ferramenta')]
     ev.write_reports(data,tmp_path/'source');assert_formats(tmp_path/'source')
-    assert data['total_casos']==8 and data['status_tecnico']=='ERROR' and data['nivel_validacao']=='PARCIAL'
+    assert data['total_casos']==N_ESTATICA and data['status_tecnico']=='ERROR' and data['nivel_validacao']=='PARCIAL'
     skips=ET.parse(tmp_path/'source/resultados.xml').getroot().findall('testcase/skipped')
     assert {s.get('type') for s in skips}==ev.UNEXECUTED
 
@@ -62,7 +66,7 @@ def test_merge_ausencias_corrupcao_e_fontes_confiaveis(tmp_path):
     fixture_source(tmp_path/'valid')
     (tmp_path/'broken').mkdir();(tmp_path/'broken/resultados.json').write_text('{quebrado')
     code,data=run_merge(tmp_path,[tmp_path/'valid',tmp_path/'broken',tmp_path/'missing'],suites=('xano-static','e2e'))
-    assert code==1 and data['totais']['PASSED']==8 and data['nivel_validacao']=='PARCIAL'
+    assert code==1 and data['totais']['PASSED']==N_ESTATICA and data['nivel_validacao']=='PARCIAL'
     assert data['obrigacoes_pendentes']==['e2e'];assert_formats(tmp_path/'out')
     code,data=run_merge(tmp_path,[],output='empty')
     assert code==1 and data['casos']==[] and data['nivel_validacao']=='BLOQUEADA'
@@ -88,11 +92,12 @@ def test_merge_rejeita_commits_run_attempt_duplicacao_e_tampering(tmp_path):
 
 def test_merge_leitura_legada_somente_local_explicita_sem_alterar_origem(tmp_path):
     data=fixture_source(tmp_path/'legacy');data.pop('versao_formato')
-    for c in data['casos']:c.update(id=c['aliases_historicos'][0],status='PASS')
+    # Casos registrados depois do formato legado não têm alias: mantêm o ID permanente.
+    for c in data['casos']:c.update(id=(c['aliases_historicos'] or [c['id']])[0],status='PASS')
     path=tmp_path/'legacy/resultados.json';path.write_text(json.dumps(data));before=path.read_bytes()
     code,result=run_merge(tmp_path,[path.parent],output='denied');assert code==1
     code,result=run_merge(tmp_path,[path.parent],'--allow-legacy-local',output='allowed')
-    assert code==0 and result['totais']['PASSED']==8 and result['limitacoes']
+    assert code==0 and result['totais']['PASSED']==N_ESTATICA and result['limitacoes']
     assert path.read_bytes()==before
     with patch.dict(os.environ,{'GITHUB_ACTIONS':'true'}):
         with pytest.raises(ValueError):merge.validate_source(data,data['commit'],None,None,True)
@@ -204,7 +209,7 @@ def test_muitos_casos_agrupa_motivos_sem_tabela_bruta(tmp_path):
     cases=[dict(c,status='BLOCKED',motivo='Dependência obrigatória ausente',duracao_segundos=0) for c in ev.catalog('reflex')]
     data=ev.metadata('reflex',datetime.now(timezone.utc));data['casos']=cases;ev.finalize(data)
     ev.markdown_write(data,tmp_path/'resumo.md');text=(tmp_path/'resumo.md').read_text()
-    assert len(text.splitlines())<60 and '250 caso(s)' in text
+    assert len(text.splitlines())<60 and f'{len(cases)} caso(s)' in text
     assert cases[-1]['id'] not in text
 
 
@@ -307,6 +312,6 @@ def test_fixtures_isolam_actions_sem_apagar_contexto_do_runner(tmp_path):
     data = json.loads((output / 'resultados.json').read_text())
     assert data['commit'] == data['sha_esperado'] == commit
     assert (data['github_run_id'], data['github_run_attempt'], data['github_job']) == ('123456789', '3', 'autotestes')
-    assert data['ambiente'] == 'GitHub Actions' and data['totais']['BLOCKED'] == 8
+    assert data['ambiente'] == 'GitHub Actions' and data['totais']['BLOCKED'] == N_ESTATICA
     assert_formats(output)
     assert summary.read_text().startswith(sentinel + '# Evidências: xano-static')

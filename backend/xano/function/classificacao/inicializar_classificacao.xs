@@ -16,6 +16,9 @@ function "classificacao/inicializar_classificacao" {
             db.add parametro {
               data = {chave: $padrao.chave, valor: $padrao.valor, tipo: "INTEIRO"}
             } as $criado
+            function.run "registrar_alteracao" {
+              input = {sistema: true, tipo_evento: "CARGA_INICIAL", entidade: "PARAMETRO", registro_id: $criado.id, valor_anterior: null, valor_novo: {chave: $criado.chave, valor: $criado.valor}}
+            } as $criado_auditoria
           }
         }
       }
@@ -35,6 +38,9 @@ function "classificacao/inicializar_classificacao" {
             db.add faixa_sinal_vital {
               data = {parametro: $faixa.parametro, minimo: $faixa.minimo, maximo: $faixa.maximo, pontos: $faixa.pontos, condicao_gravidade: $faixa.condicao_gravidade}
             } as $faixa_criada
+            function.run "registrar_alteracao" {
+              input = {sistema: true, tipo_evento: "CARGA_INICIAL", entidade: "FAIXA_SINAL_VITAL", registro_id: $faixa_criada.id, valor_anterior: null, valor_novo: {parametro: $faixa_criada.parametro, minimo: $faixa_criada.minimo, maximo: $faixa_criada.maximo, pontos: $faixa_criada.pontos}}
+            } as $faixa_criada_auditoria
           }
         }
       }

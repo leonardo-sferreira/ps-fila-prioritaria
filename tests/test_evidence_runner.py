@@ -199,7 +199,7 @@ class ModeloEColetaTest(unittest.TestCase):
                 else:payload['casos'].pop(0)
                 path.write_text(json.dumps(payload))
                 with self.assertRaises(ValueError):ev.catalog('reflex',path)
-        self.assertEqual(len(ev.catalog('xano-static')),8)
+        self.assertEqual(len(ev.catalog('xano-static')),len([c for c in json.loads(ev.CATALOG_PATH.read_text(encoding='utf-8'))['casos'] if c['suite']=='xano-static']))
         self.assertEqual(len(ev.catalog('controlled')),sum(max(1,len(c['variantes'])) for c in json.loads(ev.CATALOG_PATH.read_text(encoding='utf-8'))['casos'] if c['suite']=='controlled'))
         variants=[c for c in ev.catalog('reflex') if c['variante']]
         self.assertTrue(variants)
@@ -279,5 +279,6 @@ class ModeloEColetaTest(unittest.TestCase):
         with patch('httpx.get',side_effect=AssertionError('rede proibida')),patch('subprocess.run',side_effect=AssertionError('CLI proibido')):
             suite=unittest.TestSuite([unittest.defaultTestLoader.loadTestsFromTestCase(cls) for cls in (base.AuditoriaTest,base.ParametrosTest)])
             result=unittest.TestResult();suite.run(result)
-            self.assertEqual(result.testsRun,8);self.assertFalse(result.errors or result.failures)
+            esperados=[c for c in ev.catalog('xano-static') if '::AuditoriaTest.' in c['seletor'] or '::ParametrosTest.' in c['seletor']]
+            self.assertEqual(result.testsRun,len(esperados));self.assertFalse(result.errors or result.failures)
         self.assertTrue(all(c['modo_dependencia']=='LOCAL' for c in ev.catalog('xano-static')))

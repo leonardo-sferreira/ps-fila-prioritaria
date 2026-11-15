@@ -12,6 +12,9 @@ function "inicializar_parametros_fila" {
             db.add parametro {
               data = {chave: $padrao.chave, valor: $padrao.valor, tipo: "INTEIRO"}
             } as $criado
+            function.run "registrar_alteracao" {
+              input = {sistema: true, tipo_evento: "CARGA_INICIAL", entidade: "PARAMETRO", registro_id: $criado.id, valor_anterior: null, valor_novo: {chave: $criado.chave, valor: $criado.valor}}
+            } as $criado_auditoria
           }
         }
       }

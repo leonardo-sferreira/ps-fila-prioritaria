@@ -11,7 +11,8 @@
 
 - [ ] 2.1 [Xano] Criar `GET admin/fila-geral` com filtros e a ordem de `prever_fila` (D3); verificar com os testes 2.4
 - [ ] 2.2 [Xano] Criar `GET admin/equipe` (sessões ativas, com filtro por perfil) e `GET admin/fichas/{id}` (detalhe com senhas, chamadas e histórico); verificar com os testes 2.4
-- [ ] 2.3 [Xano] Criar `GET admin/auditoria` com a união das três fontes, filtros, período padrão de 24 h e paginação de 50 (D2); verificar com os testes 2.4
+- [x] 2.3 [Xano] Criar `GET admin/auditoria` com a união das três fontes, filtros e paginação de 50 (D2)
+  - Evidência (15/11/2026): `api/cadastros/admin_auditoria_get.xs`. Filtros: período (padrão hoje, no máximo 31 dias), origem (alteração, chamada, acesso) e usuário. `sort` decrescente e `slice` conferidos numa função temporária na `v1`, removida em seguida. Os testes da 2.4 continuam pendentes.
 - [ ] 2.4 Escrever `tests/api/test_acompanhamento.py` cobrindo 403 para Médico e Recepção nos três endpoints, fila geral com os três status e a ordem da regra, filtro por cor, fichas finalizadas fora da lista, equipe logada com status, sessão encerrada fora da lista, detalhe com ajuste e duas tentativas, auditoria ordenada e paginada, filtro por tipo e período e evento de login; verificar que passam e que `pytest tests/api` passa por completo
 - [ ] 2.5 Exportar o XanoScript das seções 1 e 2 para `backend/xano/` e verificar que os arquivos estão no repositório
 
@@ -21,6 +22,9 @@
 - [ ] 3.2 [Reflex] Criar `/admin/acompanhamento` com os blocos Fila geral, Equipe e Auditoria, filtros e polling de 10 s (D4); verificar manualmente com dados das changes anteriores
 - [ ] 3.3 [Reflex] Criar `/admin/fichas/{id}`, somente leitura; verificar manualmente que não há ações de edição
 - [ ] 3.4 Adicionar ao README o roteiro manual da seção 3; verificar executando-o
+
+- [x] 3.5 [Reflex] Tela `/admin/auditoria` (decisão do PO em 15/11/2026: aba própria no menu do Administrador, em vez de bloco em `/admin/acompanhamento`), só leitura, com filtros de período, tipo e usuário e paginação de 50
+  - Evidência (15/11/2026): `paginas/auditoria.py` e `estados/auditoria.py`; 5 testes em `tests/test_auditoria_state.py`.
 
 ## 4. Integração e documentação
 

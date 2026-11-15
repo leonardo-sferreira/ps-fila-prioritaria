@@ -43,6 +43,8 @@ from ps_fila_prioritaria.paginas.cadastros import (
     pagina_sintomas,
 )
 from ps_fila_prioritaria.paginas.comprovante import pagina_comprovante
+from ps_fila_prioritaria.estados.auditoria import AuditoriaState
+from ps_fila_prioritaria.paginas.auditoria import pagina_auditoria
 from ps_fila_prioritaria.paginas.ficha import pagina_recepcao_ficha
 from ps_fila_prioritaria.paginas.painel_admin import area_admin
 from ps_fila_prioritaria.paginas.medico import area_medico, pagina_impressao_medico
@@ -105,5 +107,6 @@ for _pagina, _rota, _titulo, _estado in [
     (pagina_plantoes, "/admin/disponibilidade", "Plantões", PlantoesState),
     (pagina_parametros, "/admin/parametros", "Parâmetros", ParametrosState),
     (pagina_usuarios, "/admin/usuarios", "Usuários", UsuariosState),
+    (pagina_auditoria, "/admin/auditoria", "Auditoria", AuditoriaState),
 ]:
     app.add_page(_pagina, route=_rota, title=_titulo, on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), _estado.carregar])
