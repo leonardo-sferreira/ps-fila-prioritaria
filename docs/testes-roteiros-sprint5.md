@@ -4,17 +4,20 @@ Esta página acompanha somente os cards de teste **101 a 106**, abertos na lista
 
 ## Como obter a evidência
 
-O CI produz `roteiros-sprint5.md` dentro do artifact `evidencias-consolidadas`. O arquivo reúne os testes técnicos por roteiro em frases curtas e mostra quantos testes de cada tipo sustentam cada verificação. `resumo.md` e `resultados.json` guardam os nomes e identificadores dos casos para auditoria detalhada. No JSON, os campos de leitura humana usam frases em português; `node`, `id` e `assertions` preservam a rastreabilidade técnica.
+O [guia comum de QA](testes-qualidade.md) define os comandos seguros, o catálogo, os estados e a consolidação. O snapshot agora está em `tests/roteiros/sprint5.json`, preservando os cards, links e pendências deste documento. As verificações referenciam IDs permanentes de `tests/catalogo_testes.json`, sem duplicar nomes ou resultados esperados. O CI não seleciona uma sprint fixa automaticamente.
 
-Para gerar o mesmo resumo localmente, depois de executar as suites existentes:
+Para acrescentar o roteiro histórico a uma consolidação local, selecione-o explicitamente:
 
 ```bash
-.venv/bin/python scripts/run_test_evidence.py --suite reflex --output test-evidence/sprint5-reflex --require-execution
-.venv/bin/python scripts/run_test_evidence.py --suite xano-safe --output test-evidence/sprint5-xano --require-execution
-.venv/bin/python scripts/merge_test_evidence.py --input test-evidence/sprint5-reflex --input test-evidence/sprint5-xano --output test-evidence/sprint5-consolidado
+.venv/bin/python scripts/merge_test_evidence.py \
+  --input test-evidence/revisao-reflex --expected-suite reflex \
+  --input test-evidence/revisao-xano --expected-suite xano-safe \
+  --roteiro tests/roteiros/sprint5.json --output test-evidence/sprint5-consolidado
 ```
 
-A suite `xano-safe` precisa do CLI Xano autenticado e executa somente funções puras na branch `v1`. O arquivo final fica em `test-evidence/sprint5-consolidado/roteiros-sprint5.md`. O diretório `test-evidence/` é ignorado pelo Git para evitar versionar logs e respostas de execução.
+As entradas devem ter sido produzidas nesta execução, com identidade compatível. A suíte `xano-safe` depende do CLI autenticado e do guardião; sua ausência gera impedimento, sem execução presumida. `--require-complete` também exige resolver as pendências do roteiro selecionado; este snapshot continua parcial mesmo quando todos os casos automatizados passam.
+
+O adaptador `scripts/roteiros_sprint5.py --input <resultados.json> --output <arquivo-novo.md>` permanece disponível. O gerador comum `scripts/roteiros_testes.py` recebe `--config` para outros ciclos. `resultados.json` contém os detalhes por ID/variante e as referências; as assertions continuam no código, e mensagens livres sensíveis não entram nos relatórios. Evidências antigas não são reescritas.
 
 ## Como ler o resultado
 

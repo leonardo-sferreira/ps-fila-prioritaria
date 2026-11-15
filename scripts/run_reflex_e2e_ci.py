@@ -1,7 +1,7 @@
-"""Sobe o Reflex no CI, executa o E2E público e encerra o servidor."""
-
+"""Inicia servidor de produção próprio, coleta E2E público e preserva histórico."""
 from __future__ import annotations
-
+import argparse
+import importlib.util
 import os
 from pathlib import Path
 import shutil
@@ -13,93 +13,65 @@ import tempfile
 import time
 from urllib.error import URLError
 from urllib.request import urlopen
+try:
+    from .run_test_evidence import ROOT, new_output
+except ImportError:
+    from run_test_evidence import ROOT, new_output
 
-from run_test_evidence import ROOT, clean
-
-
-FRONTEND = ROOT / "frontend"
-OUTPUT = ROOT / "test-evidence" / "e2e"
+FRONTEND = ROOT / 'frontend'
+OUTPUT = ROOT / 'test-evidence/e2e'
 
 
 def free_port() -> int:
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.bind(("127.0.0.1", 0))
-        return int(sock.getsockname()[1])
+    with socket.socket() as sock:
+        sock.bind(('127.0.0.1',0));return sock.getsockname()[1]
 
 
-def run_evidence(base_url: str | None) -> int:
-    env = os.environ.copy()
-    if base_url:
-        env["REFLEX_E2E_BASE_URL"] = base_url
-    else:
-        env.pop("REFLEX_E2E_BASE_URL", None)
-    return subprocess.run(
-        [sys.executable, str(ROOT / "scripts/run_test_evidence.py"), "--suite", "e2e",
-         "--output", str(OUTPUT), "--require-execution"],
-        env=env, check=False,
-    ).returncode
+def run_evidence(base_url: str | None, output: Path = OUTPUT, reason: str | None=None) -> int:
+    env=os.environ.copy();env.pop('REFLEX_E2E_BASE_URL',None)
+    if base_url:env['REFLEX_E2E_BASE_URL']=base_url
+    args=[sys.executable,str(ROOT/'scripts/run_test_evidence.py'),'--suite','e2e','--output',str(output),'--require-execution','--require-complete']
+    if reason:args+=['--blocked-reason',reason]
+    return subprocess.run(args,env=env,check=False).returncode
 
 
-def main() -> int:
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    server_log = Path(tempfile.gettempdir()) / f"reflex-e2e-{os.getpid()}.log"
-    reflex = shutil.which("reflex")
-    if not reflex:
-        (OUTPUT / "servidor.log").write_text("CLI Reflex não instalado.\n", encoding="utf-8")
-        return run_evidence(None)
-
-    env = os.environ.copy()
-    env["CI"] = "1"
-    port = free_port()
-    base_url = f"http://127.0.0.1:{port}"
-    process = None
+def main(argv=None) -> int:
+    parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--output',type=Path,default=OUTPUT)
+    args=parser.parse_args(argv)
+    try:out=new_output(args.output)
+    except OSError as exc:print(str(exc),file=sys.stderr);return 2
+    process=None;server_status='não iniciado';ready=False
     try:
-        with server_log.open("w", encoding="utf-8") as stream:
+        reflex=shutil.which('reflex')
+        if not reflex or not importlib.util.find_spec('playwright'):return run_evidence(None,out,'dependencia')
+        from playwright.sync_api import sync_playwright
+        with sync_playwright() as playwright:
+            if not Path(playwright.chromium.executable_path).exists():return run_evidence(None,out,'navegador')
+        env=os.environ.copy();env['CI']='1';port=free_port();base=f'http://127.0.0.1:{port}'
+        # Log livre temporário privado: nunca incluído nos artifacts.
+        with tempfile.TemporaryFile(mode='w+') as stream:
             try:
-                process = subprocess.Popen(
-                    [reflex, "run", "--env", "prod", "--frontend-port", str(port)],
-                    cwd=FRONTEND, env=env, stdout=stream, stderr=subprocess.STDOUT,
-                    start_new_session=True,
-                )
-            except OSError as exc:
-                print(f"Reflex não iniciou: {type(exc).__name__}", flush=True)
-                return run_evidence(None)
-            deadline = time.monotonic() + 300
-            ready = False
-            while time.monotonic() < deadline and process.poll() is None:
+                process=subprocess.Popen([reflex,'run','--env','prod','--single-port','--frontend-port',str(port)],cwd=FRONTEND,env=env,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True)
+            except OSError:
+                server_status='falha ao iniciar';return run_evidence(None,out,'servidor')
+            deadline=time.monotonic()+300
+            while time.monotonic()<deadline and process.poll() is None:
                 try:
-                    with urlopen(base_url + "/login", timeout=2) as response:
-                        ready = response.status == 200
-                except (OSError, URLError):
-                    pass
-                if ready:
-                    break
+                    with urlopen(base+'/login',timeout=2) as response:ready=response.status==200
+                except (OSError,URLError):pass
+                if ready:break
                 time.sleep(2)
-            if not ready:
-                print("Reflex não ficou pronto; E2E registrado como NOT_RUN.", flush=True)
-                return run_evidence(None)
-            return run_evidence(base_url)
+            server_status='pronto' if ready else 'não ficou pronto dentro do prazo'
+            return run_evidence(base if ready else None,out,None if ready else 'servidor')
     finally:
         if process is not None and process.poll() is None:
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-            try:
-                process.wait(timeout=10)
+            try:os.killpg(process.pid,signal.SIGTERM)
+            except ProcessLookupError:pass
+            try:process.wait(timeout=10)
             except subprocess.TimeoutExpired:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+                try:os.killpg(process.pid,signal.SIGKILL)
+                except ProcessLookupError:pass
                 process.wait()
-        if server_log.exists():
-            (OUTPUT / "servidor.log").write_text(
-                clean(server_log.read_text(encoding="utf-8", errors="replace"), 20000) + "\n",
-                encoding="utf-8",
-            )
-            server_log.unlink()
+        (out/'servidor.log').write_text(f'Servidor público controlado: {server_status}.\nSaída livre omitida por minimização.\n',encoding='utf-8')
 
-
-if __name__ == "__main__":
-    sys.exit(main())
+if __name__=='__main__':sys.exit(main())

@@ -13,21 +13,15 @@ import pytest
 
 
 def _route(url) -> str:
-    path = urlparse(str(url)).path
-    # IDs gerados dinamicamente não entram nos artefatos.
-    return "/" + "/".join("{id}" if part.isdigit() else part for part in path.split("/") if part)
+    # Somente segmentos de rotas conhecidos; valores dinâmicos nunca são publicados.
+    allowed = {"api", "auth", "login", "verificar", "solicitar", "redefinir", "senha", "codigo", "me", "logout", "pacientes", "fichas", "sintomas", "sinais-vitais", "classificacao", "prioridade", "confirmar", "comprovante", "totem", "tickets", "parametros", "medicos", "fila", "chamar", "disponibilidade", "comparecimento", "desistencia", "{id}"}
+    parts = urlparse(str(url)).path.split("/")
+    return "/" + "/".join("{id}" if p.isdigit() else p if p in allowed else "{omitido}" for p in parts if p)
 
 
 def _example(response) -> dict:
-    try:
-        body = response.json()
-    except Exception:
-        return {"tipo": "não JSON"}
-    if isinstance(body, dict):
-        return {"tipo": "objeto", "campos": sorted(str(key) for key in body.keys())[:30]}
-    if isinstance(body, list):
-        return {"tipo": "lista", "quantidade": len(body), "campos_primeiro_item": sorted(str(key) for key in body[0].keys())[:30] if body and isinstance(body[0], dict) else []}
-    return {"tipo": type(body).__name__}
+    # Nem nomes de campos arbitrários nem valores do corpo saem da memória.
+    return {"tipo": "conteúdo omitido"}
 
 
 @pytest.hookimpl(hookwrapper=True)

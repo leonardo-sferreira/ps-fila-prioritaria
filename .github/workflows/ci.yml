@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  reflex:
-    name: Reflex - testes locais e E2E publico
+  autotestes:
+    name: Autotestes da infraestrutura
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -20,38 +20,248 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: frontend/requirements.txt
-      - name: Instalar dependencias
-        run: python -m pip install -r frontend/requirements.txt pytest==8.4.2 pytest-playwright==0.10.0 playwright==1.65.0
-      - name: Verificar gerador de evidencias
+      - name: Instalar dependências e capturar retorno
+        id: install
+        shell: bash
         run: |
-          mkdir -p test-evidence/reflex
-          python -m pytest -q tests/test_evidence_runner.py tests/test_roteiros_sprint5.py --junitxml=test-evidence/reflex/gerador.xml
-      - name: Executar testes locais Reflex
+          set +e
+          python -m pip install pytest==8.4.2 httpx python-dotenv
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Executar e produzir evidências
+        id: tests
         if: always()
-        run: python scripts/run_test_evidence.py --suite reflex --output test-evidence/reflex --require-execution
-      - name: Instalar Chromium
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+        run: |
+          set +e
+          if [ "$INSTALL_CODE" != "0" ]; then
+            python scripts/run_test_evidence.py --suite autotestes --output test-evidence/autotestes --blocked-reason instalacao --require-execution --require-complete
+          else
+            python scripts/run_test_evidence.py --suite autotestes --output test-evidence/autotestes --require-execution --require-complete
+          fi
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Conferir arquivos canônicos obrigatórios
         if: always()
-        run: python -m playwright install --with-deps chromium
-      - name: Iniciar Reflex e executar E2E publico
+        shell: bash
+        run: |
+          test -s test-evidence/autotestes/resultados.json
+          test -s test-evidence/autotestes/resultados.xml
+          test -s test-evidence/autotestes/resumo.md
+      - name: Publicar evidências antes do gate
         if: always()
-        run: python scripts/run_reflex_e2e_ci.py
-      - name: Guardar evidencias Reflex mesmo se falhar
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencias-autotestes
+          path: |
+            test-evidence/autotestes/resultados.json
+            test-evidence/autotestes/resultados.xml
+            test-evidence/autotestes/resumo.md
+          if-no-files-found: error
+      - name: Aplicar resultado original
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+          TEST_CODE: ${{ steps.tests.outputs.code }}
+        run: |
+          test "$INSTALL_CODE" = "0" && test "$TEST_CODE" = "0"
+
+  reflex:
+    name: Reflex local e mocks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: frontend/requirements.txt
+      - name: Instalar dependências e capturar retorno
+        id: install
+        shell: bash
+        run: |
+          set +e
+          python -m pip install -r frontend/requirements.txt pytest==8.4.2
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Executar e produzir evidências
+        id: tests
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+        run: |
+          set +e
+          if [ "$INSTALL_CODE" != "0" ]; then
+            python scripts/run_test_evidence.py --suite reflex --output test-evidence/reflex --blocked-reason instalacao --require-execution --require-complete
+          else
+            python scripts/run_test_evidence.py --suite reflex --output test-evidence/reflex --require-execution --require-complete
+          fi
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Conferir arquivos canônicos obrigatórios
+        if: always()
+        shell: bash
+        run: |
+          test -s test-evidence/reflex/resultados.json
+          test -s test-evidence/reflex/resultados.xml
+          test -s test-evidence/reflex/resumo.md
+      - name: Publicar evidências antes do gate
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: evidencias-reflex
-          path: test-evidence/reflex/
-          if-no-files-found: warn
-      - name: Guardar evidencias E2E mesmo se falhar
+          path: |
+            test-evidence/reflex/resultados.json
+            test-evidence/reflex/resultados.xml
+            test-evidence/reflex/resumo.md
+          if-no-files-found: error
+      - name: Aplicar resultado original
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+          TEST_CODE: ${{ steps.tests.outputs.code }}
+        run: |
+          test "$INSTALL_CODE" = "0" && test "$TEST_CODE" = "0"
+
+  estatico:
+    name: Xano estático local
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: frontend/requirements.txt
+      - name: Instalar dependências e capturar retorno
+        id: install
+        shell: bash
+        run: |
+          set +e
+          python -m pip install -r frontend/requirements.txt pytest==8.4.2
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Executar e produzir evidências
+        id: tests
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+        run: |
+          set +e
+          if [ "$INSTALL_CODE" != "0" ]; then
+            python scripts/run_test_evidence.py --suite xano-static --output test-evidence/xano-static --blocked-reason instalacao --require-execution --require-complete
+          else
+            python scripts/run_test_evidence.py --suite xano-static --output test-evidence/xano-static --require-execution --require-complete
+          fi
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Conferir arquivos canônicos obrigatórios
+        if: always()
+        shell: bash
+        run: |
+          test -s test-evidence/xano-static/resultados.json
+          test -s test-evidence/xano-static/resultados.xml
+          test -s test-evidence/xano-static/resumo.md
+      - name: Publicar evidências antes do gate
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencias-xano-static
+          path: |
+            test-evidence/xano-static/resultados.json
+            test-evidence/xano-static/resultados.xml
+            test-evidence/xano-static/resumo.md
+          if-no-files-found: error
+      - name: Aplicar resultado original
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+          TEST_CODE: ${{ steps.tests.outputs.code }}
+        run: |
+          test "$INSTALL_CODE" = "0" && test "$TEST_CODE" = "0"
+
+  e2e:
+    name: E2E público local
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: frontend/requirements.txt
+      - name: Instalar dependências e capturar retorno
+        id: install
+        shell: bash
+        run: |
+          set +e
+          python -m pip install -r frontend/requirements.txt pytest==8.4.2 pytest-playwright==0.10.0 playwright==1.65.0
+          rc=$?
+          python -m playwright install --with-deps chromium
+          browser_rc=$?
+          if [ "$rc" -eq 0 ]; then rc=$browser_rc; fi
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Executar e produzir evidências
+        id: tests
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+        run: |
+          set +e
+          if [ "$INSTALL_CODE" != "0" ]; then
+            python scripts/run_test_evidence.py --suite e2e --output test-evidence/e2e --blocked-reason instalacao --require-execution --require-complete
+          else
+            python scripts/run_reflex_e2e_ci.py --output test-evidence/e2e
+          fi
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Conferir arquivos canônicos obrigatórios
+        if: always()
+        shell: bash
+        run: |
+          test -s test-evidence/e2e/resultados.json
+          test -s test-evidence/e2e/resultados.xml
+          test -s test-evidence/e2e/resumo.md
+      - name: Publicar evidências antes do gate
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: evidencias-e2e
-          path: test-evidence/e2e/
-          if-no-files-found: warn
+          path: |
+            test-evidence/e2e/resultados.json
+            test-evidence/e2e/resultados.xml
+            test-evidence/e2e/resumo.md
+          if-no-files-found: error
+      - name: Aplicar resultado original
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+          TEST_CODE: ${{ steps.tests.outputs.code }}
+        run: |
+          test "$INSTALL_CODE" = "0" && test "$TEST_CODE" = "0"
 
   xano:
-    name: Xano - funcoes puras
+    name: Xano funções puras remotas
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -64,27 +274,65 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Instalar dependencias Python
-        run: python -m pip install -r frontend/requirements.txt pytest==8.4.2
-      - name: Instalar CLI oficial Xano
-        run: npm install -g @xano/cli@1.3.4
-      - name: Executar testes Xano sem escrita
+      - name: Instalar dependências e capturar retorno
+        id: install
+        shell: bash
+        run: |
+          set +e
+          python -m pip install -r frontend/requirements.txt pytest==8.4.2
+          rc=$?
+          npm install -g @xano/cli@1.3.4
+          cli_rc=$?
+          if [ "$rc" -eq 0 ]; then rc=$cli_rc; fi
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Executar e produzir evidências
+        id: tests
         if: always()
+        shell: bash
         env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
           XANO_CLI_CONFIG_YAML: ${{ secrets.XANO_CLI_CONFIG_YAML }}
           XANO_TEST_PROFILE: ${{ vars.XANO_TEST_PROFILE || 'ps-impacta' }}
-        run: python scripts/run_test_evidence.py --suite xano-safe --output test-evidence/xano-safe --require-execution
-      - name: Guardar evidencias Xano mesmo se falhar
+        run: |
+          set +e
+          if [ "$INSTALL_CODE" != "0" ]; then
+            python scripts/run_test_evidence.py --suite xano-safe --output test-evidence/xano-safe --blocked-reason instalacao --require-execution --require-complete
+          else
+            python scripts/run_test_evidence.py --suite xano-safe --output test-evidence/xano-safe --require-execution --require-complete
+          fi
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Conferir arquivos canônicos obrigatórios
+        if: always()
+        shell: bash
+        run: |
+          test -s test-evidence/xano-safe/resultados.json
+          test -s test-evidence/xano-safe/resultados.xml
+          test -s test-evidence/xano-safe/resumo.md
+      - name: Publicar evidências antes do gate
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: evidencias-xano
-          path: test-evidence/xano-safe/
-          if-no-files-found: warn
+          path: |
+            test-evidence/xano-safe/resultados.json
+            test-evidence/xano-safe/resultados.xml
+            test-evidence/xano-safe/resumo.md
+          if-no-files-found: error
+      - name: Aplicar resultado original
+        if: always()
+        shell: bash
+        env:
+          INSTALL_CODE: ${{ steps.install.outputs.code }}
+          TEST_CODE: ${{ steps.tests.outputs.code }}
+        run: |
+          test "$INSTALL_CODE" = "0" && test "$TEST_CODE" = "0"
 
   consolidado:
-    name: Consolidar evidencias
-    needs: [reflex, xano]
+    name: Consolidar evidências
+    needs: [autotestes, reflex, estatico, e2e, xano]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -92,29 +340,81 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - name: Obter evidencias-autotestes
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: evidencias-autotestes
+          path: test-evidence/entrada-autotestes
+      - name: Obter evidencias-reflex
+        if: always()
+        uses: actions/download-artifact@v4
         with:
           name: evidencias-reflex
           path: test-evidence/entrada-reflex
-      - uses: actions/download-artifact@v4
+      - name: Obter evidencias-xano-static
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          name: evidencias-xano-static
+          path: test-evidence/entrada-xano-static
+      - name: Obter evidencias-e2e
+        if: always()
+        uses: actions/download-artifact@v4
         with:
           name: evidencias-e2e
           path: test-evidence/entrada-e2e
-      - uses: actions/download-artifact@v4
+      - name: Obter evidencias-xano
+        if: always()
+        uses: actions/download-artifact@v4
         with:
           name: evidencias-xano
-          path: test-evidence/entrada-xano
-      - name: Consolidar XML JSON e Markdown
-        run: >-
-          python scripts/merge_test_evidence.py
-          --input test-evidence/entrada-reflex
-          --input test-evidence/entrada-e2e
-          --input test-evidence/entrada-xano
-          --output test-evidence/consolidado
-      - name: Guardar consolidado mesmo se falhar
+          path: test-evidence/entrada-xano-safe
+      - name: Consolidar fontes e capturar retorno
+        id: merge
+        if: always()
+        shell: bash
+        env:
+          NEEDS_AUTOTESTES: ${{ needs.autotestes.result }}
+          NEEDS_REFLEX: ${{ needs.reflex.result }}
+          NEEDS_ESTATICO: ${{ needs.estatico.result }}
+          NEEDS_E2E: ${{ needs.e2e.result }}
+          NEEDS_XANO: ${{ needs.xano.result }}
+        run: |
+          set +e
+          python scripts/merge_test_evidence.py \
+            --input test-evidence/entrada-autotestes --expected-suite autotestes \
+            --input test-evidence/entrada-reflex --expected-suite reflex \
+            --input test-evidence/entrada-xano-static --expected-suite xano-static \
+            --input test-evidence/entrada-e2e --expected-suite e2e \
+            --input test-evidence/entrada-xano-safe --expected-suite xano-safe \
+            --expected-commit "$GITHUB_SHA" --expected-run-id "$GITHUB_RUN_ID" --expected-attempt "$GITHUB_RUN_ATTEMPT" \
+            --needs-result "autotestes=$NEEDS_AUTOTESTES" --needs-result "reflex=$NEEDS_REFLEX" \
+            --needs-result "xano-static=$NEEDS_ESTATICO" --needs-result "e2e=$NEEDS_E2E" --needs-result "xano-safe=$NEEDS_XANO" \
+            --output test-evidence/consolidado --require-execution --require-complete
+          rc=$?
+          echo "code=$rc" >> "$GITHUB_OUTPUT"
+          exit 0
+      - name: Conferir arquivos canônicos obrigatórios
+        if: always()
+        shell: bash
+        run: |
+          test -s test-evidence/consolidado/resultados.json
+          test -s test-evidence/consolidado/resultados.xml
+          test -s test-evidence/consolidado/resumo.md
+      - name: Publicar consolidado disponível
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: evidencias-consolidadas
-          path: test-evidence/consolidado/
-          if-no-files-found: warn
+          path: |
+            test-evidence/consolidado/resultados.json
+            test-evidence/consolidado/resultados.xml
+            test-evidence/consolidado/resumo.md
+          if-no-files-found: error
+      - name: Aplicar gate da consolidação
+        if: always()
+        shell: bash
+        env:
+          MERGE_CODE: ${{ steps.merge.outputs.code }}
+        run: test "$MERGE_CODE" = "0"

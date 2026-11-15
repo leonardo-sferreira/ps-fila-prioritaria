@@ -147,16 +147,17 @@ python -m venv .venv
 pip install -r requirements.txt pytest
 cp .env.example .env            # preencha as URLs da API do Xano
 reflex run                      # http://localhost:3000
-python -m pytest                # testes
+# Testes: usar os comandos com seleção explícita abaixo
 ```
 
-Para verificar a ordem da fila médica publicada na `v1` do Xano, execute na raiz do repositório:
+Os comandos seguros de QA ficam no [guia comum](docs/testes-qualidade.md). Na raiz:
 
 ```bash
-.venv/bin/python -m unittest discover -s tests/api -p test_ordenacao.py -v
+.venv/bin/python scripts/run_test_evidence.py --suite reflex --output test-evidence/local-reflex --require-execution --require-complete
+.venv/bin/python scripts/run_test_evidence.py --suite xano-static --output test-evidence/local-static --require-execution --require-complete
 ```
 
-O teste usa `xano function run` com o perfil `ps-impacta` (ou `XANO_TEST_PROFILE`) e espaça as chamadas para respeitar o limite do plano Free. A ordem interna é Vermelha antes de Amarela/Azul; sem Vermelha, o ciclo configurável é inicialmente A-A-B por especialidade. Condição prioritária precede não prioritária dentro da cor, seguida pela ordem efetiva da fila e pelo menor ID.
+A suíte `reflex` usa testes locais/mocks; `xano-static` lê XanoScript sem rede. Para verificar funções puras publicadas, use `--suite xano-safe` em outro destino, somente com CLI/credencial válidos e guardião aprovado. Essa suíte é remota e não comprova persistência nem equivalência integral com o Git. Não use descoberta ampla dos diretórios de testes, pois também contêm integrações com escrita.
 
 ### Fila e chamada do médico
 
@@ -172,13 +173,7 @@ Configure `XANO_FILA_API_URL` no `frontend/.env` com a URL base do grupo **Fila*
 
 Na seleção, Vermelhas próprias precedem as demais próprias; Amarelas e Azuis próprias seguem rodízio por médico, mantendo o ciclo de cada especialidade. Uma descoberta supera a próxima própria somente se tiver cor mais grave. Empate favorece a própria. Sem própria aguardando, o médico apoia uma descoberta e depois outra coberta. PAUSA e AUSENTE retiram cobertura; EM_ATENDIMENTO a mantém.
 
-Na raiz do repositório, os testes da seleção consultam funções publicadas na `v1`; o teste de chamada cria registros fictícios, encerra seus acessos ao final e preserva o histórico de auditoria:
-
-```bash
-.venv/bin/python -m unittest discover -s tests/api -p test_selecao_entre_filas.py -v
-.venv/bin/python -m unittest discover -s tests/api -p test_chamada.py -v
-cd frontend && ../.venv/bin/python -m unittest discover -s tests -p test_medico_state.py -v
-```
+A ordenação e a seleção entre filas são verificadas pela suíte remota pura `xano-safe`; a tela médica faz parte de `reflex`. Os cenários CLI de chamada com escrita permanecem bloqueados: esta infraestrutura não os habilita na branch `v1`. Integrações HTTP exigem autorização e ambiente descartável comprovado, conforme o [guia de QA](docs/testes-qualidade.md).
 
 ### Primeiro administrador
 
