@@ -138,4 +138,5 @@ query "admin/auditoria" verb=GET {
   }
 
   response = {itens: $pagina_itens, total: $total, pagina: $pagina, por_pagina: 50, de: $dia_inicio, ate: $dia_fim}
+  guid = "T4IZQjvOPU4ajWGYwJcZDo5klj4"
 }
