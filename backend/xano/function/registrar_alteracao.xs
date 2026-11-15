@@ -1,11 +1,14 @@
 // Grava a trilha imutável da operação autenticada. O chamador DEVE passar
 // $auth.id após verificar_acesso e executá-la na mesma db.transaction da
-// escrita de domínio.
+// escrita de domínio. A carga automática (funções inicializar_*) passa sistema = true e nenhum usuário: o registro
+// fica com usuario_id vazio e a tela de auditoria mostra "Sistema" (add-base-compartilhada, task 4.3).
+// Endpoints NUNCA passam sistema = true (tests/api/test_base_compartilhada.py).
 function "registrar_alteracao" {
   description = "Registra a alteração da operação autenticada em historico_alteracao; não expõe endpoint próprio."
 
   input {
-    int usuario_id
+    int? usuario_id?
+    bool? sistema?
     text tipo_evento filters=trim
     text entidade filters=trim
     int registro_id
@@ -15,14 +18,23 @@ function "registrar_alteracao" {
   }
 
   stack {
-    db.get usuario {
-      field_name = "id"
-      field_value = $input.usuario_id
-    } as $usuario
+    var $pelo_sistema { value = ($input.sistema ?? false) == true }
+    var $responsavel_id { value = null }
 
-    precondition ($usuario != null && $usuario.ativo) {
-      error_type = "unauthorized"
-      error = "Sessão inválida. Faça login novamente."
+    conditional {
+      if (!$pelo_sistema) {
+        db.get usuario {
+          field_name = "id"
+          field_value = $input.usuario_id ?? 0
+        } as $usuario
+
+        precondition ($usuario != null && $usuario.ativo) {
+          error_type = "unauthorized"
+          error = "Sessão inválida. Faça login novamente."
+        }
+
+        var.update $responsavel_id { value = $usuario.id }
+      }
     }
 
     precondition ($input.tipo_evento != "") {
@@ -55,7 +67,7 @@ function "registrar_alteracao" {
         valor_anterior: $input.valor_anterior,
         valor_novo    : $input.valor_novo,
         justificativa : $input.justificativa,
-        usuario_id    : $usuario.id
+        usuario_id    : $responsavel_id
       }
     } as $registro
   }

@@ -159,6 +159,7 @@ ABAS_ADMIN = [
     ("Plantões", "/admin/disponibilidade"),
     ("Parâmetros", "/admin/parametros"),
     ("Usuários", "/admin/usuarios"),
+    ("Auditoria", "/admin/auditoria"),
 ]
 
 

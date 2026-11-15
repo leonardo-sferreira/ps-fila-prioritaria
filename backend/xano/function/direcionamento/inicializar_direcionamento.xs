@@ -17,6 +17,9 @@ function "direcionamento/inicializar_direcionamento" {
               // nome_normalizado é obrigatório desde a migração de especialidade dos cadastros: lower(trim(nome)).
               data = {nome: $padrao.nome, nome_normalizado: $padrao.nome|to_lower, sigla: $padrao.sigla, ativo: true}
             } as $criada
+            function.run "registrar_alteracao" {
+              input = {sistema: true, tipo_evento: "CARGA_INICIAL", entidade: "ESPECIALIDADE", registro_id: $criada.id, valor_anterior: null, valor_novo: {nome: $criada.nome, sigla: $criada.sigla}}
+            } as $criada_auditoria
           }
         }
       }
@@ -96,6 +99,9 @@ function "direcionamento/inicializar_direcionamento" {
                 db.add sintoma_especialidade {
                   data = {sintoma_id: $sintoma.id, especialidade_id: $especialidade.id, ordem: 1}
                 } as $ligacao_criada
+                function.run "registrar_alteracao" {
+                  input = {sistema: true, tipo_evento: "CARGA_INICIAL", entidade: "SINTOMA_ESPECIALIDADE", registro_id: $ligacao_criada.id, valor_anterior: null, valor_novo: {sintoma_id: $ligacao_criada.sintoma_id, especialidade_id: $ligacao_criada.especialidade_id}}
+                } as $ligacao_criada_auditoria
               }
             }
           }
@@ -118,6 +124,9 @@ function "direcionamento/inicializar_direcionamento" {
             db.add parametro {
               data = {chave: "ESPECIALIDADE_PADRAO", valor: $clinica_geral.id|to_text, tipo: "ESPECIALIDADE"}
             } as $padrao_criado
+            function.run "registrar_alteracao" {
+              input = {sistema: true, tipo_evento: "CARGA_INICIAL", entidade: "PARAMETRO", registro_id: $padrao_criado.id, valor_anterior: null, valor_novo: {chave: $padrao_criado.chave, valor: $padrao_criado.valor}}
+            } as $padrao_criado_auditoria
           }
         }
       }
