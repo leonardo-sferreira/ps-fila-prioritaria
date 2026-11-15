@@ -46,6 +46,7 @@ def filtros() -> rx.Component:
             value=a.usuario_id, on_change=a.set_usuario, size="2"), spacing="1"),
         rx.spacer(),
         botao_secundario("Atualizar", on_click=a.carregar, loading=a.carregando),
+        rx.button(rx.icon("download", size=16), "Exportar CSV", on_click=a.exportar_csv, loading=a.exportando, size="2", variant="outline"),
         align="end",
         gap="12px",
         wrap="wrap",
@@ -73,7 +74,7 @@ def pagina_auditoria() -> rx.Component:
         "/admin/auditoria",
         "Auditoria",
         "Quem alterou o quê e quando: cadastros e regras, chamadas da fila médica e entradas e saídas do sistema. "
-        "Somente leitura; os registros não podem ser editados nem apagados. \"Sistema\" é a carga automática dos dados iniciais.",
+        "Somente leitura; os registros não podem ser editados nem apagados. \"Exportar CSV\" baixa todos os registros do filtro atual. \"Sistema\" é a carga automática dos dados iniciais.",
         filtros(),
         mensagem(a),
         painel(rx.cond(

@@ -4,6 +4,8 @@ O Xano junta alterações, chamadas e entradas/saídas, filtra pelo período (pa
 traduzem os códigos para a tela. Registro sem usuário é da carga automática e aparece como "Sistema".
 """
 
+import csv
+import io
 import json
 from datetime import datetime
 from typing import Any
@@ -72,6 +74,24 @@ def parametros_consulta(data_inicio: str, data_fim: str, origem: str, usuario_id
     return params
 
 
+COLUNAS_CSV = [("quando", "Data e hora"), ("usuario", "Usuário"), ("evento", "Evento"), ("origem", "Tipo"), ("alvo", "Registro"),
+               ("anterior", "Valor anterior"), ("novo", "Valor novo"), ("justificativa", "Justificativa")]
+
+
+def gerar_csv(linhas: list[dict[str, Any]]) -> str:
+    """CSV com ; e BOM, para o Excel em português abrir com acentos e colunas certas."""
+    saida = io.StringIO()
+    escritor = csv.writer(saida, delimiter=";", lineterminator="\r\n")
+    escritor.writerow([titulo for _, titulo in COLUNAS_CSV])
+    for linha in linhas:
+        escritor.writerow([linha.get(chave, "") for chave, _ in COLUNAS_CSV])
+    return "﻿" + saida.getvalue()
+
+
+def nome_arquivo(data_inicio: str, data_fim: str) -> str:
+    return f"auditoria_{data_inicio}.csv" if data_inicio == data_fim else f"auditoria_{data_inicio}_a_{data_fim}.csv"
+
+
 class AuditoriaState(rx.State):
     itens: list[dict[str, Any]] = []
     total: int = 0
@@ -82,6 +102,7 @@ class AuditoriaState(rx.State):
     usuario_id: str = "0"
     opcoes_usuarios: list[dict[str, str]] = []
     carregando: bool = False
+    exportando: bool = False
     mensagem: str = ""
     erro: bool = False
 
@@ -145,3 +166,31 @@ class AuditoriaState(rx.State):
         if self.pagina < self.total_paginas:
             self.pagina += 1
             await self._consultar()
+
+    async def exportar_csv(self):
+        """Baixa todas as páginas do filtro atual (não só a aberta) num CSV."""
+        if self.exportando:
+            return None
+        self.exportando = True
+        linhas: list[dict[str, Any]] = []
+        try:
+            pagina = 1
+            while True:
+                ok, corpo = await chamar(self, "GET", "/admin/auditoria",
+                                         params=parametros_consulta(self.data_inicio, self.data_fim, self.origem, self.usuario_id, pagina))
+                if not ok:
+                    self.erro, self.mensagem = True, str(corpo)
+                    return None
+                corpo = corpo or {}
+                itens = corpo.get("itens") or []
+                linhas += [linha_auditoria(e) for e in itens]
+                if not itens or len(linhas) >= int(corpo.get("total") or 0):
+                    break
+                pagina += 1
+        finally:
+            self.exportando = False
+        if not linhas:
+            self.erro, self.mensagem = True, "Nenhum registro para exportar neste filtro."
+            return None
+        self.erro, self.mensagem = False, f"{len(linhas)} registro(s) exportado(s)."
+        return rx.download(data=gerar_csv(linhas), filename=nome_arquivo(self.data_inicio, self.data_fim))

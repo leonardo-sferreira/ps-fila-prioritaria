@@ -51,3 +51,30 @@ def test_filtro_volta_para_a_primeira_pagina_e_consulta():
         asyncio.run(a.AuditoriaState.set_origem.fn(estado, "SESSAO"))
     assert chamadas == [("GET", "/admin/auditoria", {"pagina": 1, "data_inicio": "2026-11-14", "data_fim": "2026-11-14", "origem": "SESSAO"})]
     assert estado.pagina == 1 and estado.total == 1 and estado.itens[0]["evento"] == "Saiu do sistema"
+
+
+def test_csv_tem_cabecalho_ponto_e_virgula_e_bom():
+    texto = a.gerar_csv([{"quando": "14/11/2026 14:30:00", "usuario": "Ana", "evento": "Usuario editado", "origem": "Alteração",
+                          "alvo": "Usuario #7", "anterior": "nome: Bia", "novo": "nome: Beatriz; ativa", "justificativa": ""}])
+    linhas = texto.lstrip("﻿").splitlines()
+    assert texto.startswith("﻿")
+    assert linhas[0] == "Data e hora;Usuário;Evento;Tipo;Registro;Valor anterior;Valor novo;Justificativa"
+    assert linhas[1] == '14/11/2026 14:30:00;Ana;Usuario editado;Alteração;Usuario #7;nome: Bia;"nome: Beatriz; ativa";'
+    assert a.nome_arquivo("2026-11-14", "2026-11-14") == "auditoria_2026-11-14.csv"
+    assert a.nome_arquivo("2026-11-01", "2026-11-14") == "auditoria_2026-11-01_a_2026-11-14.csv"
+
+
+def test_exportar_busca_todas_as_paginas():
+    estado = estado_falso(a.AuditoriaState, itens=[], total=0, pagina=1, data_inicio="2026-11-14", data_fim="2026-11-14",
+                          origem="TODAS", usuario_id="0", opcoes_usuarios=[], carregando=False, exportando=False, mensagem="", erro=False)
+    paginas = []
+
+    def requisitar(metodo, _variavel, caminho, **kw):
+        n = kw["params"]["pagina"]
+        paginas.append(n)
+        quantos = 50 if n == 1 else 10
+        return Resposta(200, {"itens": [{"em": EM, "origem": "SESSAO", "tipo_evento": "LOGIN", "usuario_id": 1, "usuario": "Ana"}] * quantos, "total": 60})
+
+    with patch(REQUISITAR, side_effect=requisitar):
+        asyncio.run(a.AuditoriaState.exportar_csv.fn(estado))
+    assert paginas == [1, 2] and "60 registro" in estado.mensagem and not estado.exportando
