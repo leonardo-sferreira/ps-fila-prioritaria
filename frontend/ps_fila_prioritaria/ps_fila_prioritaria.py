@@ -43,7 +43,9 @@ from ps_fila_prioritaria.paginas.cadastros import (
     pagina_sintomas,
 )
 from ps_fila_prioritaria.paginas.comprovante import pagina_comprovante
+from ps_fila_prioritaria.estados.acompanhamento import FichaAdminState, FilaGeralState
 from ps_fila_prioritaria.estados.auditoria import AuditoriaState
+from ps_fila_prioritaria.paginas.acompanhamento import pagina_ficha_admin, pagina_fila_geral
 from ps_fila_prioritaria.estados.status_equipe import StatusEquipeState
 from ps_fila_prioritaria.paginas.auditoria import pagina_auditoria
 from ps_fila_prioritaria.paginas.ficha import pagina_recepcao_ficha
@@ -109,5 +111,7 @@ for _pagina, _rota, _titulo, _estado in [
     (pagina_parametros, "/admin/parametros", "Parâmetros", ParametrosState),
     (pagina_usuarios, "/admin/usuarios", "Usuários", UsuariosState),
     (pagina_auditoria, "/admin/auditoria", "Auditoria", AuditoriaState),
+    (pagina_fila_geral, "/admin/fila-geral", "Fila geral", FilaGeralState),
 ]:
     app.add_page(_pagina, route=_rota, title=_titulo, on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), _estado.carregar])
+app.add_page(pagina_ficha_admin, route="/admin/fichas/[id]", title="Detalhe da ficha", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), FichaAdminState.carregar_da_rota])

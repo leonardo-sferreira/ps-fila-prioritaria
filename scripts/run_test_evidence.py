@@ -35,6 +35,7 @@ REMOTE_FILES = {
     "test_xano_api_integration.py": ("ficha-atendimento", "escrita: pacientes e fichas sem limpeza garantida"),
     "test_chamada.py": ("chamada-paciente", "escrita: cenário, chamadas, sessões e limpeza remota"),
     "test_recuperacao_sessao_medico.py": ("chamada-paciente", "escrita: sessões e estado operacional"),
+    "test_acompanhamento.py": ("acompanhamento-administrador", "escrita: cenário sintético de fila com limpeza remota"),
 }
 NATIVE_PURE = (
     "classificacao/pontuar", "classificacao/faixas_padrao",

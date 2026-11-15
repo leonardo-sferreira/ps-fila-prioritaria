@@ -151,6 +151,7 @@ def aba_menu(nome: str, rota: str, ativa: bool) -> rx.Component:
 # Menu do Administrador, no mesmo padrão (add-cadastros-administrador, D9).
 ABAS_ADMIN = [
     ("Início", "/admin"),
+    ("Fila geral", "/admin/fila-geral"),
     ("Médicos", "/admin/medicos"),
     ("Recepção", "/admin/recepcao"),
     ("Especialidades", "/admin/especialidades"),
