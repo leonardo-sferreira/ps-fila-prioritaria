@@ -26,7 +26,8 @@
 
 - [x] 4.1 [Xano] Especialidades e relações iniciais inseridas por `classificacao/inicializar_classificacao` e `direcionamento/inicializar_direcionamento` (só o que falta); sintomas mantidos pelo Administrador
 - [x] 4.2 [Xano] `GET especialidades` e `GET sintomas` conforme as specs `especialidades` e `sintomas`
-- [ ] 4.3 Decidir se a carga automática (`inicializar_*`) precisa gravar auditoria, já que não há usuário responsável · PENDENTE PO
+- [x] 4.3 A carga automática (`inicializar_*`) grava auditoria · DECIDIDO PO (15/11/2026)
+  - Cada `db.add` das três funções chama `registrar_alteracao` com `sistema: true` e evento `CARGA_INICIAL`; o registro fica sem usuário e a tela de auditoria mostra "Sistema". Testes `test_carga_automatica_audita_cada_insercao` e `test_endpoint_nunca_audita_como_sistema`.
 
 ## 5. Integração e documentação
 
