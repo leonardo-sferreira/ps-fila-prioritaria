@@ -12,6 +12,15 @@ import pytest
 from scripts import run_test_evidence as ev, merge_test_evidence as merge
 
 
+
+@pytest.fixture(autouse=True)
+def contexto_local_das_fixtures(monkeypatch):
+    """Separa as simulações do run e do Summary reais do processo executor."""
+    for key in tuple(os.environ):
+        if key.startswith('GITHUB_'):
+            monkeypatch.delenv(key)
+
+
 def fixture_source(path, suite='xano-static', status='PASSED', commit=None, run=None, attempt=None):
     data=ev.metadata(suite,datetime.now(timezone.utc));data.update(commit=commit or ev.git('rev-parse','HEAD'),github_run_id=run,github_run_attempt=attempt)
     data['casos']=[dict(c,status=status,duracao_segundos=.01,motivo='' if status=='PASSED' else 'Motivo sintético',resultado_obtido='Resultado sintético') for c in ev.catalog(suite)]
@@ -261,3 +270,43 @@ def test_workflow_topologia_publicacao_e_gates_preservados(tmp_path):
     # Cada download e cada publicação depende apenas de always, não do sucesso anterior.
     for block in text.split('      - ')[1:]:
         if 'uses: actions/download-artifact' in block or 'uses: actions/upload-artifact' in block:assert 'if: always()' in block
+
+
+def test_fixtures_isolam_actions_sem_apagar_contexto_do_runner(tmp_path):
+    summary = tmp_path / 'summary-externo.md'
+    sentinel = 'Resumo externo preservado.\n'
+    summary.write_text(sentinel)
+    commit = ev.git('rev-parse', 'HEAD')
+    # Contexto sintético exclusivo desta regressão; nenhuma chamada remota.
+    env = dict(os.environ, GITHUB_ACTIONS='true', GITHUB_SHA=commit,
+               GITHUB_RUN_ID='123456789', GITHUB_RUN_ATTEMPT='3',
+               GITHUB_JOB='autotestes', GITHUB_REPOSITORY='owner/repo',
+               GITHUB_STEP_SUMMARY=str(summary))
+    selected = (
+        'test_merge_ausencias_corrupcao_e_fontes_confiaveis',
+        'test_merge_leitura_legada_somente_local_explicita_sem_alterar_origem',
+        'test_merge_recusa_destino_preserva_historico_e_sem_roteiro_fixo',
+        'test_codigos_reais_merge_sucesso_falha_erro_parcial_ignorado_bloqueado',
+        'test_minimizacao_canarios_em_todos_formatos_e_logs',
+        'test_needs_failure_nao_substituido_por_publicacao_e_roteiro_explicito',
+    )
+    result = subprocess.run(
+        [sys.executable, '-m', 'pytest', '-q', *[f'{__file__}::{name}' for name in selected]],
+        cwd=ev.ROOT, env=env, text=True, capture_output=True, timeout=120,
+    )
+    assert result.returncode == 0, result.stdout[-3000:]
+    assert summary.read_text() == sentinel
+    output = tmp_path / 'runner-intencional'
+    result = subprocess.run(
+        [sys.executable, str(ev.ROOT / 'scripts/run_test_evidence.py'),
+         '--suite', 'xano-static', '--output', str(output),
+         '--blocked-reason', 'dependencia', '--require-complete'],
+        cwd=ev.ROOT, env=env, text=True, capture_output=True, timeout=30,
+    )
+    assert result.returncode == 1
+    data = json.loads((output / 'resultados.json').read_text())
+    assert data['commit'] == data['sha_esperado'] == commit
+    assert (data['github_run_id'], data['github_run_attempt'], data['github_job']) == ('123456789', '3', 'autotestes')
+    assert data['ambiente'] == 'GitHub Actions' and data['totais']['BLOCKED'] == 8
+    assert_formats(output)
+    assert summary.read_text().startswith(sentinel + '# Evidências: xano-static')

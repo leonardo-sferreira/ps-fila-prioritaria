@@ -10984,6 +10984,26 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "id": "CT-FERRAMENTA-0041",
+      "seletor": "tests/test_evidence_pipeline.py::test_fixtures_isolam_actions_sem_apagar_contexto_do_runner",
+      "suite": "autotestes",
+      "nome": "Fixtures isolam Actions sem apagar contexto do runner",
+      "objetivo": "Verificar que as fixtures sintéticas não herdam identidade nem publicam no Summary externo, preservando o contexto da execução intencional.",
+      "resultado_esperado": "Os seis cenários antes reprovados passam sob ambiente CI; o Summary sentinela permanece intacto e o runner intencional mantém SHA, run, tentativa e job.",
+      "tipo": "UNITARIO",
+      "componente": "Ferramenta",
+      "modo_dependencia": "LOCAL",
+      "classe_seguranca": "nao_mutavel",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "NAO_APLICAVEL"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }

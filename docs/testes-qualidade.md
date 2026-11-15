@@ -121,6 +121,8 @@ Para outro ciclo, crie um JSON com `versao: 1`, `ciclo`, `titulo`, `descricao`, 
 
 ## GitHub Actions
 
+Os autotestes sintéticos do pipeline isolam `GITHUB_*` por teste. Assim, suas fontes locais, simulações de CI e relatórios temporários não herdam a identidade nem escrevem no Job Summary do run real. Os cenários que verificam CI configuram seu próprio contexto explicitamente; o runner externo conserva SHA/run/tentativa/job e publica somente o resultado real da suíte. O passo “Aplicar resultado original” continua exigindo os códigos originais de instalação e testes: sua falha indica um resultado anterior não aprovado.
+
 O workflow preserva gatilhos push/PR/manual, permissão `contents: read` e versões anteriores de Python/actions/CLIs. Cinco jobs independentes executam `autotestes`, `reflex`, `xano-static`, E2E público e Xano puro. Cada um captura o retorno da preparação/execução, produz e publica evidências com `always()` e aplica o gate ao final. Capturar o retorno permite publicar; o passo final conserva sua falha. Falta de secret remoto bloqueia a suíte obrigatória e o CI; não cancela os jobs locais. Nenhuma tolerância irrestrita transforma falha em sucesso.
 
 Artifacts históricos mantidos: `evidencias-reflex`, `evidencias-e2e`, `evidencias-xano`, `evidencias-consolidadas`; suítes separadas acrescentam `evidencias-autotestes` e `evidencias-xano-static`. O merge declara as cinco suítes esperadas e recebe SHA/run/tentativa e `needs`. Cada download e a consolidação têm condição própria `always()`. Arquivos canônicos obrigatórios são verificados e uploads usam `if-no-files-found: error`. O Job Summary mostra eixos, totais, falhas/ausências, limites e link para o run/artifacts.
