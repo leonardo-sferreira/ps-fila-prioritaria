@@ -4,6 +4,8 @@ import concurrent.futures
 import json
 import os
 import secrets
+import shutil
+import ssl
 import subprocess
 import time
 import unittest
@@ -30,7 +32,7 @@ def funcao(nome: str, entrada: dict, *, esperar: bool = True) -> dict:
     if esperar:
         time.sleep(2.5)  # Xano Free: a instância limita as chamadas também pelo CLI.
     processo = subprocess.run(
-        ["xano", "function", "run", nome, "--json", "-", "--branch", "v1", "-p", PERFIL, "-o", "json"],
+        [shutil.which("xano") or "xano", "function", "run", nome, "--json", "-", "--branch", "v1", "-p", PERFIL, "-o", "json"],
         input=json.dumps(entrada), text=True, capture_output=True, timeout=40, check=False,
     )
     if processo.returncode:
@@ -58,7 +60,7 @@ class ChamadaTest(unittest.TestCase):
             "ficha_dois": c["ficha_dois"], "vinculo_neu": c["vinculos"][1], "vinculo_cli": c["vinculos"][2],
         })
         assert ajustado["status"] == "ok", ajustado
-        cls.http = httpx.Client(timeout=10)
+        cls.http = httpx.Client(timeout=10, verify=ssl.create_default_context())
 
     @classmethod
     def tearDownClass(cls):
@@ -136,6 +138,10 @@ class ChamadaTest(unittest.TestCase):
 
         compareceu = self.agir(c["usuario_dois"], ficha_dois, "COMPARECEU")
         self.assertEqual(compareceu["status"], "ATENDIDO")
+        # Comparecimento põe o médico EM_ATENDIMENTO (status-equipe, D1).
+        filas = self.requisitar("GET", "/medico/filas", "token_dois")
+        self.assertEqual(filas.status_code, 200, filas.text)
+        self.assertEqual(filas.json()["medico"]["status"], "EM_ATENDIMENTO")
         self.assertEqual(self.requisitar("GET", f"/fichas/{ficha_dois}/impressao", "token_dois").status_code, 200)
 
 

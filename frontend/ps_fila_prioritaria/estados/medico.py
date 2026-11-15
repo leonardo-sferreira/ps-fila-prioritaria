@@ -10,6 +10,10 @@ from ps_fila_prioritaria.comum import _codigo_erro, _mensagem_erro
 from ps_fila_prioritaria.estados.autenticacao import AuthState
 
 
+NOME_STATUS = {"DISPONIVEL": "Disponível", "EM_ATENDIMENTO": "Em atendimento", "PAUSA": "Pausa", "AUSENTE": "Ausente",
+               "INDISPONÍVEL": "Indisponível", "SEM_SESSAO": "Sem sessão"}
+
+
 class MedicoState(rx.State):
     """Consulta a fila e executa somente ações sobre a ficha atribuída pelo Xano."""
 
@@ -19,6 +23,11 @@ class MedicoState(rx.State):
     apto: bool = False
     plantao_vigente: bool = False
     status_operacional: str = ""
+
+    @rx.var
+    def status_exibido(self) -> str:
+        """Status em texto para a tela; EM_ATENDIMENTO vem sozinho do comparecimento (D1)."""
+        return NOME_STATUS.get(self.status_operacional, self.status_operacional)
     tem_ficha: bool = False
     mensagem: str = ""
     erro: bool = False

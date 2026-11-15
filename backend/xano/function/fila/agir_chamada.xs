@@ -199,6 +199,28 @@ function "fila/agir_chamada" {
                 created_at  : now
               }
             } as $evento
+
+            // Comparecimento põe o médico EM_ATENDIMENTO (status-equipe, add-acompanhamento-administrador D1);
+            // vale também vindo de PAUSA. Volta a DISPONIVEL em fila/chamar_proximo.
+            conditional {
+              if ($input.acao == "COMPARECEU") {
+                db.query sessao {
+                  where = $db.sessao.usuario_id == $usuario.id && $db.sessao.logout_em == null && $db.sessao.expira_em > now
+                  sort = {login_em: "desc"}
+                  return = {type: "single"}
+                } as $sessao_medico
+
+                conditional {
+                  if ($sessao_medico != null) {
+                    db.edit sessao {
+                      field_name = "id"
+                      field_value = $sessao_medico.id
+                      data = {status_operacional: "EM_ATENDIMENTO"}
+                    } as $em_atendimento
+                  }
+                }
+              }
+            }
           }
         }
 
