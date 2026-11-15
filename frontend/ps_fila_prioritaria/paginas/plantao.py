@@ -4,6 +4,8 @@ from typing import Any
 
 import reflex as rx
 
+from ps_fila_prioritaria.estados.status_equipe import OPCOES_STATUS, StatusEquipeState
+
 from ps_fila_prioritaria.componentes import (
     COR_AZUL,
     COR_BORDA,
@@ -294,13 +296,31 @@ def painel_plantao(extras: tuple[rx.Component, ...] = (), com_links: bool = True
     )
 
 
+def barra_status_recepcao() -> rx.Component:
+    """Status da pessoa da Recepção/Triagem: Disponível, Pausa ou Ausente (D5)."""
+    st = StatusEquipeState
+    return rx.hstack(
+        rx.text("Meu status: ", rx.text.strong(st.status_exibido), size="2", color=COR_TEXTO),
+        *[rx.button(nome, on_click=st.definir(valor), loading=st.ocupado & (st.status != valor), size="1",
+                    variant=rx.cond(st.status == valor, "solid", "outline"), color_scheme="green" if valor == "DISPONIVEL" else "gray",
+                    disabled=st.status == valor) for valor, nome in OPCOES_STATUS],
+        rx.cond(st.mensagem != "", rx.text(st.mensagem, size="1", color=rx.cond(st.erro, COR_ERRO, COR_SECUNDARIA))),
+        spacing="2",
+        align="center",
+        wrap="wrap",
+        width="100%",
+        max_width="1200px",
+    )
+
+
 def area_recepcao() -> rx.Component:
     return protegido(
         "RECEPCAO_TRIAGEM",
         rx.box(
             cabecalho("RECEPÇÃO/TRIAGEM", "Área inicial — Recepção/Triagem"),
             menu_recepcao("/recepcao"),
-            rx.center(painel_plantao(), padding="28px 16px 48px", width="100%"),
+            rx.center(rx.vstack(barra_status_recepcao(), painel_plantao(), spacing="4", align="center", width="100%"),
+                      padding="20px 16px 48px", width="100%"),
             background=COR_FUNDO,
             font_family="Inter, sans-serif",
             min_height="100vh",

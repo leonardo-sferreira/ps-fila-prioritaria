@@ -11329,6 +11329,161 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Opções não incluem Em atendimento",
+      "objetivo": "A Recepção escolhe Disponível, Pausa ou Ausente; Em atendimento não é opção manual.",
+      "resultado_esperado": "A Recepção escolhe Disponível, Pausa ou Ausente; Em atendimento não é opção manual.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0262",
+      "seletor": "frontend/tests/test_status_equipe_state.py::test_opcoes_nao_incluem_em_atendimento",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Carregar lê o status da sessão",
+      "objetivo": "O seletor mostra o status da sessão ativa vindo de auth/me.",
+      "resultado_esperado": "O seletor mostra o status da sessão ativa vindo de auth/me.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0263",
+      "seletor": "frontend/tests/test_status_equipe_state.py::test_carregar_le_o_status_da_sessao",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Definir envia PATCH e atualiza",
+      "objetivo": "Trocar o status envia PATCH me/status e mostra o novo status.",
+      "resultado_esperado": "Trocar o status envia PATCH me/status e mostra o novo status.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0264",
+      "seletor": "frontend/tests/test_status_equipe_state.py::test_definir_envia_patch_e_atualiza",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Mesmo status não chama a API",
+      "objetivo": "Escolher o status atual não chama a API.",
+      "resultado_esperado": "Escolher o status atual não chama a API.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0265",
+      "seletor": "frontend/tests/test_status_equipe_state.py::test_mesmo_status_nao_chama_a_api",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Administrador não tem status",
+      "objetivo": "PATCH me/status aceita só Médico e Recepção/Triagem.",
+      "resultado_esperado": "PATCH me/status aceita só Médico e Recepção/Triagem.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0137",
+      "seletor": "tests/api/test_base_compartilhada.py::StatusEquipeTest.test_administrador_nao_tem_status",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Em atendimento não é escolhido à mão",
+      "objetivo": "PATCH me/status aceita só DISPONIVEL, PAUSA e AUSENTE.",
+      "resultado_esperado": "PATCH me/status aceita só DISPONIVEL, PAUSA e AUSENTE.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0138",
+      "seletor": "tests/api/test_base_compartilhada.py::StatusEquipeTest.test_em_atendimento_nao_e_escolhido_a_mao",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Comparecimento põe Em atendimento",
+      "objetivo": "fila/agir_chamada grava EM_ATENDIMENTO na sessão do médico ao confirmar o comparecimento.",
+      "resultado_esperado": "fila/agir_chamada grava EM_ATENDIMENTO na sessão do médico ao confirmar o comparecimento.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0139",
+      "seletor": "tests/api/test_base_compartilhada.py::StatusEquipeTest.test_comparecimento_poe_em_atendimento",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }

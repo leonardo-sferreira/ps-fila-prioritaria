@@ -4,6 +4,7 @@ import concurrent.futures
 import json
 import os
 import secrets
+import shutil
 import ssl
 import subprocess
 import time
@@ -24,10 +25,15 @@ def _cenario(acao: str, marcador: str, codigo: str = "", senha: str = "") -> dic
     # O CLI exige os campos opcionais mesmo quando a ação não os utiliza.
     entrada["codigo"] = codigo or f"{secrets.randbelow(1_000_000):06d}"
     entrada["senha"] = senha or secrets.token_urlsafe(18)
-    processo = subprocess.run(
-        ["xano", "function", "run", "auth/teste_sessao_unica", "--json", "-", "--branch", "v1", "-p", "ps-impacta", "-o", "json"],
-        input=json.dumps(entrada), text=True, capture_output=True, check=True, timeout=30,
-    )
+    comando = [shutil.which("xano") or "xano", "function", "run", "auth/teste_sessao_unica", "--json", "-", "--branch", "v1", "-p", "ps-impacta", "-o", "json"]
+    for tentativa in range(6):
+        # Plano gratuito: 25 requisições a cada 20 s no CLI; ao bater no limite, espera a janela e tenta de novo.
+        if tentativa:
+            time.sleep(21)
+        processo = subprocess.run(comando, input=json.dumps(entrada), text=True, capture_output=True, check=False, timeout=60)
+        if processo.returncode == 0 or "requests per 20 seconds" not in processo.stderr:
+            break
+    assert processo.returncode == 0, (acao, processo.stderr[-500:] or processo.stdout[-500:])
     resposta = json.loads(processo.stdout)
     assert resposta["status"] == "ok", resposta
     return resposta["result"]
@@ -84,6 +90,11 @@ def _verificar_recuperacao_sem_disponibilidade_automatica() -> None:
             alteracao = _protegida("PATCH", BASE, "/me/status", token, json={"status": status})
             assert alteracao.status_code == 200, alteracao.text
             assert _cenario("CONSULTAR", marcador)["status_atual"] == status
+            # auth/me devolve o status da sessão (seletor da Recepção, D5) e a chamada em PAUSA/AUSENTE é recusada.
+            me = _protegida("GET", BASE, "/auth/me", token)
+            assert me.status_code == 200 and me.json()["status_operacional"] == status, me.text
+            chamada = _protegida("POST", BASE_FILA, "/medico/chamar-proximo", token)
+            assert chamada.status_code >= 400 and "MEDICO_INDISPONIVEL" in chamada.text, chamada.text
             novo_login = _verificar(email, _novo_codigo(marcador))
             assert novo_login.status_code == 200, novo_login.text
             token = novo_login.json()["token"]

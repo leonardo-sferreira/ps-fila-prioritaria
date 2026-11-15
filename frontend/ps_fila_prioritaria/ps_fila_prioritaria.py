@@ -44,6 +44,7 @@ from ps_fila_prioritaria.paginas.cadastros import (
 )
 from ps_fila_prioritaria.paginas.comprovante import pagina_comprovante
 from ps_fila_prioritaria.estados.auditoria import AuditoriaState
+from ps_fila_prioritaria.estados.status_equipe import StatusEquipeState
 from ps_fila_prioritaria.paginas.auditoria import pagina_auditoria
 from ps_fila_prioritaria.paginas.ficha import pagina_recepcao_ficha
 from ps_fila_prioritaria.paginas.painel_admin import area_admin
@@ -68,7 +69,7 @@ app.add_page(senha_sucesso, route="/senha/sucesso", title="Senha redefinida")
 app.add_page(privacidade, route="/privacidade", title="Aviso de privacidade")
 app.add_page(totem, route="/totem", title="Totem de autoatendimento", on_load=TotemState.concluir)
 app.add_page(carregando, route="/sair/inatividade", title="Sessão encerrada", on_load=AuthState.sair_por_inatividade)
-app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), PlantaoState.carregar])
+app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), PlantaoState.carregar, StatusEquipeState.carregar])
 app.add_page(area_medico, route="/medico", title="Médico", on_load=[AuthState.verificar_sessao("MEDICO"), MedicoState.carregar, MeusPlantoesState.carregar])
 app.add_page(pagina_impressao_medico, route="/medico/ficha/[id]/imprimir", title="Imprimir ficha", on_load=[AuthState.verificar_sessao("MEDICO"), ImpressaoMedicoState.carregar_da_rota])
 app.add_page(area_admin, route="/admin", title="Administrador", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), PlantaoState.carregar, EquipeState.carregar, ExpiracaoState.carregar])

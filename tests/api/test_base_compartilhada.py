@@ -111,6 +111,28 @@ class AuditoriaTest(unittest.TestCase):
                 self.assertEqual(insercoes, auditorias)
 
 
+class StatusEquipeTest(unittest.TestCase):
+    """Regras do status operacional no XanoScript, sem rede (add-acompanhamento-administrador, tarefa 1.3).
+    O fluxo ao vivo está em test_recuperacao_sessao_medico.py e o EM_ATENDIMENTO após o comparecimento em test_chamada.py."""
+
+    def setUp(self) -> None:
+        self.me_status = (XANO / "api/autenticacao/me_status_patch.xs").read_text(encoding="utf-8")
+
+    def test_administrador_nao_tem_status(self) -> None:
+        perfis = re.search(r"perfis_permitidos:\s*\[([^\]]*)\]", self.me_status).group(1)
+        self.assertNotIn("ADMINISTRADOR", perfis)
+        self.assertIn("MEDICO", perfis)
+        self.assertIn("RECEPCAO_TRIAGEM", perfis)
+
+    def test_em_atendimento_nao_e_escolhido_a_mao(self) -> None:
+        valores = re.search(r"enum status \{\s*values = \[([^\]]*)\]", self.me_status).group(1)
+        self.assertEqual(re.findall(r'"([A-Z_]+)"', valores), ["DISPONIVEL", "PAUSA", "AUSENTE"])
+
+    def test_comparecimento_poe_em_atendimento(self) -> None:
+        agir = (XANO / "function/fila/agir_chamada.xs").read_text(encoding="utf-8")
+        self.assertRegex(agir, r'acao == "COMPARECEU"[\s\S]*status_operacional: "EM_ATENDIMENTO"')
+
+
 class ParametrosTest(unittest.TestCase):
     VALORES_DA_BASELINE = {
         "IDADE_MINIMA_IDOSO": "60",
