@@ -32,9 +32,11 @@
   - Parcial: verificado ao vivo (8 testes de `test_api_autenticacao.py` passando): login válido dos três perfis com token/nome/perfil, e-mail com maiúsculas e espaços, senha errada e e-mail inexistente com a mesma mensagem, campos ausentes. Faltam usuário inativo (grupo 4) e conferir o registro em `sessao` (não há consulta de sessões nesta change; conferir no painel ou na `add-acompanhamento-administrador`).
 - [ ] 3.2 [Xano] Implementar `GET auth/me` (autenticado + `verificar_acesso` com todos os perfis), que retorna id, nome e perfil; verificar com os testes 3.4
   - Parcial: verificado ao vivo com token válido (200, sem `password`), sem token (401) e com token adulterado (401). Falta usuário desativado com token ainda válido (grupo 4).
-- [ ] 3.3 [Xano] Implementar `POST auth/logout`, que preenche `logout_em` na sessão aberta mais recente; verificar com os testes 3.4
+- [x] 3.3 [Xano] Implementar `POST auth/logout`, que preenche `logout_em` na sessão aberta mais recente; verificar com os testes 3.4
   - Parcial: verificado ao vivo com token válido (200 `{"encerrada": true}`) e sem token (401). Falta conferir `logout_em` preenchido na tabela `sessao` (painel do Xano).
-- [ ] 3.4 Escrever `tests/api/test_autenticacao.py` cobrindo: login bem-sucedido, credenciais inválidas (mensagem idêntica), campos ausentes, usuário inativo, `me` sem token, com token adulterado e com usuário desativado após o login, login criando sessão, login recusado sem sessão, logout encerrando a sessão; verificar que `pytest tests/api/test_autenticacao.py` passa
+  - Validado pelo PO em 15/11/2026: logout registra `logout_em` na sessão (visível como "Saiu do sistema" em `/admin/auditoria`).
+- [ ] 3.4 Escrever `frontend/tests/test_api_autenticacao.py` cobrindo: login bem-sucedido, credenciais inválidas (mensagem idêntica), campos ausentes, usuário inativo, `me` sem token, com token adulterado e com usuário desativado após o login, login criando sessão, login recusado sem sessão, logout encerrando a sessão; verificar que `pytest frontend/tests/test_api_autenticacao.py` passa
+  - Caminho corrigido em 15/11/2026: os testes sempre estiveram em `frontend/tests/test_api_autenticacao.py`.
 - [x] 3.5 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
   - Evidência: `backend/xano/api/autenticacao/` (api_group, auth_login_post, auth_me_get, auth_logout_post) com GUIDs do servidor.
 
@@ -52,8 +54,9 @@
 - [x] 3A.5 [Reflex] Criar a tela `/login/codigo` no padrão da tela A2 do Figma (6 dígitos, botão desabilitado durante o envio, contador de reenvio de 60 s, aviso "Não recebeu? Confira a caixa de spam", "Voltar ao login"); o `AuthState` guarda só o e-mail entre as etapas, nunca a senha; atualizar `test_auth_state.py`; verificar manualmente o login dos três perfis com e-mail real
   - Evidência: tela `/login/codigo` e `AuthState` (`verificar_codigo`, `reenviar_codigo`, contador em segundo plano, guarda `exigir_login_pendente`) criados; `reflex compile` sem erros; 17 testes de estado passando.
   - Validado pelo PO em 25/10/2026: fluxo completo com e-mail real nos testes manuais.
-- [ ] 3A.6 Atualizar `test_api_autenticacao.py` (o login passa a responder `codigo_enviado`) e cobrir: código errado, limite de 5 tentativas, reenvio antes de 60 s, reenvio sem login pendente e nenhuma sessão criada sem código; o caminho feliz até o token, a validade de 9 min 59 s/10 min e o reenvio após 10 minutos ficam no roteiro manual (D13); verificar que passam
+- [x] 3A.6 Atualizar `test_api_autenticacao.py` (o login passa a responder `codigo_enviado`) e cobrir: código errado, limite de 5 tentativas, reenvio antes de 60 s, reenvio sem login pendente e nenhuma sessão criada sem código; o caminho feliz até o token, a validade de 9 min 59 s/10 min e o reenvio após 10 minutos ficam no roteiro manual (D13); verificar que passam
   - Parcial: `test_api_autenticacao.py` com 11 testes ao vivo passando. Falta conferir que nenhuma sessão é criada sem o código (não há consulta de sessões nesta change; conferir no painel do Xano).
+  - Validado pelo PO em 15/11/2026: nenhuma sessão é criada sem o código.
 - [x] 3A.7 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
   - Evidência: `codigo_verificacao.xs`, `function/auth/emitir_codigo.xs`, `function/auth/conferir_codigo.xs`, `auth_login_verificar_post.xs` e `auth_login_reenviar_post.xs` versionados com os GUIDs do servidor.
 
@@ -106,7 +109,8 @@
   - protegida para ADMINISTRADOR.
 
   Verificar que o app compila e abre
-- [x] 6.2 [Reflex] "Novo administrador", edição de administrador e "Ativar/Desativar" (só em administradores; médicos e Recepção apontam para os cadastros), com as mensagens da API
+- [x] 6.2 [Reflex] "Novo usuário" com escolha de perfil, edição (com CRM/especialidades/sala ou CPF/referência) e "Ativar/Desativar" para qualquer perfil, com as mensagens da API
+  - Revisada pelo PO em 14/11/2026 (PR #52): antes valia só para administradores, com médicos e Recepção nos cadastros.
 - [x] 6.3 [Reflex] "Trocar perfil" em qualquer usuário, exceto o próprio:
   - o diálogo pede os dados do perfil novo (CRM e especialidades para Médico; CPF para Recepção/Triagem);
   - confirmação antes de salvar.
@@ -127,12 +131,14 @@
 - [x] 6A.5 [Reflex] Criar as telas do fluxo "Esqueci minha senha" conforme o Figma (A1 a A4: e-mail, código, código inválido, nova senha e sucesso) com o link na tela de login, o contador de reenvio e o aviso "Não recebeu? Confira a caixa de spam"; verificar manualmente o fluxo completo com um e-mail real de teste
   - Evidência: telas `/senha` (A1), `/senha/codigo` (A2/A2b), `/senha/nova` (A3) e `/senha/sucesso` (A4) e o link "Esqueci minha senha" no login, com o mesmo cartão das telas de login; A1 e login conferidas com o Figma por captura de tela; 9 testes de estado em `test_senha_state.py`.
   - Validado pelo PO em 25/10/2026: fluxo completo com e-mail real nos testes manuais.
-- [ ] 6A.6 Escrever `frontend/tests/test_api_redefinicao_senha.py` cobrindo todos os cenários do requisito "Redefinição de senha pelo próprio usuário", com os valores-limite de 59/60 s no reenvio, 9 min 59 s/10 min na validade, 5ª/6ª tentativa e senha de 7/8 caracteres, simulando o envio de e-mail no ambiente de teste; verificar que passam
+- [x] 6A.6 Escrever `frontend/tests/test_api_redefinicao_senha.py` cobrindo todos os cenários do requisito "Redefinição de senha pelo próprio usuário", com os valores-limite de 59/60 s no reenvio, 9 min 59 s/10 min na validade, 5ª/6ª tentativa e senha de 7/8 caracteres, simulando o envio de e-mail no ambiente de teste; verificar que passam
   - Parcial: 4 testes ao vivo passando (resposta genérica, reenvio cedo, tentativas, senha curta e senha anterior mantida). Os limites de tempo e o caminho feliz ficam no roteiro manual, como na D13, porque o código só chega por e-mail.
+  - Concluída pelo PO em 15/11/2026: os 4 testes ao vivo cobrem o que não depende do e-mail; caminho feliz e limites de tempo (59/60 s, 9 min 59 s/10 min) ficam no roteiro manual da 6.4, conforme D13.
 - [x] 6A.7 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
   - Evidência: `auth_senha_solicitar_post.xs`, `auth_senha_verificar_post.xs`, `auth_senha_redefinir_post.xs` e `conferir_codigo.xs` (opção `consumir`) versionados com os GUIDs do servidor.
 
 ## 7. Integração e documentação
 
 - [ ] 7.1 Verificação ponta a ponta: o Administrador cria um usuário Médico (pelos cadastros), o Médico faz login e vê a própria área, o Administrador troca o perfil dele para Recepção/Triagem e a próxima requisição já usa o novo perfil, e depois o desativa e a próxima ação o leva a `/login`; verificar executando o fluxo com a app rodando e confirmando as sessões no Xano
-- [ ] 7.2 Atualizar `docs/domain-model.md` (Usuário e Sessão) com o que foi implementado e verificar que ele bate com as tabelas do Xano
+- [x] 7.2 Atualizar `docs/domain-model.md` (Usuário e Sessão) com o que foi implementado e verificar que ele bate com as tabelas do Xano
+  - Conferido em 15/11/2026: Usuário e Sessão batem com `table/usuario.xs` e `table/sessao.xs`; acrescentadas a gestão de todos os perfis em Usuários e a auditoria de entradas/saídas.
