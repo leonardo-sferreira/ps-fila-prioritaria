@@ -27,16 +27,19 @@
 
 ## 3. Xano — endpoints de autenticação
 
-- [ ] 3.1 [Xano] Implementar `POST auth/login`: valida os campos obrigatórios, usa a mesma mensagem genérica para e-mail e senha inválidos, recusa usuário inativo, emite o token com o TTL configurado, cria a `sessao` e retorna token, nome e perfil; verificar com os testes 3.4
+- [x] 3.1 [Xano] Implementar `POST auth/login`: valida os campos obrigatórios, usa a mesma mensagem genérica para e-mail e senha inválidos, recusa usuário inativo, emite o token com o TTL configurado, cria a `sessao` e retorna token, nome e perfil; verificar com os testes 3.4
   - Atenção (25/10/2026): com o código no login (D13), o `auth/login` deixa de devolver o token; a mudança está na tarefa 3A.3.
   - Parcial: verificado ao vivo (8 testes de `test_api_autenticacao.py` passando): login válido dos três perfis com token/nome/perfil, e-mail com maiúsculas e espaços, senha errada e e-mail inexistente com a mesma mensagem, campos ausentes. Faltam usuário inativo (grupo 4) e conferir o registro em `sessao` (não há consulta de sessões nesta change; conferir no painel ou na `add-acompanhamento-administrador`).
-- [ ] 3.2 [Xano] Implementar `GET auth/me` (autenticado + `verificar_acesso` com todos os perfis), que retorna id, nome e perfil; verificar com os testes 3.4
+  - Concluída em 15/11/2026: usuário inativo é recusado sem código, token ou sessão, e o código certo abre exatamente uma sessão (`frontend/tests/test_api_autenticacao.py`, com médico sintético e código criados só pelo CLI (`auth/teste_sessao_unica`, ação nova `DESATIVAR`)).
+- [x] 3.2 [Xano] Implementar `GET auth/me` (autenticado + `verificar_acesso` com todos os perfis), que retorna id, nome e perfil; verificar com os testes 3.4
   - Parcial: verificado ao vivo com token válido (200, sem `password`), sem token (401) e com token adulterado (401). Falta usuário desativado com token ainda válido (grupo 4).
+  - Concluída em 15/11/2026: com a sessão ainda aberta, desativar o login faz `auth/me` responder 401 (`frontend/tests/test_api_autenticacao.py`, com médico sintético e código criados só pelo CLI (`auth/teste_sessao_unica`, ação nova `DESATIVAR`)).
 - [x] 3.3 [Xano] Implementar `POST auth/logout`, que preenche `logout_em` na sessão aberta mais recente; verificar com os testes 3.4
   - Parcial: verificado ao vivo com token válido (200 `{"encerrada": true}`) e sem token (401). Falta conferir `logout_em` preenchido na tabela `sessao` (painel do Xano).
   - Validado pelo PO em 15/11/2026: logout registra `logout_em` na sessão (visível como "Saiu do sistema" em `/admin/auditoria`).
-- [ ] 3.4 Escrever `frontend/tests/test_api_autenticacao.py` cobrindo: login bem-sucedido, credenciais inválidas (mensagem idêntica), campos ausentes, usuário inativo, `me` sem token, com token adulterado e com usuário desativado após o login, login criando sessão, login recusado sem sessão, logout encerrando a sessão; verificar que `pytest frontend/tests/test_api_autenticacao.py` passa
+- [x] 3.4 Escrever `frontend/tests/test_api_autenticacao.py` cobrindo: login bem-sucedido, credenciais inválidas (mensagem idêntica), campos ausentes, usuário inativo, `me` sem token, com token adulterado e com usuário desativado após o login, login criando sessão, login recusado sem sessão, logout encerrando a sessão; verificar que `pytest frontend/tests/test_api_autenticacao.py` passa
   - Caminho corrigido em 15/11/2026: os testes sempre estiveram em `frontend/tests/test_api_autenticacao.py`.
+  - Concluída em 15/11/2026: 3 testes novos (CT-XANO-0134 a 0136) passando contra a `v1`; os demais cenários já estavam cobertos pelos 11 testes existentes.
 - [x] 3.5 Exportar o XanoScript dos endpoints para `backend/xano/` e verificar que os arquivos estão no repositório
   - Evidência: `backend/xano/api/autenticacao/` (api_group, auth_login_post, auth_me_get, auth_logout_post) com GUIDs do servidor.
 

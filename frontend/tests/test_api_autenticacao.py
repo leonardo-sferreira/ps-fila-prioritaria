@@ -106,3 +106,74 @@ def test_verificar_sem_codigo_e_recusado() -> None:
 def test_me_recusa_requisicao_sem_token_ou_com_token_adulterado() -> None:
     assert _chamar("GET", "/auth/me").status_code == 401
     assert _chamar("GET", "/auth/me", token="token.adulterado.invalido").status_code == 401
+
+
+# --- Tarefa 3.4: sessão e usuário inativo, com médico sintético criado só pelo CLI do Xano. ---
+# O código de login é gravado direto pela função auth/teste_sessao_unica (sem endpoint público), então o teste
+# não depende do e-mail. ENCERRAR, no fim, fecha as sessões e desativa o usuário sintético.
+
+import json as _json
+import secrets as _secrets
+import shutil as _shutil
+import subprocess as _subprocess
+
+_CLI = _shutil.which("xano")
+
+
+def _cenario(acao: str, marcador: str, codigo: str = "", senha: str = "") -> dict:
+    entrada = {"acao": acao, "marcador": marcador, "codigo": codigo or f"{_secrets.randbelow(1_000_000):06d}",
+               "senha": senha or _secrets.token_urlsafe(18)}
+    comando = [_CLI, "function", "run", "auth/teste_sessao_unica", "--json", "-", "--branch", "v1",
+               "-p", os.getenv("XANO_TEST_PROFILE", "ps-impacta"), "-o", "json"]
+    for tentativa in range(6):
+        # Plano gratuito: 25 requisições a cada 20 s no CLI; ao bater no limite, espera a janela e tenta de novo.
+        time.sleep(3 if tentativa == 0 else 21)
+        processo = _subprocess.run(comando, input=_json.dumps(entrada), text=True, capture_output=True, check=False, timeout=60)
+        if processo.returncode == 0 or "requests per 20 seconds" not in processo.stderr:
+            break
+    assert processo.returncode == 0, (acao, processo.stderr[-800:] or processo.stdout[-800:])
+    resposta = _json.loads(processo.stdout)
+    assert resposta["status"] == "ok", resposta
+    return resposta["result"]
+
+
+@pytest.fixture
+def medico_sintetico():
+    if not _CLI:
+        pytest.skip("CLI do Xano indisponível")
+    marcador, codigo, senha = _secrets.token_hex(5), f"{_secrets.randbelow(1_000_000):06d}", _secrets.token_urlsafe(18)
+    criado = _cenario("CRIAR", marcador, codigo=codigo, senha=senha)
+    try:
+        yield {"marcador": marcador, "email": criado["email"], "codigo": codigo, "senha": senha}
+    finally:
+        _cenario("ENCERRAR", marcador)
+
+
+def test_codigo_errado_nao_cria_sessao_e_codigo_certo_cria(medico_sintetico):
+    m = medico_sintetico
+    recusado = _chamar("POST", "/auth/login/verificar", json={"email": m["email"], "codigo": "000000" if m["codigo"] != "000000" else "111111"})
+    assert recusado.status_code >= 400 and "token" not in recusado.json()
+    assert _cenario("CONSULTAR", m["marcador"])["sessoes_ativas"] == 0
+    aceito = _chamar("POST", "/auth/login/verificar", json={"email": m["email"], "codigo": m["codigo"]})
+    assert aceito.status_code == 200, aceito.text
+    assert aceito.json()["token"]
+    assert _cenario("CONSULTAR", m["marcador"])["sessoes_ativas"] == 1
+
+
+def test_usuario_desativado_com_token_valido_perde_o_acesso(medico_sintetico):
+    m = medico_sintetico
+    token = _chamar("POST", "/auth/login/verificar", json={"email": m["email"], "codigo": m["codigo"]}).json()["token"]
+    assert _chamar("GET", "/auth/me", token=token).status_code == 200
+    _cenario("DESATIVAR", m["marcador"])
+    # A sessão continua aberta: a recusa vem da desativação do login, não do fim da sessão.
+    assert _cenario("CONSULTAR", m["marcador"])["sessoes_ativas"] == 1
+    assert _chamar("GET", "/auth/me", token=token).status_code == 401
+
+
+def test_usuario_inativo_nao_consegue_entrar(medico_sintetico):
+    m = medico_sintetico
+    _cenario("DESATIVAR", m["marcador"])
+    resposta = _chamar("POST", "/auth/login", json={"email": m["email"], "senha": m["senha"]})
+    assert resposta.status_code >= 400
+    assert "codigo_enviado" not in resposta.json() and "token" not in resposta.json()
+    assert _cenario("CONSULTAR", m["marcador"])["sessoes_ativas"] == 0

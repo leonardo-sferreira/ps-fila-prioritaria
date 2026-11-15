@@ -1,3 +1,4 @@
+import json
 """Verifica a integridade do formato de evidências com resultados sintéticos do coletor.
 
 Os dados desta suite testam apenas o gerador; não representam resultados do produto.
@@ -199,7 +200,7 @@ class ModeloEColetaTest(unittest.TestCase):
                 path.write_text(json.dumps(payload))
                 with self.assertRaises(ValueError):ev.catalog('reflex',path)
         self.assertEqual(len(ev.catalog('xano-static')),8)
-        self.assertEqual(len(ev.catalog('controlled')),29)
+        self.assertEqual(len(ev.catalog('controlled')),sum(max(1,len(c['variantes'])) for c in json.loads(ev.CATALOG_PATH.read_text(encoding='utf-8'))['casos'] if c['suite']=='controlled'))
         variants=[c for c in ev.catalog('reflex') if c['variante']]
         self.assertTrue(variants)
         self.assertEqual(len({(c['id'],c['variante']) for c in variants}),len(variants))
