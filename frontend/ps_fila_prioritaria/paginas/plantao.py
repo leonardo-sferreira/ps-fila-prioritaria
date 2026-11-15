@@ -4,6 +4,8 @@ from typing import Any
 
 import reflex as rx
 
+from ps_fila_prioritaria.estados.status_equipe import StatusRecepcaoState
+
 from ps_fila_prioritaria.componentes import (
     COR_AZUL,
     COR_BORDA,
@@ -12,6 +14,7 @@ from ps_fila_prioritaria.componentes import (
     COR_SECUNDARIA,
     COR_SUPERFICIE,
     COR_TEXTO,
+    botao_secundario,
     cabecalho,
     menu_recepcao,
     protegido,
@@ -294,12 +297,41 @@ def painel_plantao(extras: tuple[rx.Component, ...] = (), com_links: bool = True
     )
 
 
+def seletor_status_recepcao() -> rx.Component:
+    return rx.vstack(
+        rx.hstack(
+            rx.text("Meu status: ", StatusRecepcaoState.status_exibido, weight="medium"),
+            rx.select.root(
+                rx.select.trigger(placeholder="Selecione o status", aria_label="Status da Recepção/Triagem"),
+                rx.select.content(
+                    rx.select.item("Disponível", value="DISPONIVEL"),
+                    rx.select.item("Pausa", value="PAUSA"),
+                    rx.select.item("Ausente", value="AUSENTE"),
+                ),
+                value=StatusRecepcaoState.status_operacional,
+                on_change=StatusRecepcaoState.definir_status,
+                disabled=StatusRecepcaoState.ocupado | (StatusRecepcaoState.status_operacional == ""),
+            ),
+            botao_secundario("Atualizar status", on_click=StatusRecepcaoState.carregar, disabled=StatusRecepcaoState.ocupado),
+            rx.cond(StatusRecepcaoState.ocupado, rx.spinner(size="1")),
+            align="center", gap="12px", flex_wrap="wrap",
+        ),
+        rx.cond(
+            StatusRecepcaoState.mensagem != "",
+            rx.text(StatusRecepcaoState.mensagem, role="status", aria_live="polite", size="2",
+                color=rx.cond(StatusRecepcaoState.erro, COR_ERRO, COR_SECUNDARIA)),
+        ),
+        padding="16px", spacing="2", width="min(100%, 1184px)", margin="16px auto 0",
+    )
+
+
 def area_recepcao() -> rx.Component:
     return protegido(
         "RECEPCAO_TRIAGEM",
         rx.box(
             cabecalho("RECEPÇÃO/TRIAGEM", "Área inicial — Recepção/Triagem"),
             menu_recepcao("/recepcao"),
+            seletor_status_recepcao(),
             rx.center(painel_plantao(), padding="28px 16px 48px", width="100%"),
             background=COR_FUNDO,
             font_family="Inter, sans-serif",

@@ -67,3 +67,26 @@ PAUSA, AUSENTE e plantão encerrado NÃO DEVEM encerrar ou invalidar por si sós
 #### Scenario: Pausa mantém sessão ativa
 - **QUANDO** Médico ou Recepção/Triagem muda para PAUSA sem fazer logout
 - **ENTÃO** continua na lista de sessões ativas enquanto `logout_em` for nulo e `expira_em` estiver no futuro, com status PAUSA
+
+### Requirement: Consulta do próprio status sem efeitos colaterais
+O GET me/status DEVE permitir somente a Médico ou Recepção/Triagem ativos consultar o status da própria sessão ativa mais recente, sem alterar dados ou aceitar identidade de outro usuário. Sessão ausente, encerrada ou expirada DEVE ser recusada. A interface da Recepção DEVE consultar antes de apresentar um status como confirmado e NÃO DEVE inventar um valor quando a integração estiver indisponível.
+
+#### Scenario: Recepção abre o seletor
+- **QUANDO** a Recepção/Triagem autenticada abre sua área inicial
+- **ENTÃO** consulta o próprio status, sem enviar alteração, e pode escolher Disponível, Pausa ou Ausente após uma consulta válida
+
+#### Scenario: Consulta ainda não publicada
+- **QUANDO** o GET me/status não está disponível ou retorna resposta inválida
+- **ENTÃO** o seletor informa indisponibilidade, não apresenta status fictício e permite tentar atualizar sem executar PATCH
+
+#### Scenario: Alteração com resultado incerto
+- **QUANDO** ocorre timeout ou a resposta não confirma o status solicitado
+- **ENTÃO** a interface não anuncia sucesso nem repete a operação, orienta atualização e mantém o estado como não confirmado
+
+#### Scenario: Envio em andamento
+- **QUANDO** uma consulta ou alteração de status está em andamento
+- **ENTÃO** o seletor bloqueia interações concorrentes e não emite uma segunda requisição
+
+#### Scenario: Administrador tenta consultar o próprio status operacional
+- **QUANDO** um Administrador chama GET me/status
+- **ENTÃO** a autorização recusa o acesso, pois o perfil não possui status operacional
