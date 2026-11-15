@@ -56,3 +56,14 @@ O Administrador pode abrir as telas da Recepção/Triagem e do Médico só para 
 ## Plano de migração
 
 Campo já existente em `sessao`. A migração das sessões médicas ativas que receberam DISPONIVEL automaticamente deixa o status nulo até o Médico escolher DISPONIVEL; não altera PAUSA, AUSENTE ou EM_ATENDIMENTO. Rollback: restaurar o comportamento anterior do login e dos endpoints de status.
+
+## Entrega local de status da Recepção — 15/11/2026
+
+Recorte autorizado da Sprint 4: concluir o seletor da Recepção e acrescentar testes locais dos status já existentes do Médico. Não recriar dashboard/auditoria, alterar a chamada, publicar recursos ou executar escritas no Live. RF44/RF45 são as referências fornecidas para a tarefa; esta fatia não atribui texto formal novo aos códigos sem consulta à fonte formal.
+
+- Reutilizar o grupo Autenticacao e o PATCH me/status publicado. Como auth/me não informa o status, preparar localmente GET me/status: auth usuario, somente Médico/Recepção ativo, sessão do próprio usuário ainda não encerrada/expirada, a mais recente. Retornar somente status, com 401 sem sessão; nenhum input de identidade e nenhuma escrita.
+- O GET novo precisa de publicação seletiva autorizada. Não afirmar que o status atual foi consultado se o servidor retornar 404 ou resposta inválida. Mostrar indisponibilidade, manter seletor bloqueado até consulta válida e permitir Atualizar status.
+- StatusRecepcaoState usa api.py e AuthState existentes. A página /recepcao consulta na abertura; renderização e abertura nunca fazem PATCH. Disponível, Pausa e Ausente são as únicas opções manuais; Em atendimento continua automático no Médico.
+- Aceitar mudança somente após HTTP 200 e status correspondente ao solicitado. Em timeout, erro de conexão ou resposta incerta, não repetir, não anunciar sucesso e orientar atualização. Não presumir o estado anterior após resultado incerto. Publicar o estado de carregamento antes do HTTP, liberar o bloqueio mesmo no encerramento do evento e ignorar uma repetição do status já confirmado. Bloquear reentrada durante consulta/envio e validar o perfil local sem substituir a autorização do Xano.
+- Os testes novos usam transporte HTTP simulado. Contratos XS estáticos conferem permissões, sessão inicial, enum manual e transições médicas existentes; não comprovam execução do engine, rollback ou bloqueios concorrentes.
+- GET admin/fila-geral, detalhe administrativo, polling de 10 s e Visualizar como permanecem nas tarefas próprias, fora desta fatia. O dashboard e a auditoria existentes são preservados.

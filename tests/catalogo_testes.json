@@ -11329,6 +11329,631 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Consulta status real da api sem escrita",
+      "objetivo": "Consulta status real da api sem escrita",
+      "resultado_esperado": "Consulta status real da api sem escrita.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-001",
+      "seletor": "frontend/tests/test_status_equipe.py::test_consulta_status_real_da_api_sem_escrita",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Altera tres estados manuais somente apos confirmacao",
+      "objetivo": "Altera tres estados manuais somente apos confirmacao",
+      "resultado_esperado": "Altera tres estados manuais somente apos confirmacao.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-002",
+      "seletor": "frontend/tests/test_status_equipe.py::test_altera_tres_estados_manuais_somente_apos_confirmacao",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Estado manual invalido inclusive em atendimento nao envia",
+      "objetivo": "Estado manual invalido inclusive em atendimento nao envia",
+      "resultado_esperado": "Estado manual invalido inclusive em atendimento nao envia.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-003",
+      "seletor": "frontend/tests/test_status_equipe.py::test_estado_manual_invalido_inclusive_em_atendimento_nao_envia",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Ausencia de token redireciona sem http",
+      "objetivo": "Ausencia de token redireciona sem http",
+      "resultado_esperado": "Ausencia de token redireciona sem http.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-004",
+      "seletor": "frontend/tests/test_status_equipe.py::test_ausencia_de_token_redireciona_sem_http",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Outros perfis nao consultam nem alteram status da recepcao",
+      "objetivo": "Outros perfis nao consultam nem alteram status da recepcao",
+      "resultado_esperado": "Outros perfis nao consultam nem alteram status da recepcao.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-005",
+      "seletor": "frontend/tests/test_status_equipe.py::test_outros_perfis_nao_consultam_nem_alteram_status_da_recepcao",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "401 encerra sessao e redireciona",
+      "objetivo": "401 encerra sessao e redireciona",
+      "resultado_esperado": "401 encerra sessao e redireciona.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-006",
+      "seletor": "frontend/tests/test_status_equipe.py::test_401_encerra_sessao_e_redireciona",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "403 preserva status anterior sem confirmar mudanca",
+      "objetivo": "403 preserva status anterior sem confirmar mudanca",
+      "resultado_esperado": "403 preserva status anterior sem confirmar mudanca.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-007",
+      "seletor": "frontend/tests/test_status_equipe.py::test_403_preserva_status_anterior_sem_confirmar_mudanca",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Get nao publicado mostra indisponibilidade sem status ficticio",
+      "objetivo": "Get nao publicado mostra indisponibilidade sem status ficticio",
+      "resultado_esperado": "Get nao publicado mostra indisponibilidade sem status ficticio.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-008",
+      "seletor": "frontend/tests/test_status_equipe.py::test_get_nao_publicado_mostra_indisponibilidade_sem_status_ficticio",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Erro publico do servidor nao confirma",
+      "objetivo": "Erro publico do servidor nao confirma",
+      "resultado_esperado": "Erro publico do servidor nao confirma.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-009",
+      "seletor": "frontend/tests/test_status_equipe.py::test_erro_publico_do_servidor_nao_confirma",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Timeout nao repete e nao presume status anterior",
+      "objetivo": "Timeout nao repete e nao presume status anterior",
+      "resultado_esperado": "Timeout nao repete e nao presume status anterior.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-010",
+      "seletor": "frontend/tests/test_status_equipe.py::test_timeout_nao_repete_e_nao_presume_status_anterior",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Falha de rede nao repete",
+      "objetivo": "Falha de rede nao repete",
+      "resultado_esperado": "Falha de rede nao repete.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-011",
+      "seletor": "frontend/tests/test_status_equipe.py::test_falha_de_rede_nao_repete",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Respostas inesperadas nao confirmam nem repetem",
+      "objetivo": "Respostas inesperadas nao confirmam nem repetem",
+      "resultado_esperado": "Respostas inesperadas nao confirmam nem repetem.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-012",
+      "seletor": "frontend/tests/test_status_equipe.py::test_respostas_inesperadas_nao_confirmam_nem_repetem",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Ambiente ausente nao chama http",
+      "objetivo": "Ambiente ausente nao chama http",
+      "resultado_esperado": "Ambiente ausente nao chama http.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-013",
+      "seletor": "frontend/tests/test_status_equipe.py::test_ambiente_ausente_nao_chama_http",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Processamento bloqueia reentrada de consulta e alteracao",
+      "objetivo": "Processamento bloqueia reentrada de consulta e alteracao",
+      "resultado_esperado": "Processamento bloqueia reentrada de consulta e alteracao.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-014",
+      "seletor": "frontend/tests/test_status_equipe.py::test_processamento_bloqueia_reentrada_de_consulta_e_alteracao",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Guardiao ja esta ativo durante requisicao",
+      "objetivo": "Guardiao ja esta ativo durante requisicao",
+      "resultado_esperado": "Guardiao ja esta ativo durante requisicao.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-015",
+      "seletor": "frontend/tests/test_status_equipe.py::test_guardiao_ja_esta_ativo_durante_requisicao",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Consulta invalida nao reutiliza status de sessao anterior",
+      "objetivo": "Consulta invalida nao reutiliza status de sessao anterior",
+      "resultado_esperado": "Consulta invalida nao reutiliza status de sessao anterior.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-016",
+      "seletor": "frontend/tests/test_status_equipe.py::test_consulta_invalida_nao_reutiliza_status_de_sessao_anterior",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Seletor nao oferece em atendimento e nao envia ao renderizar",
+      "objetivo": "Seletor nao oferece em atendimento e nao envia ao renderizar",
+      "resultado_esperado": "Seletor nao oferece em atendimento e nao envia ao renderizar.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-017",
+      "seletor": "frontend/tests/test_status_equipe.py::test_seletor_nao_oferece_em_atendimento_e_nao_envia_ao_renderizar",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Pagina recepcao preserva protecao de perfil",
+      "objetivo": "Pagina recepcao preserva protecao de perfil",
+      "resultado_esperado": "Pagina recepcao preserva protecao de perfil.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-018",
+      "seletor": "frontend/tests/test_status_equipe.py::test_pagina_recepcao_preserva_protecao_de_perfil",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato get status e apenas leitura da propria sessao",
+      "objetivo": "Contrato get status e apenas leitura da propria sessao",
+      "resultado_esperado": "Contrato get status e apenas leitura da propria sessao.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-019",
+      "seletor": "frontend/tests/test_status_equipe.py::test_contrato_get_status_e_apenas_leitura_da_propria_sessao",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato status manual recusa admin e estado automatico",
+      "objetivo": "Contrato status manual recusa admin e estado automatico",
+      "resultado_esperado": "Contrato status manual recusa admin e estado automatico.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-020",
+      "seletor": "frontend/tests/test_status_equipe.py::test_contrato_status_manual_recusa_admin_e_estado_automatico",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato medico inicia indisponivel recepcao disponivel",
+      "objetivo": "Contrato medico inicia indisponivel recepcao disponivel",
+      "resultado_esperado": "Contrato medico inicia indisponivel recepcao disponivel.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-021",
+      "seletor": "frontend/tests/test_status_equipe.py::test_contrato_medico_inicia_indisponivel_recepcao_disponivel",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato chamada e comparecimento preservam status automatico",
+      "objetivo": "Contrato chamada e comparecimento preservam status automatico",
+      "resultado_esperado": "Contrato chamada e comparecimento preservam status automatico.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-022",
+      "seletor": "frontend/tests/test_status_equipe.py::test_contrato_chamada_e_comparecimento_preservam_status_automatico",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Medico em pausa recusado sem sucesso ou repeticao",
+      "objetivo": "Medico em pausa recusado sem sucesso ou repeticao",
+      "resultado_esperado": "Medico em pausa recusado sem sucesso ou repeticao.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-023",
+      "seletor": "frontend/tests/test_status_equipe.py::test_medico_em_pausa_recusado_sem_sucesso_ou_repeticao",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Comparecimento em pausa atualiza status pelo retorno do servidor",
+      "objetivo": "Comparecimento em pausa atualiza status pelo retorno do servidor",
+      "resultado_esperado": "Comparecimento em pausa atualiza status pelo retorno do servidor.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-024",
+      "seletor": "frontend/tests/test_status_equipe.py::test_comparecimento_em_pausa_atualiza_status_pelo_retorno_do_servidor",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Proxima chamada confirmada restaura disponivel",
+      "objetivo": "Proxima chamada confirmada restaura disponivel",
+      "resultado_esperado": "Proxima chamada confirmada restaura disponivel.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-STATUS-S4-025",
+      "seletor": "frontend/tests/test_status_equipe.py::test_proxima_chamada_confirmada_restaura_disponivel",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }

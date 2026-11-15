@@ -21,7 +21,7 @@
 ## 3. Reflex — telas
 
 - [ ] 3.1 [Reflex] Criar o seletor de status (D5) nos cabeçalhos de `/recepcao` e `/medico`, com a mensagem de recusa ao chamar em pausa; verificar manualmente
-  - Parcial (15/11/2026): seletor pronto em `/medico` (Ficar disponível, Pausar, Ausente), com o status em português, inclusive "Em atendimento". Falta em `/recepcao`.
+  - Parcial (15/11/2026): seletor pronto em `/medico` (Ficar disponível, Pausar, Ausente), com o status em português, inclusive "Em atendimento". Seletor de `/recepcao` preparado localmente nesta fatia (seção 7); publicação do GET e aceite manual pendentes.
 - [ ] 3.2 [Reflex] Criar `/admin/acompanhamento` com os blocos Fila geral, Equipe e Auditoria, filtros e polling de 10 s (D4); verificar manualmente com dados das changes anteriores
 - [ ] 3.3 [Reflex] Criar `/admin/fichas/{id}`, somente leitura; verificar manualmente que não há ações de edição
 - [ ] 3.4 Adicionar ao README o roteiro manual da seção 3; verificar executando-o
@@ -46,3 +46,16 @@
 ## 6. "Visualizar como" (decisão do PO em 11/11/2026, D7)
 
 - [ ] 6.1 Detalhar no design quais telas e leituras entram, e como as ações ficam desabilitadas; depois quebrar em tarefas
+
+## 7. Fatia local da Sprint 4 — status da Recepção (15/11/2026)
+
+Recorte autorizado: tarefas 1.3/3.1 nos limites locais, sem nova publicação. Preservar as entregas já aprovadas e manter o aceite manual/integrado separado.
+
+- [x] 7.1 [Xano local] Preparar GET me/status somente leitura, com autenticação, perfis e sessão própria ativa; validar sintaxe e contrato estático sem executar endpoint.
+- [x] 7.2 [Reflex local] Integrar o seletor à área inicial da Recepção, usando AuthState/api.py, três opções manuais, confirmação da resposta, bloqueio de reentrada e erros sem repetição.
+- [x] 7.3 [Testes locais] Registrar no catálogo e executar testes HTTP simulados da Recepção e regressões médicas de Pausa/comparecimento/status automático, suites locais e compilação.
+- [ ] 7.4 [Integração pendente] Após revisão e autorização próprias, publicar somente o GET novo e conferir sessão real da Recepção, status na equipe administrativa e interação visual. Não executar nesta fatia.
+
+As tarefas 1.3 e 3.1 amplas continuam pendentes quanto a engine/aceite manual. Não executar pytest tests/api indiscriminadamente: há testes mutáveis/externos; usar suites locais do catálogo.
+
+Evidências locais desta fatia: 25 casos novos incluídos nos 285 aprovados da suite reflex; 10 aprovados em xano-static; GET novo válido no validador XanoScript; Reflex compile --dry aprovado (sem bundle JavaScript ou aceite visual). Autotestes da ferramenta: 39 aprovados e 2 erros de compatibilidade Windows/POSIX, fora dos módulos alterados; não declarar essa suite integralmente aprovada. Nenhum teste executou escrita real no Xano.

@@ -3,9 +3,9 @@
 | Campo | Valor |
 |---|---|
 | Change | `add-acompanhamento-administrador` |
-| Sprint e entrega | Sem card. Sugestão: Sprint 5, só se sobrar tempo |
-| Fatias no Trello | Nenhuma (sem card) |
-| Dupla | A definir |
+| Sprint e entrega | Sprint 4; recorte local de status da Recepção autorizado em 15/11/2026 |
+| Fatias no Trello | Acompanhamento do Administrador e status da equipe (escopo informado pelo responsável) |
+| Responsável pelo recorte local | Nicolas Rissato Marques |
 | Depende de | Todas as changes anteriores |
 | Situação | Em revisão; dashboard do Administrador e "visualizar como" aprovados pelo PO em 11/11/2026 |
 | RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF44 (status da equipe); RF45 (fila geral e auditoria) |
@@ -42,7 +42,7 @@ Depois do feedback do professor, o Administrador ganhou uma tela de acompanhamen
 ### Capacidades modificadas
 Altera o comportamento de `autenticacao` (`add-autenticacao-perfis`: status na sessão) e de `chamada-paciente` (`add-fila-chamada-medico`: `chamar-proximo` recusa PAUSA e AUSENTE; `comparecimento` define EM_ATENDIMENTO). Declarar como deltas `MODIFIED`.
 
-Aviso: o `openspec/specs/` ainda está vazio. Os deltas `MODIFIED` só funcionam depois que a change anterior for arquivada (`/opsx:archive`); arquive as changes na ordem.
+As specs consolidadas já estão disponíveis em `openspec/specs/`. Os deltas `MODIFIED` devem referenciar requisitos existentes nas respectivas specs; conferir a base consolidada antes de sincronizar ou arquivar esta change.
 
 ## Impacto
 
@@ -52,7 +52,11 @@ Aviso: o `openspec/specs/` ainda está vazio. Os deltas `MODIFIED` só funcionam
 - **Depende de:** todas as changes anteriores.
 - **Divergência com o documento formal:** o documento v1.0 só prevê "consultar visão geral e histórico". Os blocos "pessoas logadas e status" e o status operacional vêm do contexto do PO e ainda não estão no Confluence.
 
+## Recorte desta entrega — Sprint 4
+
+Preparar o GET me/status da própria sessão e concluir o seletor de status da Recepção/Triagem, reutilizando PATCH me/status e os estados manuais já existentes. Acrescentar testes simulados e estáticos das permissões e das transições médicas existentes, sem alterar as regras da fila. Dashboard e auditoria administrativos já entregues são preservados. Publicação do novo GET, validação visual e operações reais dependem de autorização posterior; abrir o PR não publica o endpoint.
+
 ## Perguntas em aberto
 
-- [ ] Entra na Sprint 5, vira evolução futura ou sai do escopo? · PENDENTE PO
+- [x] Alocação do recorte local na Sprint 4 confirmada pelo responsável em 15/11/2026. Fila geral, detalhe da ficha e demais itens permanecem nas tarefas próprias, sem declaração de conclusão.
 - [ ] O campo `status_operacional` já existe em `sessao` (`backend/xano/table/sessao.xs`); as tasks de criar o campo viram conferência. · dupla da fatia
