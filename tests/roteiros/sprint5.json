@@ -1,0 +1,236 @@
+{
+  "versao": 1,
+  "ciclo": "Sprint 5",
+  "titulo": "Testes dos roteiros abertos da Sprint 5",
+  "descricao": "Snapshot dos cards abertos 101–106 do export Trello de 12/11/2026. Card 63 de ponta a ponta e cards fechados fora do escopo; estado atual no Trello não conferido.",
+  "arquivo": "roteiros-sprint5.md",
+  "roteiros": [
+    {
+      "numero": 101,
+      "titulo": "Totem e fila de pré-triagem",
+      "url": "https://trello.com/c/U2NEx9ZV/101-teste-totem-e-fila-de-pr%C3%A9-triagem",
+      "verificacoes": [
+        {
+          "titulo": "Emissão do ticket sem dados pessoais no estado público",
+          "casos": [
+            "CT-REFLEX-0228"
+          ],
+          "pendencia": "Confirmar os três tipos, a numeração simultânea e a ausência de dados pessoais na API real."
+        },
+        {
+          "titulo": "Tipo, horário e contagem dos tickets aguardando",
+          "casos": [
+            "CT-REFLEX-0139",
+            "CT-REFLEX-0138"
+          ],
+          "pendencia": "Conferir a lista e as contagens na tela autenticada."
+        },
+        {
+          "titulo": "Intervalos configurados e chamada sempre manual",
+          "casos": [
+            "CT-REFLEX-0060",
+            "CT-REFLEX-0061",
+            "CT-REFLEX-0066"
+          ],
+          "pendencia": "Cronometrar as ações e confirmar a ordem 2:1 na fila real."
+        },
+        {
+          "titulo": "Presença, identificação e desistência",
+          "casos": [
+            "CT-REFLEX-0137",
+            "CT-REFLEX-0136",
+            "CT-REFLEX-0135"
+          ],
+          "pendencia": "Verificar a reentrada e o segundo não comparecimento no Xano real."
+        }
+      ]
+    },
+    {
+      "numero": 102,
+      "titulo": "Identificação do paciente e classificação na ficha",
+      "url": "https://trello.com/c/q6VyShFt/102-teste-identifica%C3%A7%C3%A3o-do-paciente-e-classifica%C3%A7%C3%A3o-na-ficha",
+      "verificacoes": [
+        {
+          "titulo": "CPF válido e inválido; abrir ou retomar ficha",
+          "casos": [
+            "CT-XANO-0086",
+            "CT-REFLEX-0160",
+            "CT-REFLEX-0161"
+          ],
+          "pendencia": "Pesquisar, cadastrar e recusar nascimento futuro na API real."
+        },
+        {
+          "titulo": "Limites do escore, sinais vitais e glicemia",
+          "casos": [
+            "CT-XANO-0042",
+            "CT-XANO-0043",
+            "CT-XANO-0045",
+            "CT-XANO-0037",
+            "CT-XANO-0052"
+          ],
+          "pendencia": "Conferir os valores digitados e as mensagens na ficha real."
+        },
+        {
+          "titulo": "Sintoma digitado, pendência e classificação manual",
+          "casos": [
+            "CT-XANO-0050",
+            "CT-XANO-0054",
+            "CT-XANO-0061",
+            "CT-XANO-0057"
+          ],
+          "pendencia": "Conferir recusa de sintoma repetido, justificativa e descarte do ajuste após edição na API real."
+        }
+      ]
+    },
+    {
+      "numero": 103,
+      "titulo": "Direcionamento, senha e comprovante",
+      "url": "https://trello.com/c/4bgJ3BKZ/103-teste-direcionamento-senha-e-comprovante",
+      "verificacoes": [
+        {
+          "titulo": "Destino pelos sintomas e idade",
+          "casos": [
+            "CT-XANO-0067",
+            "CT-XANO-0068",
+            "CT-XANO-0071",
+            "CT-XANO-0072",
+            "CT-XANO-0073"
+          ],
+          "pendencia": "Confirmar o destino previsto na ficha real."
+        },
+        {
+          "titulo": "Formato da senha e regra de reavaliação",
+          "casos": [
+            "CT-XANO-0076",
+            "CT-XANO-0079",
+            "CT-XANO-0080"
+          ],
+          "pendencia": "Conferir numeração sequencial diária e senha persistida na API real."
+        },
+        {
+          "titulo": "Confirmar, reimprimir e proteger o comprovante",
+          "casos": [
+            "CT-REFLEX-0106",
+            "CT-REFLEX-0110",
+            "CT-REFLEX-0117",
+            "CT-REFLEX-0116"
+          ],
+          "pendencia": "Imprimir e inspecionar o papel de 80 mm; confirmar os dados da API real."
+        }
+      ]
+    },
+    {
+      "numero": 104,
+      "titulo": "Fila do médico e atendimento",
+      "url": "https://trello.com/c/CllOO9y9/104-teste-fila-do-m%C3%A9dico-e-atendimento",
+      "verificacoes": [
+        {
+          "titulo": "Ordem de cor, prioridade e apoio entre filas",
+          "casos": [
+            "CT-XANO-0002",
+            "CT-XANO-0006",
+            "CT-XANO-0020"
+          ],
+          "pendencia": "Confirmar a ordem com fichas e médicos reais."
+        },
+        {
+          "titulo": "Ações sobre a ficha atribuída e fila vazia",
+          "casos": [
+            "CT-REFLEX-0141",
+            "CT-REFLEX-0147",
+            "CT-REFLEX-0148"
+          ],
+          "pendencia": "Conferir chamadas, impressão e plantão na API real."
+        },
+        {
+          "titulo": "Dois médicos chamando ao mesmo tempo",
+          "casos": [],
+          "pendencia": "Teste de integração com escrita existente fora do CI; requer workspace descartável confirmado."
+        }
+      ]
+    },
+    {
+      "numero": 105,
+      "titulo": "Painel público e privacidade",
+      "url": "https://trello.com/c/LcyWdDfe/105-teste-painel-p%C3%BAblico-e-privacidade",
+      "verificacoes": [
+        {
+          "titulo": "CPF mascarado e texto do aviso público",
+          "casos": [
+            "CT-REFLEX-0200",
+            "CT-REFLEX-0203"
+          ],
+          "pendencia": "Conferir todas as telas internas e o link do aviso no navegador."
+        },
+        {
+          "titulo": "Mensagem e encerramento por inatividade",
+          "casos": [
+            "CT-REFLEX-0015"
+          ],
+          "pendencia": "Conferir inatividade e movimento do mouse em sessão real."
+        },
+        {
+          "titulo": "Painel, som, previsão e reconexão",
+          "casos": [],
+          "pendencia": "A página e o endpoint do painel ainda não foram entregues nesta branch."
+        }
+      ]
+    },
+    {
+      "numero": 106,
+      "titulo": "Administrador: usuários, cadastros, acompanhamento e permissões",
+      "url": "https://trello.com/c/vFMKYEh1/106-teste-administrador-usu%C3%A1rios-cadastros-acompanhamento-e-permiss%C3%B5es",
+      "verificacoes": [
+        {
+          "titulo": "Login com código e proteção de perfil",
+          "casos": [
+            "CT-REFLEX-0003",
+            "CT-REFLEX-0012"
+          ],
+          "pendencia": "Confirmar e-mail recebido e recusa pelo backend ao acessar outro perfil."
+        },
+        {
+          "titulo": "Redefinição e reenvio de código",
+          "casos": [
+            "CT-REFLEX-0214",
+            "CT-REFLEX-0212"
+          ],
+          "pendencia": "Confirmar o fluxo com e-mail real e limites de tempo."
+        },
+        {
+          "titulo": "Usuários, troca de perfil e permissões",
+          "casos": [
+            "CT-REFLEX-0237",
+            "CT-REFLEX-0241",
+            "CT-REFLEX-0248"
+          ],
+          "pendencia": "Confirmar criação, troca de perfil e autorização na API real."
+        },
+        {
+          "titulo": "Cadastros, parâmetros e plantões",
+          "casos": [
+            "CT-REFLEX-0037",
+            "CT-REFLEX-0040",
+            "CT-REFLEX-0050",
+            "CT-REFLEX-0055"
+          ],
+          "pendencia": "Conferir as operações e os limites nas APIs reais e nas telas."
+        },
+        {
+          "titulo": "Dashboard do plantão do Administrador",
+          "casos": [
+            "CT-REFLEX-0181",
+            "CT-REFLEX-0185",
+            "CT-REFLEX-0189"
+          ],
+          "pendencia": "Conferir os indicadores com dados reais do plantão."
+        },
+        {
+          "titulo": "Acompanhamento completo da fila, equipe, fichas e auditoria",
+          "casos": [],
+          "pendencia": "As consultas e telas de acompanhamento detalhado ainda estão pendentes na change ativa."
+        }
+      ]
+    }
+  ]
+}

@@ -105,6 +105,18 @@ Abra a IA **na raiz do repositório**; aberta numa subpasta, ela não encontra o
 
 Arquive as changes (`/opsx:archive` ou `$openspec-archive-change`) só quando estiverem concluídas e revisadas, na ordem da tabela "Changes do OpenSpec".
 
+## Testes e evidências
+
+Siga o [guia comum de QA](docs/testes-qualidade.md) para catálogo, estados, gates, roteiros e CI. Na raiz, use saídas novas:
+
+```bash
+.venv/bin/python scripts/run_test_evidence.py --suite autotestes --output test-evidence/contrib-autotestes --require-execution --require-complete
+.venv/bin/python scripts/run_test_evidence.py --suite reflex --output test-evidence/contrib-reflex --require-execution --require-complete
+.venv/bin/python scripts/run_test_evidence.py --suite xano-static --output test-evidence/contrib-static --require-execution --require-complete
+```
+
+Mocks, leitura estática, funções puras remotas e integração com escrita têm alcances diferentes. Não faça descoberta irrestrita em diretórios com testes reais e `.env`. `xano-safe` exige CLI/credencial e guardião; `controlled` só inventaria por padrão. Nunca execute os cenários CLI com escrita na `v1` como regressão genérica. Preserve evidências históricas e selecione o snapshot da Sprint 5 explicitamente quando necessário.
+
 ## Regras
 
 - A autorização por perfil é aplicada **no backend**. Esconder um botão no frontend não é controle de acesso.

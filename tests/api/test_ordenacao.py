@@ -23,6 +23,10 @@ def ficha(identificador, cor, chegada, *, condicao="NENHUMA", fila_em=None, stat
 
 
 def executar(nome, **entrada):
+    from scripts.run_test_evidence import pure_guard
+    impedimento = pure_guard([nome])
+    if impedimento:
+        raise RuntimeError(impedimento)
     # A instância Free também limita as chamadas do CLI (25 por 20 s nesta conta).
     for tentativa in range(4):
         time.sleep(2.5 if tentativa == 0 else 21)
@@ -38,10 +42,13 @@ def executar(nome, **entrada):
         if not processo.returncode or "plan only supports" not in resposta_cli.lower() or tentativa == 3:
             break
     if processo.returncode:
-        raise AssertionError(f"{nome}: {processo.stderr or processo.stdout}")
-    resposta = json.loads(processo.stdout)
-    if resposta.get("status") != "ok":
-        raise AssertionError(resposta)
+        raise RuntimeError("CLI Xano não concluiu a execução da função pura")
+    try:
+        resposta = json.loads(processo.stdout)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError("JSON inválido do CLI Xano") from exc
+    if not isinstance(resposta, dict) or resposta.get("status") != "ok" or "result" not in resposta:
+        raise RuntimeError("Resposta inconclusiva do CLI Xano")
     return resposta["result"]
 
 
