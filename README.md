@@ -231,3 +231,13 @@ Detalhes do ambiente, do Xano e do fluxo de trabalho no [guia de contribuição]
 ---
 
 Quer rodar ou contribuir? Veja o [guia de contribuição](CONTRIBUTING.md).
+
+### Sprint 4 — status da Recepção/Triagem
+
+A área /recepcao possui consulta e seletor do próprio status: Disponível, Pausa e Ausente. Usa a autenticação existente e PATCH /me/status. O novo GET /me/status está preparado apenas localmente nesta entrega e precisa de publicação seletiva autorizada no grupo Autenticacao; copiar a branch ou abrir PR não publica recursos no Xano.
+
+Sem essa consulta, a tela informa indisponibilidade e mantém a alteração bloqueada, sem presumir Disponível. Nenhuma renderização altera status. Timeout não provoca repetição automática: atualize o status antes de uma nova tentativa.
+
+Roteiro manual pendente, após revisão e publicação autorizada: entrar como Recepção, abrir /recepcao, consultar o status, mudar entre as três opções e conferir a equipe em /admin. Como Médico, conferir Pausa bloqueando nova chamada e comparecimento da ficha já atribuída produzindo Em atendimento. Executar essas escritas reais somente com autorização e cenário de teste aprovado.
+
+Verificação local segura: suites reflex e xano-static de scripts/run_test_evidence.py; os novos casos de frontend/tests/test_status_equipe.py usam HTTP simulado ou inspeção estática. As verificações locais não comprovam a execução das transações no Xano.
