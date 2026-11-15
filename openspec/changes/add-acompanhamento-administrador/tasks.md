@@ -32,7 +32,8 @@
   - Concluída em 15/11/2026, com o escopo combinado com o PO: a equipe já está no dashboard `/admin` e a auditoria em `/admin/auditoria`; a fila geral virou a aba `/admin/fila-geral`, com filtros de especialidade, cor e status, resumo por status e atualização automática a cada 10 s. 6 testes em `frontend/tests/test_acompanhamento_state.py`.
 - [x] 3.3 [Reflex] Criar `/admin/fichas/{id}`, somente leitura; verificar manualmente que não há ações de edição
   - Concluída em 15/11/2026: `/admin/fichas/{id}` só leitura (situação, ajuste com justificativa, triagem, chamadas e histórico), sem nenhum botão de alteração; aberto pelo botão "Detalhe" da fila geral.
-- [ ] 3.4 Adicionar ao README o roteiro manual da seção 3; verificar executando-o
+- [x] 3.4 Adicionar ao README o roteiro manual da seção 3; verificar executando-o
+  - Concluída em 15/11/2026: seção "Acompanhamento do Administrador" no README, com as telas e um roteiro de 5 passos; a execução do roteiro fica com o PO (4.1).
 
 - [x] 3.5 [Reflex] Tela `/admin/auditoria` (decisão do PO em 15/11/2026: aba própria no menu do Administrador, em vez de bloco em `/admin/acompanhamento`), só leitura, com filtros de período, tipo e usuário e paginação de 50
   - Evidência (15/11/2026): `paginas/auditoria.py` e `estados/auditoria.py`; 5 testes em `tests/test_auditoria_state.py`.
@@ -40,7 +41,8 @@
 ## 4. Integração e documentação
 
 - [ ] 4.1 Verificação ponta a ponta do plantão: com Administrador, Recepção/Triagem, dois Médicos e o painel abertos, executar o fluxo totem → triagem → chamada → comparecimento/desistência e conferir que a tela de acompanhamento reflete fila, status e auditoria em até 10 s
-- [ ] 4.2 Conferir `docs/domain-model.md` (Sessão com status operacional, Histórico_Alteração) com a implementação e ajustar o que divergir
+- [x] 4.2 Conferir `docs/domain-model.md` (Sessão com status operacional, Histórico_Alteração) com a implementação e ajustar o que divergir
+  - Concluída em 15/11/2026: `docs/domain-model.md` atualizado (EM_ATENDIMENTO automático, status escolhido pelo Médico e pela Recepção, Administrador sem status; auditoria "Sistema" e consulta em `/admin/auditoria`); bate com `table/sessao.xs` e `table/historico_alteracao.xs`.
 
 ## 5. Dashboard do Administrador (decisão do PO em 11/11/2026, D6)
 

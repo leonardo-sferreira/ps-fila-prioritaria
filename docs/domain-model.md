@@ -101,7 +101,7 @@ Código temporário de 6 dígitos enviado ao e-mail do usuário, usado no login 
 LOGIN → SESSÃO ATIVA → LOGOUT/EXPIRAÇÃO → SESSÃO ENCERRADA
 ```
 
-Uma sessão está ativa quando `logout_em` é nulo e `expira_em` ainda está no futuro. A sessão do Médico começa sem disponibilidade; ele escolhe `DISPONIVEL` quando estiver pronto. A Recepção/Triagem começa DISPONIVEL. Durante a sessão, o status operacional pode ser `DISPONIVEL`, `EM_ATENDIMENTO`, `PAUSA` ou `AUSENTE`. Sem status, PAUSA e AUSENTE não habilitam novas atribuições ao Médico. Encerrar o plantão é uma ação operacional própria, separada do encerramento da sessão.
+Uma sessão está ativa quando `logout_em` é nulo e `expira_em` ainda está no futuro. A sessão do Médico começa sem disponibilidade; ele escolhe `DISPONIVEL` quando estiver pronto. A Recepção/Triagem começa DISPONIVEL. Durante a sessão, o status operacional pode ser `DISPONIVEL`, `EM_ATENDIMENTO`, `PAUSA` ou `AUSENTE`. Sem status, PAUSA e AUSENTE não habilitam novas atribuições ao Médico. O Médico passa a `EM_ATENDIMENTO` sozinho ao confirmar o comparecimento de um paciente (nunca por escolha manual) e volta a `DISPONIVEL` ao chamar o próximo. Médico e Recepção escolhem `DISPONIVEL`, `PAUSA` ou `AUSENTE` na própria tela; o Administrador não tem status operacional. Encerrar o plantão é uma ação operacional própria, separada do encerramento da sessão.
 
 ## Médico
 
@@ -376,6 +376,8 @@ Trilha de auditoria.
 
 ### Regras
 - Não pode ser editado nem excluído.
+- Registro sem usuário responsável é da carga automática de dados iniciais e aparece como "Sistema".
+- O Administrador consulta a trilha em `/admin/auditoria`, junto com as chamadas e as entradas e saídas lidas de Chamada e Sessão.
 
 ## Parâmetros de regra
 
