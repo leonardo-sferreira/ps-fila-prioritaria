@@ -2,9 +2,11 @@
 
 ## 1. Xano — status operacional
 
-- [ ] 1.1 [Xano] Conferir `status_operacional` em `sessao`, iniciar o Médico sem disponibilidade no login e criar `PATCH me/status` para ativação explícita (D1); verificar com os testes 1.3
+- [x] 1.1 [Xano] Conferir `status_operacional` em `sessao`, iniciar o Médico sem disponibilidade no login e criar `PATCH me/status` para ativação explícita (D1); verificar com os testes 1.3
   - O login automático como DISPONIVEL e a migração de 11 sessões foram publicados antes da revisão do PO; devem ser substituídos pela ativação explícita.
-- [ ] 1.2 [Xano] Acrescentar a `comparecimento` a mudança para EM_ATENDIMENTO, a `chamar-proximo` a mudança para DISPONIVEL e a recusa de PAUSA/AUSENTE; verificar com os testes 1.3
+  - Conferido em 15/11/2026: `PATCH me/status` (DISPONIVEL, PAUSA, AUSENTE; só Médico e Recepção) publicado; o login do Médico começa sem status e o da Recepção como DISPONIVEL (`auth_login_verificar_post.xs`). Coberto por `tests/api/test_recuperacao_sessao_medico.py`.
+- [x] 1.2 [Xano] Acrescentar a `comparecimento` a mudança para EM_ATENDIMENTO, a `chamar-proximo` a mudança para DISPONIVEL e a recusa de PAUSA/AUSENTE; verificar com os testes 1.3
+  - Concluída em 15/11/2026: `fila/chamar_proximo` já recusava PAUSA/AUSENTE (`MEDICO_INDISPONIVEL`) e voltava a DISPONIVEL; `fila/agir_chamada` passou a pôr a sessão do médico EM_ATENDIMENTO no comparecimento, inclusive vindo de PAUSA. Publicado na `v1`; `tests/api/test_chamada.py` confere o EM_ATENDIMENTO após o comparecimento.
 - [ ] 1.3 Escrever `tests/api/test_status_equipe.py` cobrindo status inicial, mudança para PAUSA, recusa de EM_ATENDIMENTO manual, recusa para Administrador, EM_ATENDIMENTO após comparecimento, volta a DISPONIVEL ao chamar, recusa de chamada em PAUSA e comparecimento aceito em PAUSA; verificar que passam
 
 ## 2. Xano — consultas do Administrador
@@ -19,6 +21,7 @@
 ## 3. Reflex — telas
 
 - [ ] 3.1 [Reflex] Criar o seletor de status (D5) nos cabeçalhos de `/recepcao` e `/medico`, com a mensagem de recusa ao chamar em pausa; verificar manualmente
+  - Parcial (15/11/2026): seletor pronto em `/medico` (Ficar disponível, Pausar, Ausente), com o status em português, inclusive "Em atendimento". Falta em `/recepcao`.
 - [ ] 3.2 [Reflex] Criar `/admin/acompanhamento` com os blocos Fila geral, Equipe e Auditoria, filtros e polling de 10 s (D4); verificar manualmente com dados das changes anteriores
 - [ ] 3.3 [Reflex] Criar `/admin/fichas/{id}`, somente leitura; verificar manualmente que não há ações de edição
 - [ ] 3.4 Adicionar ao README o roteiro manual da seção 3; verificar executando-o

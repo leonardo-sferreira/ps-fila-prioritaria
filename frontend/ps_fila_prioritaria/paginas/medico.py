@@ -54,7 +54,7 @@ def area_medico() -> rx.Component:
             cabecalho("MÉDICO — FILA DE ATENDIMENTO", "A próxima ficha é escolhida pelas regras de prioridade"),
             rx.center(rx.vstack(
                 rx.hstack(
-                    rx.text("Status: ", MedicoState.status_operacional, weight="medium"),
+                    rx.text("Status: ", MedicoState.status_exibido, weight="medium"),
                     rx.badge(rx.cond(MedicoState.plantao_vigente, "Plantão vigente", "Sem plantão vigente"), color_scheme=rx.cond(MedicoState.plantao_vigente, "green", "gray")),
                     rx.button("Ficar disponível", on_click=MedicoState.definir_status("DISPONIVEL"), disabled=MedicoState.ocupado | ~MedicoState.plantao_vigente | (MedicoState.status_operacional == "DISPONIVEL"), color_scheme="green"),
                     botao_secundario("Pausar", on_click=MedicoState.definir_status("PAUSA"), disabled=MedicoState.ocupado | (MedicoState.status_operacional == "PAUSA")),
