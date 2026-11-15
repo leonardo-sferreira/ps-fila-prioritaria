@@ -118,7 +118,8 @@
   - o diálogo pede os dados do perfil novo (CRM e especialidades para Médico; CPF para Recepção/Triagem);
   - confirmação antes de salvar.
   - Evidência (11/11/2026): `estados/usuarios.py` e `paginas/usuarios.py`; aba "Usuários" em `ABAS_ADMIN`; rota protegida por `verificar_sessao("ADMINISTRADOR")`; mensagens `ULTIMO_ADMINISTRADOR`, `PROPRIO_PERFIL` e `USUARIO_EDITADO_NOS_CADASTROS` em `comum.py`; página renderiza e `reflex compile --dry` concluiu.
-- [ ] 6.4 Roteiro manual das seções 5 e 6 executado pelo PO
+- [x] 6.4 Roteiro manual das seções 5 e 6 executado pelo PO
+  - Executado pelo PO em 15/11/2026: login dos três perfis; "Sair" e "Voltar" mantêm o login; URL de outro perfil leva à área do próprio perfil; redefinição de senha completa, com reenvio só após 60 s e código inválido após 10 min; Usuários: criar, editar (inclusive o próprio acesso), desativar, ativar e trocar perfil. Ajuste pedido: "Missing param: cpf" na troca sem CPF virou "Informe o CPF." (PR de correção).
 
 ## 6A. Redefinição de senha pelo próprio usuário (D12)
 

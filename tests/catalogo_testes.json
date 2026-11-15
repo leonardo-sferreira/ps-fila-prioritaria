@@ -11269,6 +11269,66 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Troca para Recepção sem CPF avisa sem chamar a API",
+      "objetivo": "Trocar para Recepção/Triagem sem CPF mostra \"Informe o CPF.\" e não chama a API.",
+      "resultado_esperado": "Trocar para Recepção/Triagem sem CPF mostra \"Informe o CPF.\" e não chama a API.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0259",
+      "seletor": "frontend/tests/test_usuarios_state.py::test_troca_para_recepcao_sem_cpf_avisa_sem_chamar_a_api",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Dados obrigatórios por perfil",
+      "objetivo": "Médico exige CRM e especialidade; Recepção exige CPF; Administrador não exige dados extras.",
+      "resultado_esperado": "Médico exige CRM e especialidade; Recepção exige CPF; Administrador não exige dados extras.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0260",
+      "seletor": "frontend/tests/test_usuarios_state.py::test_dados_obrigatorios_por_perfil",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Missing param do Xano vira mensagem em português",
+      "objetivo": "\"Missing param: cpf\" do Xano aparece como \"Preencha o campo CPF.\"",
+      "resultado_esperado": "\"Missing param: cpf\" do Xano aparece como \"Preencha o campo CPF.\"",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-REFLEX-0261",
+      "seletor": "frontend/tests/test_usuarios_state.py::test_missing_param_do_xano_vira_mensagem_em_portugues",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }

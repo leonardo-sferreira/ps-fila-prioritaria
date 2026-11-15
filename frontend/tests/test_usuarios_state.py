@@ -114,7 +114,7 @@ def test_trocar_perfil_envia_patch_e_fecha():
 
 
 def test_trocar_perfil_mostra_erro_do_ultimo_admin_e_mantem_dialogo():
-    estado = _estado(troca_aberta=True, troca_usuario={"id": 4}, form={"perfil": "MEDICO"})
+    estado = _estado(troca_aberta=True, troca_usuario={"id": 4}, form={"perfil": "MEDICO", "crm": "12345-SP", "especialidade_ids": [1]})
     respostas = deque([Resposta(400, {"message": "ULTIMO_ADMINISTRADOR"})])
     with patch(REQUISITAR, side_effect=lambda *a, **k: respostas.popleft()):
         asyncio.run(u.UsuariosState.trocar_perfil.fn(estado))
@@ -125,3 +125,22 @@ def test_trocar_perfil_mostra_erro_do_ultimo_admin_e_mantem_dialogo():
 def test_mensagens_das_regras_existem():
     for codigo in ("ULTIMO_ADMINISTRADOR", "PROPRIO_PERFIL", "USUARIO_EDITADO_NOS_CADASTROS", "MEDICO_COM_FICHA_CHAMADA"):
         assert codigo in MENSAGENS_ERRO_API
+
+
+def test_troca_para_recepcao_sem_cpf_avisa_sem_chamar_a_api():
+    estado = _estado(troca_aberta=True, troca_usuario={"id": 3}, form={"perfil": "RECEPCAO_TRIAGEM", "cpf": " "})
+    with patch(REQUISITAR, side_effect=AssertionError("não deve chamar a API")):
+        asyncio.run(u.UsuariosState.trocar_perfil.fn(estado))
+    assert estado.erro_troca == "Informe o CPF." and estado.troca_aberta
+
+
+def test_dados_obrigatorios_por_perfil():
+    assert u.falta_dado_do_perfil("MEDICO", {"crm": "", "especialidade_ids": [1]}) == "Informe o CRM."
+    assert u.falta_dado_do_perfil("MEDICO", {"crm": "123-SP", "especialidade_ids": []}) == "Escolha ao menos uma especialidade."
+    assert u.falta_dado_do_perfil("ADMINISTRADOR", {}) == ""
+    assert u.falta_dado_do_perfil("RECEPCAO_TRIAGEM", {"cpf": "123.456.789-09"}) == ""
+
+
+def test_missing_param_do_xano_vira_mensagem_em_portugues():
+    from ps_fila_prioritaria.comum import _mensagem_erro
+    assert _mensagem_erro(Resposta(400, {"message": "Missing param: cpf"})) == "Preencha o campo CPF."

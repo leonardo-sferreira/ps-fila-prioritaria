@@ -45,6 +45,17 @@ def dados_perfil(perfil: str, form: dict[str, Any]) -> dict[str, Any]:
     return {}
 
 
+def falta_dado_do_perfil(perfil: str, form: dict[str, Any]) -> str:
+    """Mensagem do primeiro dado obrigatório do perfil que está vazio; "" quando está tudo preenchido."""
+    if perfil == "RECEPCAO_TRIAGEM" and not str(form.get("cpf") or "").strip():
+        return "Informe o CPF."
+    if perfil == "MEDICO" and not str(form.get("crm") or "").strip():
+        return "Informe o CRM."
+    if perfil == "MEDICO" and not form.get("especialidade_ids"):
+        return "Escolha ao menos uma especialidade."
+    return ""
+
+
 def corpo_troca(form: dict[str, Any]) -> dict[str, Any]:
     """Corpo de PATCH usuarios/{id}/perfil: o perfil novo e os dados que ele exige."""
     perfil = str(form.get("perfil") or "")
@@ -123,6 +134,10 @@ class UsuariosState(CadastroBase, OpcoesEspecialidades, rx.State):
         if self.salvando:
             return
         usuario_id = int(self.troca_usuario.get("id") or 0)
+        falta = falta_dado_do_perfil(str(self.form.get("perfil") or ""), self.form)
+        if falta:
+            self.erro_troca = falta
+            return
         self.salvando, self.erro_troca = True, ""
         try:
             ok, corpo = await chamar(self, "PATCH", f"{self.CAMINHO}/{usuario_id}/perfil", json=corpo_troca(self.form))
@@ -135,3 +150,11 @@ class UsuariosState(CadastroBase, OpcoesEspecialidades, rx.State):
         await self.carregar()
         nome = NOME_PERFIL.get(str(self.form.get("perfil")), "")
         self.erro, self.mensagem = False, f"Perfil alterado para {nome}. Vale no próximo acesso do usuário."
+
+    async def salvar(self) -> None:
+        """Confere os dados do perfil antes de enviar (o Xano responderia "Missing param")."""
+        falta = falta_dado_do_perfil(str(self.form.get("perfil") or ""), self.form)
+        if falta:
+            self.erro_form = falta
+            return
+        await CadastroBase.salvar(self)
