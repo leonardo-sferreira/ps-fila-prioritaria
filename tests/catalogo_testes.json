@@ -11194,6 +11194,81 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Código errado não cria sessão e código certo cria",
+      "objetivo": "Código de login errado não abre sessão; o código certo devolve o token e abre exatamente uma sessão.",
+      "resultado_esperado": "Código de login errado não abre sessão; o código certo devolve o token e abre exatamente uma sessão.",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0134",
+      "seletor": "frontend/tests/test_api_autenticacao.py::test_codigo_errado_nao_cria_sessao_e_codigo_certo_cria",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-autenticacao-perfis/specs/autenticacao/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Usuário desativado com token válido perde o acesso",
+      "objetivo": "Com a sessão ainda aberta, desativar o login faz auth/me responder 401 na próxima requisição.",
+      "resultado_esperado": "Com a sessão ainda aberta, desativar o login faz auth/me responder 401 na próxima requisição.",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0135",
+      "seletor": "frontend/tests/test_api_autenticacao.py::test_usuario_desativado_com_token_valido_perde_o_acesso",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-autenticacao-perfis/specs/autenticacao/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Usuário inativo não consegue entrar",
+      "objetivo": "Login de usuário inativo é recusado sem enviar código, sem token e sem sessão.",
+      "resultado_esperado": "Login de usuário inativo é recusado sem enviar código, sem token e sem sessão.",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0136",
+      "seletor": "frontend/tests/test_api_autenticacao.py::test_usuario_inativo_nao_consegue_entrar",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-autenticacao-perfis/specs/autenticacao/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }

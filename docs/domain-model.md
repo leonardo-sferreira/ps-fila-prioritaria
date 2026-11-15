@@ -59,7 +59,7 @@ Pessoa da equipe que acessa o sistema.
 - Um usuário pode ter várias Sessões.
 
 ### Regras
-- Somente o Administrador cria, edita e desativa usuários; usuários não são excluídos.
+- Somente o Administrador cria, edita e desativa usuários, de qualquer perfil, na tela de Usuários; usuários não são excluídos. Ninguém desativa nem troca o próprio perfil.
 - Um usuário inativo não pode se autenticar e perde o acesso imediatamente.
 - Deve existir sempre ao menos um Administrador ativo.
 
@@ -78,6 +78,7 @@ Registro de um login da equipe; alimenta a visão "Pessoas logadas e status".
 - O logout do Médico encerra todas as suas sessões ainda ativas.
 - PAUSA e AUSENTE são status operacionais durante uma sessão; não encerram a sessão.
 - Encerramento do plantão é um evento operacional próprio, diferente de logout e expiração.
+- Login e logout aparecem na auditoria do Administrador (`/admin/auditoria`) como "Entrou no sistema" e "Saiu do sistema", lidos da própria sessão, sem cópia em Histórico_Alteração.
 
 ## Código de verificação
 

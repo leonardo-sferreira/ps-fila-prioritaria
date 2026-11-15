@@ -2,7 +2,7 @@
 function "auth/teste_sessao_unica" {
   input {
     enum acao {
-      values = ["CRIAR", "CODIGO", "PAUSA", "AUSENTE", "EXPIRAR", "ENCERRAR", "CONSULTAR"]
+      values = ["CRIAR", "CODIGO", "PAUSA", "AUSENTE", "EXPIRAR", "ENCERRAR", "CONSULTAR", "DESATIVAR"]
     }
     text marcador filters=trim
     text? codigo filters=trim
@@ -119,6 +119,16 @@ function "auth/teste_sessao_unica" {
           field_value = ($sessoes|first).id
           data = {status_operacional: $input.acao}
         } as $alterada
+      }
+
+      // Só desativa o login, mantendo a sessão aberta: prova que o token deixa de valer pela desativação
+      // (add-autenticacao-perfis, tarefa 3.4). O ENCERRAR, abaixo, limpa o cenário.
+      elseif ($input.acao == "DESATIVAR") {
+        db.edit usuario {
+          field_name = "id"
+          field_value = $usuario.id
+          data = {ativo: false}
+        } as $so_desativado
       }
 
       elseif ($input.acao == "EXPIRAR") {

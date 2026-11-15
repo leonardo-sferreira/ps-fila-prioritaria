@@ -200,7 +200,7 @@ class ModeloEColetaTest(unittest.TestCase):
                 path.write_text(json.dumps(payload))
                 with self.assertRaises(ValueError):ev.catalog('reflex',path)
         self.assertEqual(len(ev.catalog('xano-static')),len([c for c in json.loads(ev.CATALOG_PATH.read_text(encoding='utf-8'))['casos'] if c['suite']=='xano-static']))
-        self.assertEqual(len(ev.catalog('controlled')),29)
+        self.assertEqual(len(ev.catalog('controlled')),sum(max(1,len(c['variantes'])) for c in json.loads(ev.CATALOG_PATH.read_text(encoding='utf-8'))['casos'] if c['suite']=='controlled'))
         variants=[c for c in ev.catalog('reflex') if c['variante']]
         self.assertTrue(variants)
         self.assertEqual(len({(c['id'],c['variante']) for c in variants}),len(variants))
