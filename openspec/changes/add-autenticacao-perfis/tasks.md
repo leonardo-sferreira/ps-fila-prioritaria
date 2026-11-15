@@ -144,5 +144,6 @@
 ## 7. Integração e documentação
 
 - [ ] 7.1 Verificação ponta a ponta: o Administrador cria um usuário Médico (pelos cadastros), o Médico faz login e vê a própria área, o Administrador troca o perfil dele para Recepção/Triagem e a próxima requisição já usa o novo perfil, e depois o desativa e a próxima ação o leva a `/login`; verificar executando o fluxo com a app rodando e confirmando as sessões no Xano
+  - Parcial (15/11/2026): o PO validou que usuário desativado não consegue acessar e que a troca de perfil é gravada. Falta ver um usuário **logado** passar a usar o perfil novo na próxima ação depois da troca.
 - [x] 7.2 Atualizar `docs/domain-model.md` (Usuário e Sessão) com o que foi implementado e verificar que ele bate com as tabelas do Xano
   - Conferido em 15/11/2026: Usuário e Sessão batem com `table/usuario.xs` e `table/sessao.xs`; acrescentadas a gestão de todos os perfis em Usuários e a auditoria de entradas/saídas.
