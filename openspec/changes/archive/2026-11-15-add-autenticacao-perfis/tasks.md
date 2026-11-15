@@ -118,7 +118,8 @@
   - o diálogo pede os dados do perfil novo (CRM e especialidades para Médico; CPF para Recepção/Triagem);
   - confirmação antes de salvar.
   - Evidência (11/11/2026): `estados/usuarios.py` e `paginas/usuarios.py`; aba "Usuários" em `ABAS_ADMIN`; rota protegida por `verificar_sessao("ADMINISTRADOR")`; mensagens `ULTIMO_ADMINISTRADOR`, `PROPRIO_PERFIL` e `USUARIO_EDITADO_NOS_CADASTROS` em `comum.py`; página renderiza e `reflex compile --dry` concluiu.
-- [ ] 6.4 Roteiro manual das seções 5 e 6 executado pelo PO
+- [x] 6.4 Roteiro manual das seções 5 e 6 executado pelo PO
+  - Executado pelo PO em 15/11/2026: login dos três perfis; "Sair" e "Voltar" mantêm o login; URL de outro perfil leva à área do próprio perfil; redefinição de senha completa, com reenvio só após 60 s e código inválido após 10 min; Usuários: criar, editar (inclusive o próprio acesso), desativar, ativar e trocar perfil. Ajuste pedido: "Missing param: cpf" na troca sem CPF virou "Informe o CPF." (PR de correção).
 
 ## 6A. Redefinição de senha pelo próprio usuário (D12)
 
@@ -142,6 +143,8 @@
 
 ## 7. Integração e documentação
 
-- [ ] 7.1 Verificação ponta a ponta: o Administrador cria um usuário Médico (pelos cadastros), o Médico faz login e vê a própria área, o Administrador troca o perfil dele para Recepção/Triagem e a próxima requisição já usa o novo perfil, e depois o desativa e a próxima ação o leva a `/login`; verificar executando o fluxo com a app rodando e confirmando as sessões no Xano
+- [x] 7.1 Verificação ponta a ponta: o Administrador cria um usuário Médico (pelos cadastros), o Médico faz login e vê a própria área, o Administrador troca o perfil dele para Recepção/Triagem e a próxima requisição já usa o novo perfil, e depois o desativa e a próxima ação o leva a `/login`; verificar executando o fluxo com a app rodando e confirmando as sessões no Xano
+  - Parcial (15/11/2026): o PO validou que usuário desativado não consegue acessar e que a troca de perfil é gravada. Falta ver um usuário **logado** passar a usar o perfil novo na próxima ação depois da troca.
+  - Concluída pelo PO em 15/11/2026: o usuário logado é desconectado na hora em que o Administrador troca o perfil ou desativa o acesso, e precisa entrar de novo.
 - [x] 7.2 Atualizar `docs/domain-model.md` (Usuário e Sessão) com o que foi implementado e verificar que ele bate com as tabelas do Xano
   - Conferido em 15/11/2026: Usuário e Sessão batem com `table/usuario.xs` e `table/sessao.xs`; acrescentadas a gestão de todos os perfis em Usuários e a auditoria de entradas/saídas.

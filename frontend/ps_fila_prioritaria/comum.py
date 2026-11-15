@@ -76,6 +76,11 @@ def _codigo_erro(resposta: httpx.Response) -> str:
     return ""
 
 
+# Nome dos campos da API para as mensagens de campo obrigatório.
+NOME_CAMPO = {"cpf": "CPF", "crm": "CRM", "nome": "Nome", "email": "E-mail", "senha": "Senha", "perfil": "Perfil",
+              "especialidade_ids": "Especialidades", "codigo": "Código"}
+
+
 def _mensagem_erro(resposta: httpx.Response) -> str:
     """Extrai a mensagem pública devolvida pela API sem expor detalhes internos."""
     try:
@@ -98,6 +103,10 @@ def _mensagem_erro(resposta: httpx.Response) -> str:
             return f"Valor fora do aceito em {NOME_SINAL_VITAL.get(campo, campo)}. Confira o número digitado."
         if isinstance(mensagem, str) and mensagem in MENSAGENS_ERRO_API:
             return MENSAGENS_ERRO_API[mensagem]
+        # Campo obrigatório vazio barrado pelo próprio Xano ("Missing param: cpf"), em inglês.
+        if isinstance(mensagem, str) and mensagem.startswith("Missing param:"):
+            campo = mensagem.split(":", 1)[1].strip()
+            return f"Preencha o campo {NOME_CAMPO.get(campo, campo)}."
         if isinstance(mensagem, str):
             return mensagem
     return "Não foi possível concluir a solicitação."
