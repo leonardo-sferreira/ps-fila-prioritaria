@@ -19,4 +19,5 @@ query "me/status" verb=GET {
     }
   }
   response = {status: $sessao.status_operacional}
+  guid = "yr0RWn24jBzNngrk_pJod5iEzJg"
 }

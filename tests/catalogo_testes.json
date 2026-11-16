@@ -12204,6 +12204,31 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Fluxo reflete no acompanhamento",
+      "objetivo": "me/status da própria sessão; detalhe com ajuste de cor e justificativa; ficha chamada duas vezes com médico e tentativa; sessão encerrada fora da equipe e na auditoria; auditoria ordenada, paginada e filtrada por origem, usuário e período.",
+      "resultado_esperado": "me/status da própria sessão; detalhe com ajuste de cor e justificativa; ficha chamada duas vezes com médico e tentativa; sessão encerrada fora da equipe e na auditoria; auditoria ordenada, paginada e filtrada por origem, usuário e período.",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0141",
+      "seletor": "tests/api/test_acompanhamento.py::AcompanhamentoTest.test_fluxo_reflete_no_acompanhamento",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }
