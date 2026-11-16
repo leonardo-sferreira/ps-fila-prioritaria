@@ -142,7 +142,8 @@ def test_runner_codigos_e_publicacao_apos_falha_instalacao_e_zero(tmp_path):
         assert ev.main(['--suite','controlled','--execute-controlled','--output',str(tmp_path/'isolated-inventory'),'--require-complete'])==1
         data=json.loads((tmp_path/'isolated-inventory/resultados.json').read_text())
         fixed=[c for c in data['casos'] if c['status']=='BLOCKED']
-        assert len(fixed)==2 and all(c['node'].startswith('tests/api/') and 'v1' in c['motivo'] for c in fixed)
+        esperados=[c for c in ev.catalog('controlled') if c['node'].startswith('tests/api/') and 'test_base_compartilhada.py' not in c['node']]
+        assert len(fixed)==len(esperados)>0 and all(c['node'].startswith('tests/api/') and 'v1' in c['motivo'] for c in fixed)
     with patch.object(ev,'catalog',return_value=[]):
         assert ev.main(['--suite','xano-static','--output',str(tmp_path/'zero')])==1
         assert_formats(tmp_path/'zero')
