@@ -12229,6 +12229,31 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Mesmo código ao mesmo tempo abre uma sessão",
+      "objetivo": "Duas verificações simultâneas do mesmo código: só uma entra (200), a outra é recusada (401) e só uma sessão é criada.",
+      "resultado_esperado": "Duas verificações simultâneas do mesmo código: só uma entra (200), a outra é recusada (401) e só uma sessão é criada.",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0142",
+      "seletor": "frontend/tests/test_api_autenticacao.py::test_mesmo_codigo_enviado_duas_vezes_ao_mesmo_tempo_abre_uma_sessao",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/specs/autenticacao/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }
