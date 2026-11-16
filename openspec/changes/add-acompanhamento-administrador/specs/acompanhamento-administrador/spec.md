@@ -90,3 +90,30 @@ A tela inicial do Administrador DEVE mostrar o mesmo painel do plantão da Recep
 #### Scenario: Sessão encerrada sai da equipe
 - **QUANDO** uma pessoa faz logout ou a sessão expira
 - **ENTÃO** ela deixa de aparecer na equipe na próxima atualização
+
+### Requirement: Integridade da consulta de fila geral
+A consulta DEVE preservar toda ficha não finalizada exatamente uma vez e NÃO DEVE alterar a fila, o ciclo, vínculos ou histórico. A previsão DEVE reutilizar a seleção oficial por especialidade sem limitar a consulta a vinte fichas. Posições não calculáveis DEVEM ser identificadas como indisponíveis.
+
+#### Scenario: Mais de vinte fichas aguardando
+- **QUANDO** uma especialidade possui mais de vinte fichas AGUARDANDO
+- **ENTÃO** todas aparecem uma vez, com previsão pela mesma seleção da chamada, sem persistir o avanço simulado do ciclo
+
+#### Scenario: Especialidade ou posição ausente
+- **QUANDO** uma ficha não tem especialidade válida no catálogo ou não pode receber previsão
+- **ENTÃO** continua na listagem com posição indisponível, sem dados fictícios
+
+#### Scenario: Ciclo inconsistente
+- **QUANDO** faltam parâmetros válidos ou a posição do ciclo é inválida
+- **ENTÃO** a consulta preserva as fichas, informa a indisponibilidade da previsão e não inventa parâmetros
+
+#### Scenario: Filtro preserva posição da fila completa
+- **QUANDO** o Administrador filtra uma cor ou situação
+- **ENTÃO** o filtro não recalcula o ciclo nem renumera as posições previstas da fila completa
+
+#### Scenario: Consulta não disponível no ambiente
+- **QUANDO** o endpoint ainda não está publicado, falha ou retorna formato inesperado
+- **ENTÃO** a interface informa indisponibilidade, sem simular dados; se preservar dados anteriores identifica que estão desatualizados
+
+#### Scenario: Aba ou rota deixa de estar visível
+- **QUANDO** o Administrador oculta a aba ou sai do acompanhamento
+- **ENTÃO** o polling não consulta a fila até a tela voltar a estar ativa e visível

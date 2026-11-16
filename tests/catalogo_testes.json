@@ -11954,6 +11954,856 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Get admin usa token existente e grupo cadastros",
+      "objetivo": "Get admin usa token existente e grupo cadastros",
+      "resultado_esperado": "Get admin usa token existente e grupo cadastros.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-001",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_get_admin_usa_token_existente_e_grupo_cadastros",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Resposta vazia confirmada",
+      "objetivo": "Resposta vazia confirmada",
+      "resultado_esperado": "Resposta vazia confirmada.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-002",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_resposta_vazia_confirmada",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Tres status nao finalizados e campos de chamado",
+      "objetivo": "Tres status nao finalizados e campos de chamado",
+      "resultado_esperado": "Tres status nao finalizados e campos de chamado.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-003",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_tres_status_nao_finalizados_e_campos_de_chamado",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Finalizados recebidos indevidamente sao recusados",
+      "objetivo": "Finalizados recebidos indevidamente sao recusados",
+      "resultado_esperado": "Finalizados recebidos indevidamente sao recusados.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-004",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_finalizados_recebidos_indevidamente_sao_recusados",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Filtros enviados ao servidor",
+      "objetivo": "Filtros enviados ao servidor",
+      "resultado_esperado": "Filtros enviados ao servidor.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-005",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_filtros_enviados_ao_servidor",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Filtros invalidos nao consultam",
+      "objetivo": "Filtros invalidos nao consultam",
+      "resultado_esperado": "Filtros invalidos nao consultam.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-006",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_filtros_invalidos_nao_consultam",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Troca de filtro nao exibe lista do filtro anterior",
+      "objetivo": "Troca de filtro nao exibe lista do filtro anterior",
+      "resultado_esperado": "Troca de filtro nao exibe lista do filtro anterior.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-007",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_troca_de_filtro_nao_exibe_lista_do_filtro_anterior",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Preserva ordem recebida vermelha e ciclo sem reordenar por chegada",
+      "objetivo": "Preserva ordem recebida vermelha e ciclo sem reordenar por chegada",
+      "resultado_esperado": "Preserva ordem recebida vermelha e ciclo sem reordenar por chegada.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-008",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_preserva_ordem_recebida_vermelha_e_ciclo_sem_reordenar_por_chegada",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Condicao prioritaria e reentrada nao sao recalculadas no cliente",
+      "objetivo": "Condicao prioritaria e reentrada nao sao recalculadas no cliente",
+      "resultado_esperado": "Condicao prioritaria e reentrada nao sao recalculadas no cliente.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-009",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_condicao_prioritaria_e_reentrada_nao_sao_recalculadas_no_cliente",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Mais de vinte fichas sem truncar",
+      "objetivo": "Mais de vinte fichas sem truncar",
+      "resultado_esperado": "Mais de vinte fichas sem truncar.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-010",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_mais_de_vinte_fichas_sem_truncar",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Sem especialidade ou catalogo permanece sem posicao ficticia",
+      "objetivo": "Sem especialidade ou catalogo permanece sem posicao ficticia",
+      "resultado_esperado": "Sem especialidade ou catalogo permanece sem posicao ficticia.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-011",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_sem_especialidade_ou_catalogo_permanece_sem_posicao_ficticia",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Duplicacao na resposta e recusada",
+      "objetivo": "Duplicacao na resposta e recusada",
+      "resultado_esperado": "Duplicacao na resposta e recusada.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-012",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_duplicacao_na_resposta_e_recusada",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Projecao no cliente nao guarda dados pessoais extras",
+      "objetivo": "Projecao no cliente nao guarda dados pessoais extras",
+      "resultado_esperado": "Projecao no cliente nao guarda dados pessoais extras.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-013",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_projecao_no_cliente_nao_guarda_dados_pessoais_extras",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Avisos de previsao invalida nao ocultam fichas",
+      "objetivo": "Avisos de previsao invalida nao ocultam fichas",
+      "resultado_esperado": "Avisos de previsao invalida nao ocultam fichas.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-014",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_avisos_de_previsao_invalida_nao_ocultam_fichas",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Sem token medico e recepcao nao enviam get",
+      "objetivo": "Sem token medico e recepcao nao enviam get",
+      "resultado_esperado": "Sem token medico e recepcao nao enviam get.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-015",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_sem_token_medico_e_recepcao_nao_enviam_get",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "401 limpa sessao e lista",
+      "objetivo": "401 limpa sessao e lista",
+      "resultado_esperado": "401 limpa sessao e lista.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-016",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_401_limpa_sessao_e_lista",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "403 e endpoint nao publicado",
+      "objetivo": "403 e endpoint nao publicado",
+      "resultado_esperado": "403 e endpoint nao publicado.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-017",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_403_e_endpoint_nao_publicado",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Timeout e conexao sem repeticao e com aviso de dados antigos",
+      "objetivo": "Timeout e conexao sem repeticao e com aviso de dados antigos",
+      "resultado_esperado": "Timeout e conexao sem repeticao e com aviso de dados antigos.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-018",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_timeout_e_conexao_sem_repeticao_e_com_aviso_de_dados_antigos",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Json invalido contagem incorreta e respostas inesperadas",
+      "objetivo": "Json invalido contagem incorreta e respostas inesperadas",
+      "resultado_esperado": "Json invalido contagem incorreta e respostas inesperadas.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-019",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_json_invalido_contagem_incorreta_e_respostas_inesperadas",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Sem configuracao nao envia http",
+      "objetivo": "Sem configuracao nao envia http",
+      "resultado_esperado": "Sem configuracao nao envia http.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-020",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_sem_configuracao_nao_envia_http",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Polling so na rota ativa e quando visivel",
+      "objetivo": "Polling so na rota ativa e quando visivel",
+      "resultado_esperado": "Polling so na rota ativa e quando visivel.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-021",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_polling_so_na_rota_ativa_e_quando_visivel",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Carregamento publicado bloqueia reentrada e saida cancela consulta",
+      "objetivo": "Carregamento publicado bloqueia reentrada e saida cancela consulta",
+      "resultado_esperado": "Carregamento publicado bloqueia reentrada e saida cancela consulta.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-022",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_carregamento_publicado_bloqueia_reentrada_e_saida_cancela_consulta",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Pagina so leitura reutiliza equipe e auditoria sem edicao",
+      "objetivo": "Pagina so leitura reutiliza equipe e auditoria sem edicao",
+      "resultado_esperado": "Pagina so leitura reutiliza equipe e auditoria sem edicao.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-023",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_pagina_so_leitura_reutiliza_equipe_e_auditoria_sem_edicao",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato auth admin ativo e somente identidade autenticada",
+      "objetivo": "Contrato auth admin ativo e somente identidade autenticada",
+      "resultado_esperado": "Contrato auth admin ativo e somente identidade autenticada.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-024",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_auth_admin_ativo_e_somente_identidade_autenticada",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato apenas estados nao finalizados e filtros validados",
+      "objetivo": "Contrato apenas estados nao finalizados e filtros validados",
+      "resultado_esperado": "Contrato apenas estados nao finalizados e filtros validados.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-025",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_apenas_estados_nao_finalizados_e_filtros_validados",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato selecao oficial sem limite de vinte ou ordem global",
+      "objetivo": "Contrato selecao oficial sem limite de vinte ou ordem global",
+      "resultado_esperado": "Contrato selecao oficial sem limite de vinte ou ordem global.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-026",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_selecao_oficial_sem_limite_de_vinte_ou_ordem_global",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato vermelha condicao ciclo e reentrada reutilizados",
+      "objetivo": "Contrato vermelha condicao ciclo e reentrada reutilizados",
+      "resultado_esperado": "Contrato vermelha condicao ciclo e reentrada reutilizados.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-027",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_vermelha_condicao_ciclo_e_reentrada_reutilizados",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato inclusao de seguranca por id e filtros apos previsao",
+      "objetivo": "Contrato inclusao de seguranca por id e filtros apos previsao",
+      "resultado_esperado": "Contrato inclusao de seguranca por id e filtros apos previsao.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-028",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_inclusao_de_seguranca_por_id_e_filtros_apos_previsao",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato sem ciclo valido mantem fichas sem inventar parametros",
+      "objetivo": "Contrato sem ciclo valido mantem fichas sem inventar parametros",
+      "resultado_esperado": "Contrato sem ciclo valido mantem fichas sem inventar parametros.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-029",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_sem_ciclo_valido_mantem_fichas_sem_inventar_parametros",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato consultas usuarios restritas e resposta sem paciente",
+      "objetivo": "Contrato consultas usuarios restritas e resposta sem paciente",
+      "resultado_esperado": "Contrato consultas usuarios restritas e resposta sem paciente.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-030",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_consultas_usuarios_restritas_e_resposta_sem_paciente",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Contrato grafo chamado nao tem operacoes de escrita",
+      "objetivo": "Contrato grafo chamado nao tem operacoes de escrita",
+      "resultado_esperado": "Contrato grafo chamado nao tem operacoes de escrita.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-031",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_grafo_chamado_nao_tem_operacoes_de_escrita",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "contrato publicado lista posicao e metadados aditivos",
+      "objetivo": "contrato publicado lista posicao e metadados aditivos",
+      "resultado_esperado": "Consome o contrato publicado sem perder posições ou opções de filtro.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-032",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_contrato_publicado_lista_posicao_e_metadados_aditivos",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "filtro preserva opcoes observadas apos resposta vazia",
+      "objetivo": "filtro preserva opcoes observadas apos resposta vazia",
+      "resultado_esperado": "Consome o contrato publicado sem perder posições ou opções de filtro.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-033",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_filtro_preserva_opcoes_observadas_apos_resposta_vazia",
+      "suite": "reflex",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Cor nula preservada sem posição fictícia",
+      "objetivo": "Impedir seleção de cor nula por igualdade null no seletor oficial.",
+      "resultado_esperado": "Seleção recebe somente cores elegíveis; inclusão de segurança preserva as demais fichas.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FILA-GERAL-034",
+      "seletor": "frontend/tests/test_fila_geral_state.py::test_cor_nula_nao_recebe_posicao_por_igualdade_null_no_seletor",
+      "suite": "reflex",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }

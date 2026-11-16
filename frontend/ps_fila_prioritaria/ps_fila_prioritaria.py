@@ -5,6 +5,8 @@ import reflex as rx
 from ps_fila_prioritaria.componentes import carregando
 from ps_fila_prioritaria.estados.autenticacao import AuthState, SenhaState
 from ps_fila_prioritaria.estados.equipe import EquipeState
+from ps_fila_prioritaria.estados.fila_geral import FilaGeralState
+from ps_fila_prioritaria.paginas.acompanhamento import pagina_acompanhamento
 from ps_fila_prioritaria.estados.status_equipe import StatusRecepcaoState
 from ps_fila_prioritaria.estados.cadastros import (
     EspecialidadesState,
@@ -73,6 +75,7 @@ app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_lo
 app.add_page(area_medico, route="/medico", title="Médico", on_load=[AuthState.verificar_sessao("MEDICO"), MedicoState.carregar, MeusPlantoesState.carregar])
 app.add_page(pagina_impressao_medico, route="/medico/ficha/[id]/imprimir", title="Imprimir ficha", on_load=[AuthState.verificar_sessao("MEDICO"), ImpressaoMedicoState.carregar_da_rota])
 app.add_page(area_admin, route="/admin", title="Administrador", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), PlantaoState.carregar, EquipeState.carregar, ExpiracaoState.carregar])
+app.add_page(pagina_acompanhamento, route="/admin/acompanhamento", title="Fila geral", on_load=[AuthState.verificar_sessao("ADMINISTRADOR"), FilaGeralState.entrar])
 app.add_page(
     pagina_recepcao_pacientes,
     route="/recepcao/pacientes",

@@ -222,3 +222,18 @@ Sem essa consulta, a tela informa indisponibilidade e mantém a alteração bloq
 Roteiro manual pendente, após revisão e publicação autorizada: entrar como Recepção, abrir /recepcao, consultar o status, mudar entre as três opções e conferir a equipe em /admin. Como Médico, conferir Pausa bloqueando nova chamada e comparecimento da ficha já atribuída produzindo Em atendimento. Executar essas escritas reais somente com autorização e cenário de teste aprovado.
 
 Verificação local segura: suites reflex e xano-static de scripts/run_test_evidence.py; os novos casos de frontend/tests/test_status_equipe.py usam HTTP simulado ou inspeção estática. As verificações locais não comprovam a execução das transações no Xano.
+
+### Sprint 4 — Fila Geral administrativa (entrega local)
+
+A página `/admin/acompanhamento` consulta `GET /admin/fila-geral` no grupo Cadastros, usando o token administrativo existente. Mostra fichas EM_TRIAGEM, AGUARDANDO e CHAMADO, filtros de especialidade/cor/status e Equipe reutilizada. Auditoria continua em sua própria página. Não há ações de triagem, chamada, edição ou link para detalhe ainda não entregue.
+
+Na correção local proposta, a posição é por especialidade, calculada pela seleção oficial, sem limite de 20. Fichas sem posição continuam visíveis. Filtros não renumeram posições. Falta de configuração gera aviso, sem parâmetros inventados. Polling de 10 s verifica visibilidade/rota; falha preserva dados anteriores com aviso explícito de desatualização.
+
+O GET já existe no Xano (ID 4128628). Esta entrega prepara SOMENTE a sua correção local, preservando o contrato de lista simples/posicao. O frontend também aceita a definição publicada, mas informa a ausência de espera/metadados e a possível falta de posições além da vigésima. A correção remota ainda não foi publicada nem validada de ponta a ponta. Abrir um PR não publica no Xano. Em falha de consulta, a tela informa indisponibilidade, sem dados simulados. `XANO_CADASTROS_API_URL` deve ser configurada privadamente no ambiente autorizado; nunca copiar credenciais para o Git.
+
+Validação local: suíte reflex do catálogo (inclui `frontend/tests/test_fila_geral_state.py`), xano-static, validador oficial XanoScript e `reflex compile --dry`. Os casos novos usam HTTP simulado e inspeção estática; não executam o engine Xano. Não rodar descoberta ampla de `tests/api`, que contém testes mutáveis.
+
+Roteiro integrado PENDENTE, somente após revisão e publicação autorizada da correção e com conta de teste apropriada: consultar a fila como Administrador; conferir filtros/posições com cenário aprovado (incluindo mais de 20 fichas, reentrada, condição prioritária e ausências de catálogo); conferir negativa para Médico/Recepção; observar duas atualizações de 10 s, ocultar a aba e sair da rota; confirmar ausência de operações de escrita. Não criar dados Live para esse roteiro sem nova autorização.
+
+
+Entrega conciliada sobre a main 324e0d8, que já contém o PR #60. O seletor de status da Recepção, seus testes e documentos permanecem na base; esta entrega acrescenta somente a Fila Geral. A validação de leitura autenticada desta página continua pendente e não exige alterar status ou cadastrar registros.

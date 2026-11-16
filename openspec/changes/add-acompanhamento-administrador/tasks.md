@@ -11,7 +11,7 @@
 
 ## 2. Xano — consultas do Administrador
 
-- [ ] 2.1 [Xano] Criar `GET admin/fila-geral` com filtros e a ordem de `prever_fila` (D3); verificar com os testes 2.4
+- [ ] 2.1 [Xano] Concluir `GET admin/fila-geral` com filtros e a ordem de `prever_fila` (D3); verificar com os testes 2.4
 - [ ] 2.2 [Xano] Criar `GET admin/equipe` (sessões ativas, com filtro por perfil) e `GET admin/fichas/{id}` (detalhe com senhas, chamadas e histórico); verificar com os testes 2.4
 - [x] 2.3 [Xano] Criar `GET admin/auditoria` com a união das três fontes, filtros e paginação de 50 (D2)
   - Evidência (15/11/2026): `api/cadastros/admin_auditoria_get.xs`. Filtros: período (padrão hoje, no máximo 31 dias), origem (alteração, chamada, acesso) e usuário. `sort` decrescente e `slice` conferidos numa função temporária na `v1`, removida em seguida. Os testes da 2.4 continuam pendentes.
@@ -59,3 +59,27 @@ Recorte autorizado: tarefas 1.3/3.1 nos limites locais, sem nova publicação. P
 As tarefas 1.3 e 3.1 amplas continuam pendentes quanto a engine/aceite manual. Não executar pytest tests/api indiscriminadamente: há testes mutáveis/externos; usar suites locais do catálogo.
 
 Evidências locais desta fatia: 25 casos novos incluídos nos 285 aprovados da suite reflex; 10 aprovados em xano-static; GET novo válido no validador XanoScript; Reflex compile --dry aprovado (sem bundle JavaScript ou aceite visual). Autotestes da ferramenta: 39 aprovados e 2 erros de compatibilidade Windows/POSIX, fora dos módulos alterados; não declarar essa suite integralmente aprovada. Nenhum teste executou escrita real no Xano.
+
+## 8. Recorte local — Fila Geral (15/11/2026)
+- [x] 8.1 Corrigir GET admin/fila-geral, preservar todas as fichas e reutilizar seleção oficial sem limite de 20; validar sintaxe.
+- [x] 8.2 Criar e executar testes locais estáticos e HTTP simulados de autorização, filtros, ordem recebida, dados excepcionais e ausência de escrita; não apresentar simulação como execução do Xano.
+- [x] 8.3 Implementar /admin/acompanhamento com filtro, listagem e Equipe reutilizada, polling visível de 10 s e indisponibilidade; compilar e verificar localmente.
+- [ ] 8.4 Revisar a correção proposta contra o GET remoto existente 4128628; após autorização futura, publicar somente a correção desse endpoint e validar integração autenticada somente leitura. Não criar endpoint duplicado nem executar agora.
+
+As tarefas amplas 2.4/3.2 e o aceite integrado continuam pendentes até os demais cenários e a verificação manual. Não executar descoberta ampla de tests/api (contém escrita Live). O PR #60 é herdado da main e seu fluxo não é alterado por esta entrega.
+
+Evidências anteriores à conciliação: 34 casos novos, incluídos nos 294 aprovados de reflex na base 62cb5dc; 10 aprovados de xano-static; sintaxe do GET e compile --dry aprovados. Repetir as verificações na base integrada antes de registrar conclusão. Autotestes anteriores: 39 aprovados e 2 erros Windows/POSIX preexistentes. As fixtures de ordem validam o consumo da resposta simulada e os contratos estáticos de reutilização da função oficial; não são prova de execução da ordenação no engine Xano. Nenhum teste escreveu no Live.
+
+
+Inventário remoto somente leitura: GET admin/fila-geral já publicado (4128628, Cadastros 438024, usuario). Frontend preserva seu contrato de lista/posicao e apresenta limitações quando faltam metadados. Não houve publicação nem consulta autenticada de dados de profissionais nesta entrega. PR #60 foi mesclado em origin/main 324e0d8; este worktree de integração parte desse commit e preserva seus arquivos e casos do catálogo.
+
+- [x] 8.5 Reconciliar os cinco arquivos comuns com a main 324e0d8, preservar o PR #60 e os três worktrees protegidos; repetir catálogo Reflex, Xano estático, OpenSpec, compilação e revisão de escopo/segredos.
+
+
+Conciliação concluída na base 324e0d8: 319 casos da suíte reflex aprovados (285 da main e 34 da Fila Geral), 10 de xano-static aprovados, GET válido no validador oficial sem avisos, 21 itens OpenSpec aprovados e compile --dry aprovado. Autotestes repetidos: 39 aprovados e os mesmos 2 erros Windows/POSIX (CT-FERRAMENTA-0039 e CT-FERRAMENTA-0040); fontes/helpers idênticos à base, não declarar essa suíte integralmente aprovada. Evidências ignoradas em test-evidence/integracao-reflex, integracao-xano-static e integracao-autotestes.
+
+Os três worktrees protegidos mantêm hashes agregados, branches, HEADs e estado Git anteriores. Os 462 casos anteriores do catálogo, os módulos de status, o on_load da Recepção e as seções documentais do PR #60 foram preservados. Sem alteração de lockfiles, dependências, configurações ou arquivos de Especialidades; sem .env real copiado. Stage vazio e nenhuma publicação, gravação Live, commit, push ou merge executados.
+
+GET remoto 4128628 reconfirmado por Metadata somente leitura (perfil ps-impacta, workspace 147348/v1, Cadastros 438024): definição inalterada desde 15/11/2026 18:32:42 UTC, auth usuario, somente ADMINISTRADOR, resposta lista/posicao. Diferenças locais não publicadas: previsão de todas as posições por ID, ausência de fallback clínico inventado, espera/metadados e consultas de usuários restritas. Isso não comprova comportamento integrado do engine.
+
+Validação visual autenticada permanece pendente: este worktree não recebeu .env, credenciais ou sessão, nem instalação de dependências JavaScript/bundle. Nenhum servidor dos outros worktrees foi reiniciado. Preparação posterior: configurar URLs somente no ambiente dos processos, usar conta de teste administrativa autorizada com sessão válida, iniciar a aplicação local e consultar /admin/acompanhamento. Um novo login cria sessão e requer autorização se ainda não houver sessão apropriada. Verificar filtros, recarga, polling visível e ausência de POST/PATCH; não criar cenários Live sem autorização. Detalhe de ficha permanece na tarefa 3.3.

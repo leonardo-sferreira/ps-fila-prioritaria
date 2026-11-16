@@ -26,10 +26,10 @@ Campo `status_operacional` (enum opcional) representa disponibilidade operaciona
 - Assim, o requisito "login registrado na auditoria" é atendido pela leitura de `sessao`, sem mudar o endpoint de login.
 
 ### D3. Fila geral reutilizando a ordenação
-`GET admin/fila-geral` lista as fichas não finalizadas. Para as AGUARDANDO, a ordem de cada especialidade vem de `prever_fila(especialidade, total)` (change 6), a mesma regra da chamada. O tempo de espera é calculado no backend a partir de `chegada_em`.
+`GET admin/fila-geral` lista as fichas não finalizadas. Para as AGUARDANDO, a ordem de cada especialidade reutiliza diretamente `fila/proxima_ficha(fichas, posicao, amarelas, azuis)`, a seleção pura usada por chamada e previsão. A consulta percorre todas as fichas, pois `fila/prever_fila` limita uma previsão a 20 itens. O tempo de espera é calculado no backend a partir de `chegada_em`.
 
 ### D4. Tela `/admin/acompanhamento`
-Três abas ou blocos: "Fila geral" (tabela com cores calculadas da prioridade, filtros e link para o detalhe), "Equipe" (cartões por pessoa com sessão ativa, status operacional e, para Médico, estado do plantão em campos separados) e "Auditoria" (tabela paginada com filtros e valores anterior e novo lado a lado). Polling de 10 s só na aba visível. Detalhe da ficha em `/admin/fichas/{id}` (somente leitura).
+Blocos de Fila geral (tabela com cores, filtros e posições por especialidade) e Equipe (componente existente do dashboard). A Auditoria fica na página própria, conforme decisão da tarefa 3.5, acessível pelo menu. Polling de 10 s só na rota e aba visíveis. O detalhe em `/admin/fichas/{id}` continua na tarefa 3.3; o link só será disponibilizado após essa entrega. Nenhuma ação de triagem, chamada ou edição.
 
 ### D5. Seletor de status para a equipe
 Um componente no cabeçalho de `/recepcao` e `/medico` mostra o status atual e permite trocar entre Disponível, Pausa e Ausente; EM_ATENDIMENTO aparece como texto, não como opção.
@@ -67,3 +67,18 @@ Recorte autorizado da Sprint 4: concluir o seletor da Recepção e acrescentar t
 - Aceitar mudança somente após HTTP 200 e status correspondente ao solicitado. Em timeout, erro de conexão ou resposta incerta, não repetir, não anunciar sucesso e orientar atualização. Não presumir o estado anterior após resultado incerto. Publicar o estado de carregamento antes do HTTP, liberar o bloqueio mesmo no encerramento do evento e ignorar uma repetição do status já confirmado. Bloquear reentrada durante consulta/envio e validar o perfil local sem substituir a autorização do Xano.
 - Os testes novos usam transporte HTTP simulado. Contratos XS estáticos conferem permissões, sessão inicial, enum manual e transições médicas existentes; não comprovam execução do engine, rollback ou bloqueios concorrentes.
 - GET admin/fila-geral, detalhe administrativo, polling de 10 s e Visualizar como permanecem nas tarefas próprias, fora desta fatia. O dashboard e a auditoria existentes são preservados.
+
+## Recorte local da Fila Geral — 15/11/2026
+D3: a assinatura antiga prever_fila(especialidade,total) não existe. A função recebe fichas/posicao/amarelas/azuis/limite e limita a 20. O GET reutiliza fila/proxima_ficha até percorrer todas as AGUARDANDO de cada especialidade, alterando a posição somente em memória. Não inventa uma ordem global entre especialidades. Filtros de especialidade/cor/status são aplicados depois da previsão: a posição refere a fila completa.
+
+Contrato preservado: lista simples com id, senha, status, cor, condicao_prioritaria, especialidade_id, especialidade, chegada_em, posicao, medico, tentativa e oportunidade. A correção local acrescenta espera_minutos, consultado_em, avisos e medico_id por item, sem remover campos publicados. Sem paciente/CPF/e-mail/sintomas/sinais vitais. Médico e tentativa somente para CHAMADO; usuários consultados apenas pelos IDs necessários. Toda ficha não finalizada aparece exatamente uma vez, inclusive sem catálogo, sem cor válida ou sem posição calculável (posicao=null). Parâmetros ausentes/inválidos e ciclo inválido geram aviso, não valores clínicos inventados nem desaparecimento de fichas. Ciclo ausente inicia em 1, como a previsão existente. Espera em minutos desde chegada, nunca negativa.
+
+D4: /admin/acompanhamento apresenta Fila Geral e reutiliza Equipe. Auditoria permanece em sua página própria, conforme tarefa 3.5. Polling de 10 s somente na rota e aba visíveis. O detalhe da ficha continua em outra tarefa: não criar link quebrado nem ações de triagem/chamada/edição. Publicação e aceite integrado permanecem pendentes. O PR #60 está integralmente presente na base 324e0d8 deste worktree de integração. Seus módulos de status e sua documentação são preservados.
+
+
+### Compatibilidade remota verificada por leitura
+O GET admin/fila-geral já existe no workspace 147348/v1, grupo Cadastros 438024, endpoint 4128628, com autenticação usuario e autorização ADMINISTRADOR. Não criar uma segunda rota. Sua definição publicada retorna lista simples, calcula somente 20 posições por especialidade usando prever_fila, associa posições por senha e adota 2/1 quando parâmetros estão ausentes. Essa definição não foi alterada nesta entrega.
+
+O arquivo local é uma proposta de correção desse endpoint existente: associação por ID, todas as posições calculáveis, parâmetros configurados e consulta restrita dos usuários necessários. Exige revisão seletiva da diferença com o proprietário do endpoint e autorização antes de qualquer publicação. O frontend aceita a lista publicada, ordenando apenas as posições fornecidas dentro da mesma especialidade, sem recalcular prioridade clínica nem inventar uma ordem entre especialidades. Mantém fichas sem posição no final dos espaços daquela especialidade. Sem os novos metadados, mostra espera indisponível e aviso das limitações da previsão; não apresenta a versão remota como corrigida.
+
+Os filtros de especialidade usam IDs/nomes observados na fila consultada, preservados ao trocar filtros; não são um segundo cadastro nem incluem especialidades sem fichas observadas. A hora de última consulta é o recebimento confirmado no Reflex; a espera clínica só é exibida quando fornecida pelo servidor. Lista vazia é resposta válida e não permite identificar a versão do backend.
