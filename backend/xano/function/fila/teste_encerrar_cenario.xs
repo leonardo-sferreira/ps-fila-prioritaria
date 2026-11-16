@@ -2,6 +2,9 @@
 function "fila/teste_encerrar_cenario" {
   input {
     text marcador filters=trim
+    // true: antes de encerrar, finaliza como DESISTENCIA as fichas do cenário ainda abertas (teste interrompido ou
+    // teste que só lê a fila, como test_acompanhamento.py). Só toca nas fichas V-CAR-/A-CAR-<marcador> deste cenário (a segunda nasce Amarela).
+    bool? finalizar_pendentes?
   }
 
   stack {
@@ -50,8 +53,30 @@ function "fila/teste_encerrar_cenario" {
       error = "CENARIO_TESTE_INVALIDO"
     }
 
+    conditional {
+      if (($input.finalizar_pendentes ?? false) == true) {
+        db.query ficha_atendimento {
+          where = $db.ficha_atendimento.senha == ("V-CAR-" ~ $input.marcador) || $db.ficha_atendimento.senha == ("A-CAR-" ~ $input.marcador)
+          return = {type: "list"}
+        } as $abertas_cenario
+        foreach ($abertas_cenario) {
+          each as $aberta {
+            conditional {
+              if ($aberta.status == "AGUARDANDO" || $aberta.status == "CHAMADO") {
+                db.edit ficha_atendimento {
+                  field_name = "id"
+                  field_value = $aberta.id
+                  data = {status: "DESISTENCIA", finalizada_em: now}
+                } as $finalizada
+              }
+            }
+          }
+        }
+      }
+    }
+
     db.query ficha_atendimento {
-      where = $db.ficha_atendimento.senha == ("V-CAR-" ~ $input.marcador)
+      where = $db.ficha_atendimento.senha == ("V-CAR-" ~ $input.marcador) || $db.ficha_atendimento.senha == ("A-CAR-" ~ $input.marcador)
       return = {type: "list"}
     } as $fichas
 

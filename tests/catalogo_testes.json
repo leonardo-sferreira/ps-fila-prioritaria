@@ -11954,6 +11954,256 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Administrador não tem status",
+      "objetivo": "PATCH me/status aceita só Médico e Recepção/Triagem.",
+      "resultado_esperado": "PATCH me/status aceita só Médico e Recepção/Triagem.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0137",
+      "seletor": "tests/api/test_base_compartilhada.py::StatusEquipeTest.test_administrador_nao_tem_status",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Em atendimento não é escolhido à mão",
+      "objetivo": "PATCH me/status aceita só DISPONIVEL, PAUSA e AUSENTE.",
+      "resultado_esperado": "PATCH me/status aceita só DISPONIVEL, PAUSA e AUSENTE.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0138",
+      "seletor": "tests/api/test_base_compartilhada.py::StatusEquipeTest.test_em_atendimento_nao_e_escolhido_a_mao",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Comparecimento põe Em atendimento",
+      "objetivo": "fila/agir_chamada grava EM_ATENDIMENTO na sessão do médico ao confirmar o comparecimento.",
+      "resultado_esperado": "fila/agir_chamada grava EM_ATENDIMENTO na sessão do médico ao confirmar o comparecimento.",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0139",
+      "seletor": "tests/api/test_base_compartilhada.py::StatusEquipeTest.test_comparecimento_poe_em_atendimento",
+      "suite": "xano-static",
+      "tipo": "ESTATICO",
+      "modo_dependencia": "LOCAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/status-equipe/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Espera em minutos e horas",
+      "objetivo": "O tempo de espera desde a chegada aparece em minutos ou em horas e minutos.",
+      "resultado_esperado": "O tempo de espera desde a chegada aparece em minutos ou em horas e minutos.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0266",
+      "seletor": "frontend/tests/test_acompanhamento_state.py::test_espera_em_minutos_e_horas",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Linha mostra médico, tentativa e posição",
+      "objetivo": "Chamada mostra médico e tentativa; aguardando mostra a posição prevista na fila.",
+      "resultado_esperado": "Chamada mostra médico e tentativa; aguardando mostra a posição prevista na fila.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0267",
+      "seletor": "frontend/tests/test_acompanhamento_state.py::test_linha_mostra_medico_e_tentativa_na_chamada_e_posicao_na_espera",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Ordem da fila geral",
+      "objetivo": "Chamadas primeiro, depois aguardando por especialidade e posição prevista, depois em triagem.",
+      "resultado_esperado": "Chamadas primeiro, depois aguardando por especialidade e posição prevista, depois em triagem.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0268",
+      "seletor": "frontend/tests/test_acompanhamento_state.py::test_ordem_chamadas_depois_aguardando_pela_posicao_depois_triagem",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Filtros vazios não vão para a API",
+      "objetivo": "A consulta envia só os filtros escolhidos.",
+      "resultado_esperado": "A consulta envia só os filtros escolhidos.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0269",
+      "seletor": "frontend/tests/test_acompanhamento_state.py::test_filtros_vazios_nao_vao_para_a_api",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Detalhe mostra ajuste, chamadas e histórico",
+      "objetivo": "O detalhe mostra o ajuste com justificativa, as tentativas de chamada e o histórico.",
+      "resultado_esperado": "O detalhe mostra o ajuste com justificativa, as tentativas de chamada e o histórico.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0270",
+      "seletor": "frontend/tests/test_acompanhamento_state.py::test_detalhe_mostra_ajuste_chamadas_e_historico",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Trocar filtro consulta de novo",
+      "objetivo": "Trocar um filtro da fila geral consulta o backend com o filtro novo.",
+      "resultado_esperado": "Trocar um filtro da fila geral consulta o backend com o filtro novo.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0271",
+      "seletor": "frontend/tests/test_acompanhamento_state.py::test_trocar_filtro_consulta_de_novo",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Consultas do Administrador",
+      "objetivo": "Fila geral, detalhe da ficha, equipe e auditoria só para o Administrador; fila geral com as fichas do cenário na ordem da regra e filtros de cor e status.",
+      "resultado_esperado": "Fila geral, detalhe da ficha, equipe e auditoria só para o Administrador; fila geral com as fichas do cenário na ordem da regra e filtros de cor e status.",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0140",
+      "seletor": "tests/api/test_acompanhamento.py::AcompanhamentoTest.test_consultas_do_administrador",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-acompanhamento-administrador/specs/acompanhamento-administrador/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }

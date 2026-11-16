@@ -175,6 +175,25 @@ Na seleção, Vermelhas próprias precedem as demais próprias; Amarelas e Azuis
 
 A ordenação e a seleção entre filas são verificadas pela suíte remota pura `xano-safe`; a tela médica faz parte de `reflex`. Os cenários CLI de chamada com escrita permanecem bloqueados: esta infraestrutura não os habilita na branch `v1`. Integrações HTTP exigem autorização e ambiente descartável comprovado, conforme o [guia de QA](docs/testes-qualidade.md).
 
+### Acompanhamento do Administrador
+
+Telas só de leitura, no menu do Administrador (`XANO_CADASTROS_API_URL`):
+
+| Tela | O que mostra |
+|---|---|
+| `/admin` | Painel do plantão, indicadores do dia, equipe logada com status e fichas paradas. Atualiza a cada 30 s. |
+| `/admin/fila-geral` | Fichas em triagem, aguardando (na ordem prevista de chamada) e chamadas, com filtros de especialidade, cor e status. Atualiza a cada 10 s. |
+| `/admin/fichas/{id}` | Detalhe da ficha: triagem, senhas, chamadas e histórico, sem botões de alteração. |
+| `/admin/auditoria` | Alterações, chamadas e entradas/saídas por período, tipo e usuário, com exportação em CSV. |
+
+Roteiro manual:
+
+1. Como Recepção/Triagem, em `/recepcao`, troque "Meu status" para Pausa e depois para Disponível.
+2. Como Médico, escolha "Ficar disponível", chame o próximo e confirme o comparecimento: o status passa a "Em atendimento"; ao chamar o próximo, volta a "Disponível". Em Pausa, "Chamar próximo" é recusado.
+3. Como Administrador, abra **Fila geral**: as fichas aparecem com cor, especialidade, espera e, para as chamadas, médico e tentativa. Filtre por cor Vermelha e confira que só ficam Vermelhas.
+4. Clique em **Detalhe** de uma ficha e confira que não há nenhum botão de alteração.
+5. Abra **Auditoria** e confira as entradas e saídas e a chamada feita no passo 2.
+
 ### Primeiro administrador
 
 Não existe tela de cadastro aberta: o primeiro Administrador é criado à mão no painel do Xano.

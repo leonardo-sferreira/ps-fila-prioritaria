@@ -35,6 +35,7 @@ REMOTE_FILES = {
     "test_xano_api_integration.py": ("ficha-atendimento", "escrita: pacientes e fichas sem limpeza garantida"),
     "test_chamada.py": ("chamada-paciente", "escrita: cenário, chamadas, sessões e limpeza remota"),
     "test_recuperacao_sessao_medico.py": ("chamada-paciente", "escrita: sessões e estado operacional"),
+    "test_acompanhamento.py": ("acompanhamento-administrador", "escrita: cenário sintético de fila com limpeza remota"),
 }
 NATIVE_PURE = (
     "classificacao/pontuar", "classificacao/faixas_padrao",
@@ -150,7 +151,7 @@ def discover(suite: str) -> list[dict]:
         raise ValueError('Suíte desconhecida')
     cases = [c for p in paths for c in source_cases(p)]
     if suite == 'xano-static':
-        cases = [c for c in cases if any('::' + cls + '.' in c['node'] for cls in ('AuditoriaTest', 'ParametrosTest'))]
+        cases = [c for c in cases if any('::' + cls + '.' in c['node'] for cls in ('AuditoriaTest', 'ParametrosTest', 'StatusEquipeTest'))]
     if suite == 'controlled':
         cases = [c for c in cases if 'test_base_compartilhada.py' not in c['node'] or '::ConsultaSemTokenTest.' in c['node']]
     return cases + (native_cases() if suite == 'xano-safe' else [])

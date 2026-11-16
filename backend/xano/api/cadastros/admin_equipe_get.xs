@@ -4,7 +4,10 @@ query "admin/equipe" verb=GET {
   api_group = "Cadastros"
   auth = "usuario"
 
-  input {}
+  input {
+    // RECEPCAO_TRIAGEM, MEDICO, ADMINISTRADOR ou vazio (todos).
+    text? perfil? filters=trim|upper
+  }
 
   stack {
     function.run "auth/verificar_acesso" {
@@ -42,6 +45,6 @@ query "admin/equipe" verb=GET {
     }
   }
 
-  response = {equipe: $equipe, agora: now}
+  response = {equipe: (($input.perfil ?? "") == "") ? $equipe : ($equipe|filter:($$.perfil == $input.perfil)), agora: now}
   guid = "sBJR_URGUWaZYhaxvFCRyo4he5Y"
 }
