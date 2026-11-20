@@ -19,8 +19,9 @@
 - [x] 2.2 [Reflex] Implementar o polling de 3 s, a detecção de nova chamada com destaque e som, e o aviso "Toque para ativar o som" (D2); verificar manualmente com uma chamada e uma repetição feitas em outra aba
   - Implementada em 20/11/2026: polling de 5 s (`rx.moment`; era 3 s, mudado pelo limite do plano gratuito do Xano), destaque que pisca a cada chamada nova ou repetida e na rechamada de ticket, aviso sonoro de dois tons pela Web Audio API (sem arquivo em `assets/`) e botão "Toque para ativar o som". 6 testes em `frontend/tests/test_painel_state.py`. Falta a verificação manual do PO.
   - Verificada pelo PO em 20/11/2026: destaque e aviso sonoro funcionando na chamada e na repetição.
-- [ ] 2.3 [Reflex] Implementar o estado "reconectando", que mantém a última informação; verificar manualmente parando o acesso à rede por 30 s
+- [x] 2.3 [Reflex] Implementar o estado "reconectando", que mantém a última informação; verificar manualmente parando o acesso à rede por 30 s
   - Implementada em 20/11/2026: em falha de rede, mantém o último estado e mostra "Reconectando…". Falta a verificação manual do PO.
+  - Aceita pelo PO em 20/11/2026 sem o teste manual de queda de rede (não havia como desligar a rede). O "Reconectando…" foi visto na prática quando o Xano recusou consultas por limite (429): o painel manteve a tela e mostrou o aviso.
 - [x] 2.4 Adicionar ao README como abrir o painel numa TV (URL com filtro, tela cheia, ativação do som) e o roteiro manual da seção 2; verificar executando-o
   - Concluída em 20/11/2026: seção "Painel público" no README (TV, filtro, tela cheia, som e roteiro de 6 passos); a execução do roteiro fica com o PO.
 
