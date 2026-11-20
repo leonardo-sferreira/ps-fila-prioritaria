@@ -117,6 +117,16 @@ Siga o [guia comum de QA](docs/testes-qualidade.md) para catálogo, estados, gat
 
 Mocks, leitura estática, funções puras remotas e integração com escrita têm alcances diferentes. Não faça descoberta irrestrita em diretórios com testes reais e `.env`. `xano-safe` exige CLI/credencial e guardião; `controlled` só inventaria por padrão. Nunca execute os cenários CLI com escrita na `v1` como regressão genérica. Preserve evidências históricas e selecione o snapshot da Sprint 5 explicitamente quando necessário.
 
+## Documentação
+
+A documentação fica em [docs/](docs/README.md), dividida em uso, manutenção, sustentação, evolução e testes. Contratos de API, mapa de telas, dicionário de dados, funções do Xano, dependências, changelog e catálogo de testes são **gerados do código**. Depois de mudar endpoints, tabelas, funções, telas, dependências ou testes, ou de arquivar uma change, rode na raiz e inclua o resultado no mesmo PR:
+
+```bash
+python scripts/gerar_docs.py
+```
+
+Os demais documentos são escritos à mão e devem ser atualizados quando a mudança afetar o que descrevem.
+
 ## Regras
 
 - A autorização por perfil é aplicada **no backend**. Esconder um botão no frontend não é controle de acesso.

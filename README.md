@@ -50,7 +50,7 @@ flowchart LR
 
 1. **Fila pré-triagem:** o tipo do ticket define quem é triado primeiro. Pediátrico vem antes de Preferencial, e prioritários e normais alternam em ciclo configurável (2 : 1), para que ninguém espere indefinidamente. O tipo não altera a cor definida na triagem.
 2. **Pontuação de sintomas:** cada sintoma vale de 1 a 3 pontos e todos os sintomas selecionados entram na soma.
-3. **Escore clínico:** soma os pontos dos sintomas e dos sinais vitais (incluindo glicemia quando medida). Não há máximo fixo de 18. Os limiares iniciais são 3 para risco moderado e 6 para alto; um item clínico isolado com 3 pontos pode elevar o risco a alto.
+3. **Escore clínico:** soma os pontos dos sintomas e dos sinais vitais (incluindo glicemia quando medida). Os limiares iniciais são 5 para Amarela e 10 para Vermelha (Azul de 0 a 4); um item clínico isolado com 3 pontos gera Vermelha.
 4. **Classificação:** baixo → Azul, moderado → Amarela e alto → Vermelha. Idosos, crianças e gestantes reordenam dentro da classificação e não somam pontos.
 5. **Direcionamento:** os sintomas determinam a especialidade da ficha. Os vínculos N:N do médico definem suas especialidades próprias e a preferência operacional; ele pode apoiar filas descobertas ou outras cobertas sem alterar a especialidade nem a senha da ficha.
 6. **Chamadas:** o médico respeita o intervalo configurável, inicialmente 30 segundos, entre chamadas da mesma senha, até 3 tentativas por oportunidade e uma única reentrada ao fim da mesma fila. A Recepção/Triagem usa os intervalos próprios da pré-triagem. Desistência explícita remove a senha da fila ativa.
@@ -88,9 +88,10 @@ flowchart LR
 |---|---|
 | Protótipo de telas | [Figma — Protótipo de Fluxos](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1) |
 | Fluxogramas, regras e modelo de dados | [FigJam — Fluxo do Sistema](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI) |
+| **Documentação completa (uso, manutenção, sustentação, evolução e testes)** | [docs/README.md](docs/README.md) |
 | Visão geral do projeto | [docs/project-overview.md](docs/project-overview.md) |
 | Modelo de domínio | [docs/domain-model.md](docs/domain-model.md) |
-| Especificações (requisitos e cenários) | [openspec/changes/](openspec/changes/) |
+| Especificações (requisitos e cenários) | [openspec/specs/](openspec/specs/) e [openspec/changes/archive/](openspec/changes/archive/) |
 | Referência formal | Confluence: RF01–RF50, RNF01–RNF10, RN01–RN35, UC01–UC12 e CA01–CA15 |
 
 As decisões consolidadas do PO estão nos documentos-base. O Confluence deve permanecer sincronizado; não invente o texto de requisitos ausentes nem reintroduza regras antigas já substituídas.
@@ -108,32 +109,37 @@ O projeto segue o desenvolvimento **orientado a especificação** com [OpenSpec]
 
 - [x] Levantamento de requisitos, protótipo e modelo de dados
 - [x] Especificação de todas as funcionalidades no OpenSpec
-- [x] Banco de dados publicado no Xano (19 tabelas)
+- [x] Banco de dados publicado no Xano (23 tabelas)
 - [x] Identificação e cadastro de pacientes por CPF — [v0.1.0](https://github.com/leonardo-sferreira/ps-fila-prioritaria/releases/tag/v0.1.0)
 - [x] Ficha de atendimento com sintomas e observação — [v0.1.0](https://github.com/leonardo-sferreira/ps-fila-prioritaria/releases/tag/v0.1.0)
-- [ ] Autenticação, perfis, gestão de usuários e redefinição de senha
-- [ ] Base compartilhada: auditoria, fuso e parâmetros
-- [ ] Totem com tickets Pediátrico, Preferencial e Normal
-- [ ] Cadastros do administrador
-- [ ] Triagem: sinais vitais e classificação de risco
-- [ ] Direcionamento, senha e comprovante
-- [ ] Fila priorizada e chamada pelo médico
-- [ ] Painel público
-- [ ] Acompanhamento do administrador
+- [x] Autenticação, perfis, gestão de usuários e redefinição de senha
+- [x] Base compartilhada: auditoria, fuso e parâmetros
+- [x] Totem com tickets Pediátrico, Preferencial e Normal
+- [x] Cadastros do administrador
+- [x] Triagem: sinais vitais e classificação de risco
+- [x] Direcionamento, senha e comprovante
+- [x] Fila priorizada e chamada pelo médico
+- [x] Painel público
+- [x] Acompanhamento do administrador
+- [x] Documentação de uso, manutenção, sustentação, evolução e testes ([docs/](docs/README.md))
+
+O que foi entregue em cada sprint: [changelog](docs/evolucao/changelog.md).
 
 ## Estrutura do repositório
 
 ```
-├── docs/                  visão geral e modelo de domínio
+├── docs/                  documentação (índice em docs/README.md)
 ├── openspec/
 │   ├── config.yaml        contexto e regras da metodologia
-│   ├── specs/             capacidades já entregues (pacientes, ficha, classificação)
-│   └── changes/           especificação de cada funcionalidade (archive/ = entregues)
+│   ├── specs/             comportamento implementado, por capacidade
+│   └── changes/archive/   histórico de cada funcionalidade entregue
 ├── backend/xano/
 │   ├── table/             schema do banco em XanoScript
-│   ├── api/               endpoints (pacientes, triagem)
-│   └── function/          funções reutilizáveis (CPF, catálogo de sintomas)
-├── frontend/              app Reflex e testes (pytest)
+│   ├── api/               endpoints, por grupo (autenticacao, pacientes, triagem, fila, cadastros)
+│   └── function/          regras de negócio reutilizáveis, com testes nativos
+├── frontend/              app Reflex (paginas/, estados/) e testes de estado
+├── tests/                 testes ao vivo do Xano, E2E e catálogo de testes
+├── scripts/               execução das suítes, evidências e geração da documentação
 ├── AGENTS.md              regras para agentes de IA
 └── CONTRIBUTING.md        guia de ambiente e fluxo de trabalho da equipe
 ```
