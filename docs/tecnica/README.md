@@ -287,7 +287,23 @@ Chromium (Playwright) com o sistema ligado ao Xano `v1` e paciente fictício de 
 | Sem uso por 1 h (relógio do navegador adiantado): volta ao login com "Sua sessão foi encerrada por inatividade." e o token é apagado | Aprovado |
 | Controle: com movimento do mouse, a sessão continua | Aprovado |
 
-Roteiros manuais ainda sem registro de execução: cards de teste 101 a 104 e passos 3, 4, 5 e 7 do card 106 no Trello ([roteiros](../testes-roteiros-sprint5.md)).
+### Roteiro do Administrador (card 106, passos 3, 4, 5 e 7), executado na `v1` (20/11/2026)
+
+Executado pela mesma API das telas do Administrador. Os registros criados ("TESTE 106") foram desativados no fim, e o parâmetro voltou ao valor original.
+
+| Verificação | Resultado |
+|---|---|
+| Usuário Médico: criar e editar; usuário desativado perde o acesso (`auth/me` 200 → 401) | Aprovado |
+| Não pode desativar a si mesmo | Aprovado (recusado) |
+| Sala, especialidade e sintoma: cadastrar, editar e inativar; a sigla da especialidade não muda | Aprovado |
+| Médico no cadastro e inativação | Aprovado |
+| Plantão futuro: cadastrar, editar e apagar; plantão já iniciado não muda (`PLANTAO_INICIADO`) | Aprovado |
+| Parâmetro: valor válido aceito; 99 recusado (`PARAMETRO_FORA_DOS_LIMITES`) | Aprovado |
+| Auditoria: 12 alterações do Administrador com usuário, data, valor anterior e novo; justificativa do ajuste de cor | Aprovado |
+
+A regra do último Administrador é coberta pelo endpoint e por 3 testes nativos (`usuarios/deixa_sem_admin`), sem desativar administradores reais.
+
+Roteiros manuais ainda sem registro de execução: cards de teste 101 a 104 no Trello ([roteiros](../testes-roteiros-sprint5.md)).
 
 ## 13. Governança e responsáveis
 
