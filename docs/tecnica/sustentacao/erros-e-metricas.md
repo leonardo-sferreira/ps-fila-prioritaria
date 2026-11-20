@@ -26,7 +26,7 @@ O Xano responde erros como `{"code": "ERROR_CODE_...", "message": "..."}`. As re
 | — | (sem resposta) | Rede ou Xano fora | "Não foi possível conectar à API de ..." | Internet e status do Xano |
 | — | (configuração) | Falta variável no `frontend/.env` | "Configure XANO_..._API_URL ..." | `.env` da máquina que roda o Reflex |
 
-Todas as mensagens de cada endpoint estão em [contratos-api.md](../manutencao/contratos-api.md); as mais comuns para o usuário, no [FAQ](../uso/inicio-rapido-e-faq.md#perguntas-frequentes-e-erros-comuns).
+Todas as mensagens de cada endpoint estão em [contratos-api.md](../manutencao/contratos-api.md); as mais comuns para o usuário, no [FAQ](../referencia/faq-operacional.md#perguntas-frequentes-e-erros-comuns).
 
 ### Erros por categoria
 

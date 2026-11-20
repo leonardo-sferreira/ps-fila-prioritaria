@@ -410,23 +410,23 @@ def gerar_changelog() -> str:
         out.append(f"## {titulo}\n")
         for data, nome, resumo, caminho in do_sprint:
             d = f"{data[8:10]}/{data[5:7]}/{data[:4]}"
-            out.append(f"- **{d} — `{nome}`**" + (f": {resumo}" if resumo else "") + f" ([change]({'../../' + caminho}))")
+            out.append(f"- **{d} — `{nome}`**" + (f": {resumo}" if resumo else "") + f" ([change]({'../../../' + caminho}))")
         out.append("")
     return "\n".join(out) + "\n"
 
 
 def main() -> None:
-    (DOCS / "manutencao").mkdir(parents=True, exist_ok=True)
-    (DOCS / "evolucao").mkdir(parents=True, exist_ok=True)
-    (DOCS / "testes").mkdir(parents=True, exist_ok=True)
+    (DOCS / "tecnica" / "manutencao").mkdir(parents=True, exist_ok=True)
+    (DOCS / "tecnica" / "evolucao").mkdir(parents=True, exist_ok=True)
+    (DOCS / "tecnica" / "testes").mkdir(parents=True, exist_ok=True)
     arquivos = {
-        DOCS / "manutencao" / "contratos-api.md": gerar_contratos(endpoints()),
-        DOCS / "manutencao" / "mapa-telas-api.md": gerar_mapa(endpoints()),
-        DOCS / "manutencao" / "dicionario-de-dados.md": gerar_dados(tabelas()),
-        DOCS / "manutencao" / "funcoes-xano.md": gerar_funcoes(funcoes()),
-        DOCS / "evolucao" / "dependencias.md": gerar_dependencias(),
-        DOCS / "evolucao" / "changelog.md": gerar_changelog(),
-        DOCS / "testes" / "catalogo-de-testes.md": gerar_testes(),
+        DOCS / "tecnica" / "manutencao" / "contratos-api.md": gerar_contratos(endpoints()),
+        DOCS / "tecnica" / "manutencao" / "mapa-telas-api.md": gerar_mapa(endpoints()),
+        DOCS / "tecnica" / "manutencao" / "dicionario-de-dados.md": gerar_dados(tabelas()),
+        DOCS / "tecnica" / "manutencao" / "funcoes-xano.md": gerar_funcoes(funcoes()),
+        DOCS / "tecnica" / "evolucao" / "dependencias.md": gerar_dependencias(),
+        DOCS / "tecnica" / "evolucao" / "changelog.md": gerar_changelog(),
+        DOCS / "tecnica" / "testes" / "catalogo-de-testes.md": gerar_testes(),
     }
     for caminho, texto in arquivos.items():
         caminho.write_text(texto, encoding="utf-8", newline="\n")

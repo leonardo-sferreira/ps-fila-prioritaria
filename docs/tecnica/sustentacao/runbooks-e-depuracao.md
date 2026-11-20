@@ -73,7 +73,7 @@ Na tela do médico, confira o status (precisa estar **Disponível**). No Adminis
 
 ### Fila parece fora de ordem
 
-A ordem é calculada no momento da chamada ([regras](../uso/glossario-e-regras.md#fila-do-médico)). Para conferir: Administrador → **Fila geral** mostra a posição prevista de cada ficha pela mesma regra. Uma Vermelha que entrou depois passa à frente; uma ficha descoberta pode ser chamada por um médico de outra especialidade. Isso é o comportamento esperado.
+A ordem é calculada no momento da chamada ([regras](../referencia/regras-de-negocio.md#fila-do-médico)). Para conferir: Administrador → **Fila geral** mostra a posição prevista de cada ficha pela mesma regra. Uma Vermelha que entrou depois passa à frente; uma ficha descoberta pode ser chamada por um médico de outra especialidade. Isso é o comportamento esperado.
 
 ### Registros esquecidos abertos
 

@@ -1,6 +1,6 @@
 # Modelo de dados — caminho funcional
 
-Como os dados entram no sistema, por onde passam e em quais tabelas ficam. Todas as tabelas estão no banco do Xano. Os campos de cada uma e o diagrama entidade-relacionamento completo estão no [dicionário de dados](dicionario-de-dados.md); as regras de negócio de cada entidade, no [modelo de domínio](../domain-model.md).
+Como os dados entram no sistema, por onde passam e em quais tabelas ficam. Todas as tabelas estão no banco do Xano. Os campos de cada uma e o diagrama entidade-relacionamento completo estão no [dicionário de dados](dicionario-de-dados.md); as regras de negócio de cada entidade, no [modelo de domínio](../../domain-model.md).
 
 ## Tabelas por bloco lógico
 
@@ -58,7 +58,7 @@ flowchart TD
 
 **Sessão / status operacional:** `DISPONIVEL`, `PAUSA`, `AUSENTE` e `EM_ATENDIMENTO` (este, automático para o médico).
 
-Diagramas de estado detalhados: [modelo de domínio](../domain-model.md#estados-da-ficha_atendimento).
+Diagramas de estado detalhados: [modelo de domínio](../../domain-model.md#estados-da-ficha_atendimento).
 
 ## Origem e linhagem
 

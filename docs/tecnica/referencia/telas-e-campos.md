@@ -1,6 +1,8 @@
-# Guia por perfil
+# Telas e campos por perfil (referência)
 
-O que cada tipo de usuário vê e consegue fazer em cada tela, os dados que insere e o tipo de cada campo. Os endereços são relativos ao site (em desenvolvimento, `http://localhost:3000`). As regras citadas estão explicadas no [glossário](glossario-e-regras.md).
+> Versão técnica e detalhada. Para o usuário final, veja o [Manual do usuário](../../usuario/manual-do-usuario.md).
+
+O que cada tipo de usuário vê e consegue fazer em cada tela, os dados que insere e o tipo de cada campo. Os endereços são relativos ao site (em desenvolvimento, `http://localhost:3000`). As regras citadas estão explicadas no [glossário](regras-de-negocio.md).
 
 O sistema tem quatro perfis. Três são da equipe, com login por e-mail, senha e código; o quarto é o público, sem login.
 
@@ -107,7 +109,7 @@ Fluxo: pesquisar o CPF → se não existir, cadastrar → **Continuar** abre a f
 | | Gestante | Sim/não | Gestante tem classificação manual |
 | Classificação | Ajustar prioridade | Vermelha, Amarela ou Azul + justificativa | Justificativa obrigatória; o ajuste some se sintomas ou sinais mudarem |
 
-A cor aparece calculada à medida que os dados são preenchidos (veja o [cálculo](glossario-e-regras.md#classificação-de-risco)). Faltando um sinal vital, a tela mostra a pendência. Menores de 16 anos e gestantes exigem classificação manual justificada.
+A cor aparece calculada à medida que os dados são preenchidos (veja o [cálculo](regras-de-negocio.md#classificação-de-risco)). Faltando um sinal vital, a tela mostra a pendência. Menores de 16 anos e gestantes exigem classificação manual justificada.
 
 **Confirmar e gerar senha** (exige cor definida): define a especialidade de destino, gera a senha `COR-ESP-NNN`, coloca a ficha na fila do médico e abre o comprovante.
 

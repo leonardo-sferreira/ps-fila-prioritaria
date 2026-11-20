@@ -119,13 +119,13 @@ Mocks, leitura estática, funções puras remotas e integração com escrita tê
 
 ## Documentação
 
-A documentação fica em [docs/](docs/README.md), dividida em uso, manutenção, sustentação, evolução e testes. Contratos de API, mapa de telas, dicionário de dados, funções do Xano, dependências, changelog e catálogo de testes são **gerados do código**. Depois de mudar endpoints, tabelas, funções, telas, dependências ou testes, ou de arquivar uma change, rode na raiz e inclua o resultado no mesmo PR:
+A documentação fica em [docs/](docs/README.md): o [manual do usuário](docs/usuario/manual-do-usuario.md) e a [documentação técnica](docs/tecnica/README.md), com seus anexos. Contratos de API, mapa de telas, dicionário de dados, funções do Xano, dependências, changelog e catálogo de testes são **gerados do código**. Depois de mudar endpoints, tabelas, funções, telas, dependências ou testes, ou de arquivar uma change, rode na raiz e inclua o resultado no mesmo PR:
 
 ```bash
 python scripts/gerar_docs.py
 ```
 
-Os demais documentos são escritos à mão e devem ser atualizados quando a mudança afetar o que descrevem.
+Os demais documentos são escritos à mão e devem ser atualizados quando a mudança afetar o que descrevem; mudanças visíveis ao usuário também atualizam o manual do usuário.
 
 ## Regras
 

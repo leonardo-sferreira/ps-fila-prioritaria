@@ -1,6 +1,6 @@
 # Estratégia de testes
 
-Quais testes o projeto tem, como são feitos, como rodar e como ler o resultado. A lista de todos os casos, com entrada e saída esperada, está no [catálogo de testes](catalogo-de-testes.md); a infraestrutura de evidências, no [guia de QA](../testes-qualidade.md).
+Quais testes o projeto tem, como são feitos, como rodar e como ler o resultado. A lista de todos os casos, com entrada e saída esperada, está no [catálogo de testes](catalogo-de-testes.md); a infraestrutura de evidências, no [guia de QA](../../testes-qualidade.md).
 
 ## Tipos de teste
 
@@ -92,4 +92,4 @@ As evidências ficam em `test-evidence/<execução>/<suíte>/` (`resultados.json
 | Autotestes | 41 |
 | **Total** | **483** |
 
-Números do catálogo na data desta documentação; o [catálogo gerado](catalogo-de-testes.md) sempre traz os atuais. Os testes manuais da Sprint 5 e sua relação com os automatizados estão em [testes-roteiros-sprint5.md](../testes-roteiros-sprint5.md).
+Números do catálogo na data desta documentação; o [catálogo gerado](catalogo-de-testes.md) sempre traz os atuais. Os testes manuais da Sprint 5 e sua relação com os automatizados estão em [testes-roteiros-sprint5.md](../../testes-roteiros-sprint5.md).

@@ -29,7 +29,7 @@ Verificações que confirmam o funcionamento do sistema antes e depois de uma mu
 
 ### Manuais
 
-Roteiros publicados nos cards de teste da Sprint 5 no Trello (101 a 106), no README (seções "Fila e chamada do médico", "Acompanhamento do Administrador" e "Painel público") e mapeados aos testes automatizados em [testes-roteiros-sprint5.md](../testes-roteiros-sprint5.md). Resultado registrado em comentário no card, com o passo e um print.
+Roteiros publicados nos cards de teste da Sprint 5 no Trello (101 a 106), no README (seções "Fila e chamada do médico", "Acompanhamento do Administrador" e "Painel público") e mapeados aos testes automatizados em [testes-roteiros-sprint5.md](../../testes-roteiros-sprint5.md). Resultado registrado em comentário no card, com o passo e um print.
 
 ## Perfilamento e desempenho
 
@@ -46,4 +46,4 @@ Cada execução gera, em `test-evidence/<execução>/<suíte>/`:
 - `resultados.xml`: formato JUnit;
 - `resumo.md`: totais e diagnóstico.
 
-No CI, essas pastas viram artefatos (`evidencias-reflex`, `evidencias-xano`…), e o job "Consolidar evidências" junta tudo num relatório só. Detalhes: [guia de QA](../testes-qualidade.md).
+No CI, essas pastas viram artefatos (`evidencias-reflex`, `evidencias-xano`…), e o job "Consolidar evidências" junta tudo num relatório só. Detalhes: [guia de QA](../../testes-qualidade.md).
