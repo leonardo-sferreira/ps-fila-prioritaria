@@ -107,7 +107,8 @@ class PainelTest(unittest.TestCase):
             resposta = self.painel()
             self.assertEqual(resposta.status_code, 200, resposta.text)
             corpo = resposta.json()
-            self.assertEqual(set(corpo), {"atual", "ultimas", "triagem", "previsoes", "gerado_em"})
+            self.assertEqual(set(corpo), {"atual", "ultimas", "triagem", "triagem_ultimas", "previsoes", "gerado_em"})
+            self.assertLessEqual(len(corpo["triagem_ultimas"]), 4)
             self.assertFalse(chaves(corpo) & PROIBIDAS, chaves(corpo) & PROIBIDAS)
             self.assertLessEqual(len(corpo["ultimas"]), 4)
             if corpo["triagem"] is not None:
@@ -199,8 +200,11 @@ class PainelTest(unittest.TestCase):
             self.assertGreaterEqual(triagem["numero"], 900)
             rechamado = funcao("fila/teste_painel_extras", {"acao": "RECHAMAR", "marcador": self.marcador, "ticket_id": estado["ticket_id"]})
             self.assertEqual(rechamado["status"], "ok", rechamado)
-            depois = self.painel().json()["triagem"]
+            depois_corpo = self.painel().json()
+            depois = depois_corpo["triagem"]
             self.assertEqual((depois["ticket_id"], depois["tentativa"]), (estado["ticket_id"], 2))
+            # O ticket chamado agora não se repete na lista dos últimos tickets.
+            self.assertNotIn(estado["ticket_id"], [u["ticket_id"] for u in depois_corpo["triagem_ultimas"]])
             self.assertGreater(depois["chamado_em"], triagem["chamado_em"])
 
 
