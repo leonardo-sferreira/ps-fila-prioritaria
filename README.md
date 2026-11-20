@@ -88,10 +88,11 @@ flowchart LR
 |---|---|
 | Protótipo de telas | [Figma — Protótipo de Fluxos](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1) |
 | Fluxogramas, regras e modelo de dados | [FigJam — Fluxo do Sistema](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI) |
-| **Documentação completa (uso, manutenção, sustentação, evolução e testes)** | [docs/README.md](docs/README.md) |
+| **Manual do usuário** (uso do sistema, regras e perguntas frequentes) | [docs/usuario/manual-do-usuario.md](docs/usuario/manual-do-usuario.md) |
+| **Documentação técnica** (arquitetura, decisões, operação e testes realizados) | [docs/tecnica/README.md](docs/tecnica/README.md) |
 | Visão geral do projeto | [docs/project-overview.md](docs/project-overview.md) |
 | Modelo de domínio | [docs/domain-model.md](docs/domain-model.md) |
-| Especificações (requisitos e cenários) | [openspec/specs/](openspec/specs/) e [openspec/changes/archive/](openspec/changes/archive/) |
+| Especificações (requisitos e cenários) | [openspec/specs/](openspec/specs) e [openspec/changes/archive/](openspec/changes/archive) |
 | Referência formal | Confluence: RF01–RF50, RNF01–RNF10, RN01–RN35, UC01–UC12 e CA01–CA15 |
 
 As decisões consolidadas do PO estão nos documentos-base. O Confluence deve permanecer sincronizado; não invente o texto de requisitos ausentes nem reintroduza regras antigas já substituídas.
@@ -121,14 +122,14 @@ O projeto segue o desenvolvimento **orientado a especificação** com [OpenSpec]
 - [x] Fila priorizada e chamada pelo médico
 - [x] Painel público
 - [x] Acompanhamento do administrador
-- [x] Documentação de uso, manutenção, sustentação, evolução e testes ([docs/](docs/README.md))
+- [x] Manual do usuário e documentação técnica ([docs/](docs/README.md))
 
-O que foi entregue em cada sprint: [changelog](docs/evolucao/changelog.md).
+O que foi entregue em cada sprint: [changelog](docs/tecnica/evolucao/changelog.md).
 
 ## Estrutura do repositório
 
 ```
-├── docs/                  documentação (índice em docs/README.md)
+├── docs/                  manual do usuário (usuario/) e documentação técnica (tecnica/)
 ├── openspec/
 │   ├── config.yaml        contexto e regras da metodologia
 │   ├── specs/             comportamento implementado, por capacidade

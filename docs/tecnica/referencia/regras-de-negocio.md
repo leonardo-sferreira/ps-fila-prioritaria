@@ -1,4 +1,6 @@
-# Glossário e regras de negócio
+# Regras de negócio e glossário (referência)
+
+> Versão técnica e detalhada. Para o usuário final, veja o [Manual do usuário](../../usuario/manual-do-usuario.md).
 
 Termos usados nas telas e as regras e cálculos que o sistema aplica. Os valores marcados com **(parâmetro)** podem ser mudados pelo Administrador em Parâmetros; os demais são fixos no código. Onde cada regra está implementada: [configuração e regras no código](../manutencao/configuracao-e-regras.md).
 
@@ -55,7 +57,7 @@ O escore soma:
 | FC (bpm) | ≤ 40 | | 41–50 | 51–90 | 91–110 | 111–130 | ≥ 131 |
 | FR (irpm) | ≤ 8 | | 9–11 | 12–20 | | 21–24 | ≥ 25 |
 
-As faixas completas, incluindo temperatura, SpO₂ e glicemia, estão em [domain-model.md](../domain-model.md#faixas-de-sinais-vitais) e na tela Parâmetros.
+As faixas completas, incluindo temperatura, SpO₂ e glicemia, estão em [domain-model.md](../../domain-model.md#faixas-de-sinais-vitais) e na tela Parâmetros.
 
 | Resultado | Cor |
 |---|---|

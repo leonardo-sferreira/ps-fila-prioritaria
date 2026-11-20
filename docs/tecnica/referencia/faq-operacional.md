@@ -1,4 +1,6 @@
-# Início rápido e FAQ
+# FAQ operacional (referência)
+
+> Versão técnica e detalhada. Para o usuário final, veja o [Manual do usuário](../../usuario/manual-do-usuario.md).
 
 ## Onde acessar
 

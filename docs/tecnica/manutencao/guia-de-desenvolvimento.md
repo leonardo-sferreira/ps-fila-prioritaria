@@ -1,6 +1,6 @@
 # Guia de desenvolvimento
 
-Como preparar o ambiente, rodar o sistema pela primeira vez, testar e contribuir. O fluxo de trabalho da equipe (Git, OpenSpec e regras) está no [CONTRIBUTING.md](../../CONTRIBUTING.md).
+Como preparar o ambiente, rodar o sistema pela primeira vez, testar e contribuir. O fluxo de trabalho da equipe (Git, OpenSpec e regras) está no [CONTRIBUTING.md](../../../CONTRIBUTING.md).
 
 ## Requisitos
 

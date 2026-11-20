@@ -29,7 +29,7 @@ O workspace do Xano pertence à conta de um membro da equipe; publicações e mu
 
 ## Como pedir suporte
 
-1. **Dúvida de uso:** consulte o [FAQ](../uso/inicio-rapido-e-faq.md). Se não resolver, fale com o Administrador do sistema.
+1. **Dúvida de uso:** consulte o [FAQ](../referencia/faq-operacional.md). Se não resolver, fale com o Administrador do sistema.
 2. **Defeito:** abra uma issue no GitHub (`leonardo-sferreira/ps-fila-prioritaria`) ou um card no Trello (quadro "Projeto PS — Fila de Atendimento por Urgência") com:
    - o que você fez (tela e passos), o que esperava e o que aconteceu;
    - a mensagem exata e um print;
@@ -52,7 +52,7 @@ Exemplo real: o mesmo código de login enviado duas vezes ao mesmo tempo abria d
 
 ## Governança das mudanças
 
-- **Requisitos:** documento formal no Confluence (RF, RNF, RN, UC, CA) e decisões do PO em [project-overview.md](../project-overview.md) e [domain-model.md](../domain-model.md).
+- **Requisitos:** documento formal no Confluence (RF, RNF, RN, UC, CA) e decisões do PO em [project-overview.md](../../project-overview.md) e [domain-model.md](../../domain-model.md).
 - **Toda funcionalidade** passa por uma change do OpenSpec (proposta, specs, design e tarefas) antes do código, e é arquivada quando validada pelo PO.
 - **Código** só entra na `main` por Pull Request com CI verde. Commits sem coautoria de IA.
 - **Banco:** mudança de esquema só com o PO; nenhuma exclusão de registro com histórico.
