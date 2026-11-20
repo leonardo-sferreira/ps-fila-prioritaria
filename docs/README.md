@@ -7,6 +7,8 @@ O projeto tem duas documentações, uma para cada público.
 | 📘 **[Manual do usuário](usuario/manual-do-usuario.md)** | Equipe do PS, avaliadores e quem vai conhecer o sistema | O que o sistema faz, como usar cada tela por perfil, as regras explicadas de forma simples e perguntas frequentes |
 | 🛠️ **[Documentação técnica](tecnica/README.md)** | Desenvolvedores e quem vai manter, operar ou evoluir o sistema | Arquitetura, decisões, regras no código, dados, API, configuração, operação, testes realizados, limitações e anexos de referência |
 
+As duas também estão publicadas como site em **[leonardo-sferreira.github.io/ps-fila-prioritaria/](https://leonardo-sferreira.github.io/ps-fila-prioritaria/)** (HTML e CSS em `site/`, publicado pelo GitHub Actions a cada merge na `main`).
+
 ## Estrutura da pasta
 
 ```

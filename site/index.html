@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="claro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prioriza — Documentação</title>
+  <meta name="description" content="Documentação do Prioriza, sistema de fila prioritária para pronto-socorro: manual do usuário e documentação técnica.">
+  <link rel="icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/estilo.css">
+  <script src="assets/app.js"></script>
+</head>
+<body>
+  <header class="topo">
+    <a class="marca" href="index.html"><img src="assets/icone-branco.svg" alt=""><span>Prioriza<small>Documentação</small></span></a>
+    <nav aria-label="Principal">
+      <a href="usuario.html">Manual do usuário</a>
+      <a href="tecnica.html">Documentação técnica</a>
+      <a class="texto" href="https://github.com/leonardo-sferreira/ps-fila-prioritaria">GitHub</a>
+      <button class="botao-icone" id="alternar-tema" type="button" aria-label="Alternar tema">☾</button>
+    </nav>
+  </header>
+
+  <section class="capa">
+    <img src="assets/icone-branco.svg" alt="Logo do Prioriza">
+    <h1>Prioriza</h1>
+    <p>Sistema de fila prioritária para pronto-socorro: o paciente mais grave é atendido primeiro, com regras claras, chamadas pelo painel e nenhum dado pessoal exposto.</p>
+  </section>
+
+  <main class="inicio">
+    <div class="cartoes">
+      <a class="cartao" href="usuario.html">
+        <div class="icone" aria-hidden="true">📘</div>
+        <h2>Manual do usuário</h2>
+        <p>Para a equipe do pronto-socorro e para quem vai conhecer o sistema: como usar cada tela, as regras explicadas de forma simples e as perguntas frequentes.</p>
+      </a>
+      <a class="cartao" href="tecnica.html">
+        <div class="icone" aria-hidden="true">🛠️</div>
+        <h2>Documentação técnica</h2>
+        <p>Para quem vai manter, operar ou evoluir o sistema: arquitetura, decisões, regras no código, dados, API, operação, testes realizados e limitações.</p>
+      </a>
+    </div>
+
+    <div class="indicadores">
+      <div class="indicador"><strong>4</strong><span>perfis de uso</span></div>
+      <div class="indicador"><strong>33</strong><span>telas</span></div>
+      <div class="indicador"><strong>71</strong><span>endpoints de API</span></div>
+      <div class="indicador"><strong>23</strong><span>tabelas</span></div>
+      <div class="indicador"><strong>484</strong><span>testes automatizados</span></div>
+    </div>
+
+    <div class="aviso">
+      <p>Projeto acadêmico desenvolvido na Faculdade Impacta. As regras clínicas foram criadas para estudo e não substituem um protocolo real de triagem.</p>
+    </div>
+  </main>
+
+  <footer class="rodape">
+    Prioriza · Documentação publicada a partir do repositório <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria">ps-fila-prioritaria</a> · Fonte em Markdown: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/tree/main/docs">docs/</a>
+  </footer>
+</body>
+</html>

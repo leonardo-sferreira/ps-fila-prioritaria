@@ -125,7 +125,7 @@ A documentação fica em [docs/](docs/README.md): o [manual do usuário](docs/us
 python scripts/gerar_docs.py
 ```
 
-Os demais documentos são escritos à mão e devem ser atualizados quando a mudança afetar o que descrevem; mudanças visíveis ao usuário também atualizam o manual do usuário.
+O site em [`site/`](site/) (HTML e CSS, publicado no GitHub Pages pelo workflow `pages.yml`) repete o manual do usuário e o documento técnico principal: quando um deles mudar, atualize também `site/usuario.html` ou `site/tecnica.html`. Os demais documentos são escritos à mão e devem ser atualizados quando a mudança afetar o que descrevem; mudanças visíveis ao usuário também atualizam o manual do usuário.
 
 ## Regras
 

@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="claro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentação técnica — Prioriza</title>
+  <meta name="description" content="Documentação técnica do Prioriza: arquitetura, decisões, regras no código, dados, API, operação, testes realizados e limitações.">
+  <link rel="icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/estilo.css">
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <header class="topo">
+    <button class="botao-icone abrir-menu" id="abrir-menu" type="button" aria-label="Abrir o menu">☰</button>
+    <a class="marca" href="index.html"><img src="assets/icone-branco.svg" alt=""><span>Prioriza<small>Documentação técnica</small></span></a>
+    <nav aria-label="Principal">
+      <a class="texto" href="usuario.html">Manual do usuário</a>
+      <a href="tecnica.html" aria-current="page">Documentação técnica</a>
+      <button class="botao-icone" id="alternar-tema" type="button" aria-label="Alternar tema">☾</button>
+    </nav>
+  </header>
+
+  <div class="pagina">
+    <aside class="menu-lateral" aria-label="Seções">
+      <h2>Sumário</h2>
+      <ol>
+        <li><a href="#resumo">1. Resumo</a></li>
+        <li><a href="#contexto">2. Contexto e escopo</a></li>
+        <li><a href="#arquitetura">3. Arquitetura</a></li>
+        <li><a href="#decisoes">4. Decisões de arquitetura</a></li>
+        <li><a href="#qualidade">5. Atributos de qualidade</a></li>
+        <li><a href="#regras">6. Domínio e regras</a></li>
+        <li><a href="#dados">7. Dados</a></li>
+        <li><a href="#api">8. API</a></li>
+        <li><a href="#configuracao">9. Configuração e segredos</a></li>
+        <li><a href="#desenvolvimento">10. Ambiente de desenvolvimento</a></li>
+        <li><a href="#operacao">11. Entrega e operação</a></li>
+        <li><a href="#testes">12. Testes realizados</a></li>
+        <li><a href="#governanca">13. Governança</a></li>
+        <li><a href="#limitacoes">14. Limitações e dívida técnica</a></li>
+        <li><a href="#primeira-semana">15. Primeira semana</a></li>
+        <li><a href="#anexos">16. Anexos</a></li>
+      </ol>
+    </aside>
+
+    <main class="conteudo">
+      <h1>Documentação técnica</h1>
+      <p class="subtitulo">Manual de engenharia para quem vai manter, operar ou evoluir o Prioriza. Lido do início ao fim, dá o entendimento do projeto inteiro; os anexos trazem o detalhe de cada assunto.</p>
+      <div class="tabela"><table>
+        <tbody>
+          <tr><th>Público</th><td>Desenvolvedores, quem assume a administração técnica, revisores e avaliadores</td></tr>
+          <tr><th>Versão</th><td><code>main</code> de 20/11/2026 (fim da Sprint 5)</td></tr>
+          <tr><th>Fonte</th><td><a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/README.md">docs/tecnica/README.md</a>. Os anexos marcados com ⚙ são gerados do código por <code>python scripts/gerar_docs.py</code></td></tr>
+        </tbody>
+      </table></div>
+      <div class="aviso"><p>Para quem só vai <strong>usar</strong> o sistema, o documento certo é o <a href="usuario.html">Manual do usuário</a>.</p></div>
+
+      <h2 id="resumo">1. Resumo</h2>
+      <p>O Prioriza organiza a entrada e a chamada de pacientes num pronto-socorro pela <strong>gravidade clínica</strong>, e não só pela ordem de chegada:</p>
+      <ol>
+        <li>O paciente retira um ticket no Totem.</li>
+        <li>A Recepção/Triagem registra sintomas e sinais vitais.</li>
+        <li>O sistema calcula a cor de risco, direciona a ficha para uma especialidade e gera a senha.</li>
+        <li>O médico chama o próximo paciente, que o sistema escolhe.</li>
+        <li>Os painéis públicos mostram as chamadas sem expor dados pessoais.</li>
+      </ol>
+      <div class="indicadores">
+        <div class="indicador"><strong>33</strong><span>telas em 4 perfis</span></div>
+        <div class="indicador"><strong>71</strong><span>endpoints em 5 grupos</span></div>
+        <div class="indicador"><strong>23</strong><span>tabelas</span></div>
+        <div class="indicador"><strong>52</strong><span>funções de regra (103 testes nativos)</span></div>
+        <div class="indicador"><strong>484</strong><span>testes catalogados</span></div>
+        <div class="indicador"><strong>25</strong><span>changes entregues</span></div>
+      </div>
+      <p><strong>Stack:</strong> Reflex 0.10 (Python) + Xano (XanoScript, PostgreSQL gerenciado) + Brevo (e-mail). <strong>Estado:</strong> todas as funcionalidades planejadas estão entregues e validadas pelo PO. Não há ambiente de produção publicado: o frontend roda em máquina local e aponta para o Xano (<a href="#operacao">seção 11</a>).</p>
+      <div class="aviso atencao"><p>Projeto acadêmico (Faculdade Impacta). As regras clínicas são modelagem de estudo, não protocolo real de triagem.</p></div>
+
+      <h2 id="contexto">2. Contexto e escopo</h2>
+      <pre class="mermaid">
+flowchart LR
+    P([Paciente]) -->|retira ticket, vê painéis| S[Prioriza]
+    R([Recepção/Triagem]) -->|chama tickets, tria, gera senha| S
+    M([Médico]) -->|chama e atende| S
+    A([Administrador]) -->|cadastra, configura, acompanha| S
+    S -->|códigos por e-mail| B[(Brevo)]
+    S -->|API e banco| X[(Xano)]
+      </pre>
+      <p><strong>No escopo:</strong></p>
+      <ul>
+        <li>Totem de tickets e fila de pré-triagem.</li>
+        <li>Cadastro de paciente por CPF.</li>
+        <li>Ficha com sintomas e sinais vitais, classificação de risco em três cores e ajuste justificado.</li>
+        <li>Direcionamento por especialidade, senha e comprovante.</li>
+        <li>Fila do médico com seleção automática e chamada.</li>
+        <li>Painéis públicos.</li>
+        <li>Cadastros do Administrador, acompanhamento e auditoria.</li>
+        <li>Login com código por e-mail.</li>
+      </ul>
+      <p><strong>Fora do escopo</strong> (decisão do PO): prontuário, diagnóstico, prescrição, exames, agendamento, faturamento, encaminhamento clínico e controle da duração da consulta. A responsabilidade do sistema termina quando o paciente comparece à chamada do médico ou desiste.</p>
+      <p>Fontes de requisito: documento formal no Confluence (RF01–RF50, RNF01–RNF10, RN01–RN35, UC01–UC12, CA01–CA15), <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/project-overview.md">visão geral</a> e <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/domain-model.md">modelo de domínio</a>.</p>
+
+      <h2 id="arquitetura">3. Arquitetura</h2>
+      <pre class="mermaid">
+flowchart LR
+    subgraph Navegador
+        UI[Telas React compiladas pelo Reflex]
+    end
+    subgraph Servidor Reflex
+        ST[Estados rx.State]
+        CL[api.requisitar com token]
+    end
+    subgraph Xano
+        EP[71 endpoints]
+        FN[52 funções]
+        DB[(23 tabelas)]
+    end
+    UI &lt;--&gt;|WebSocket| ST --> CL -->|HTTPS + Bearer| EP --> FN --> DB
+    EP --> DB
+    FN -->|e-mail| BR[Brevo]
+      </pre>
+      <div class="tabela"><table>
+        <thead><tr><th>Camada</th><th>Responsabilidade</th><th>Onde</th></tr></thead>
+        <tbody>
+          <tr><td>Tela</td><td>Layout e componentes; nenhuma regra de negócio</td><td><code>frontend/ps_fila_prioritaria/paginas/</code></td></tr>
+          <tr><td>Estado</td><td>Dados da tela, validação básica, chamadas à API, tratamento de 401 e de erros</td><td><code>frontend/ps_fila_prioritaria/estados/</code></td></tr>
+          <tr><td>Cliente HTTP</td><td>URL por grupo de API, token Bearer, TLS do sistema</td><td><code>frontend/ps_fila_prioritaria/api.py</code></td></tr>
+          <tr><td>Endpoint</td><td>Autorização por perfil, validação, transação e auditoria</td><td><code>backend/xano/api/&lt;grupo&gt;/*.xs</code></td></tr>
+          <tr><td>Função</td><td>Regras reutilizáveis; as puras têm testes nativos</td><td><code>backend/xano/function/**/*.xs</code></td></tr>
+          <tr><td>Dados</td><td>Esquema versionado em código</td><td><code>backend/xano/table/*.xs</code></td></tr>
+        </tbody>
+      </table></div>
+      <div class="aviso"><p><strong>Regra estrutural:</strong> toda regra de negócio e toda autorização ficam no Xano. O Reflex apresenta e encaminha. Esconder um botão nunca é controle de acesso.</p></div>
+
+      <h2 id="decisoes">4. Decisões de arquitetura</h2>
+      <p>Resumo das decisões que moldam o código (formato ADR). O registro completo, com as alternativas descartadas, está no <code>design.md</code> de cada change em <code>openspec/changes/archive/</code>.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>#</th><th>Decisão</th><th>Motivo</th><th>Consequência / custo</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>Reflex no frontend, Xano no backend</strong></td><td>Equipe acadêmica em Python; banco, API e funções sem servidor próprio</td><td>Dependência de um SaaS e do limite do plano</td></tr>
+          <tr><td>2</td><td><strong>Backend como código</strong> (<code>.xs</code>) publicado pelo Xano CLI</td><td>Revisão por PR, histórico e testes sobre o mesmo código</td><td>Exige simular antes e publicar só os arquivos alterados</td></tr>
+          <tr><td>3</td><td><strong>Autorização em todo endpoint</strong> por <code>auth/verificar_acesso</code></td><td>Frontend não é controle de acesso</td><td>Uma linha obrigatória em todo endpoint protegido</td></tr>
+          <tr><td>4</td><td><strong>Login em duas etapas</strong> (senha + código por e-mail)</td><td>Computadores compartilhados na recepção</td><td>Depende do envio de e-mail</td></tr>
+          <tr><td>5</td><td><strong>Parâmetros de regra no banco</strong>, com limites e carga idempotente</td><td>O PO ajusta regras sem deploy</td><td>Toda regra configurável lê o parâmetro e tem padrão</td></tr>
+          <tr><td>6</td><td><strong>Auditoria imutável</strong> na mesma transação da escrita</td><td>Rastreabilidade (RNF07)</td><td>Toda escrita relevante chama <code>registrar_alteracao</code></td></tr>
+          <tr><td>7</td><td><strong>Nada com histórico é excluído</strong> (desativação)</td><td>Preservar auditoria e vínculos</td><td>Listas filtram por <code>ativo</code></td></tr>
+          <tr><td>8</td><td><strong>Seleção do próximo paciente no servidor, atômica</strong>, com trava de linha por escrita real</td><td>O médico não escolhe (RN24); dois médicos nunca pegam a mesma ficha (RF38, RNF04)</td><td>Lógica concentrada em <code>fila/chamar_proximo</code>; escrita sem mudança real não trava no Xano</td></tr>
+          <tr><td>9</td><td><strong>Funções puras separadas</strong> das que acessam o banco</td><td>Testar regras sem banco</td><td>103 testes nativos cobrindo as regras</td></tr>
+          <tr><td>10</td><td><strong>Chamadas sempre manuais</strong></td><td>Uma pessoa responde por cada chamada</td><td>Prazos só liberam botões</td></tr>
+          <tr><td>11</td><td><strong>Polling</strong> em vez de WebSocket/SSE</td><td>Simplicidade; o plano não oferece push</td><td>Custo de requisições; painéis em 5 s</td></tr>
+          <tr><td>12</td><td><strong>Painéis com resposta campo a campo</strong> e teste de chaves proibidas</td><td>Privacidade por construção (RNF06, RN35)</td><td>Campo novo exige inclusão explícita</td></tr>
+          <tr><td>13</td><td><strong>Dois painéis, sem previsão</strong></td><td>Decisão do PO: cada TV no seu local</td><td>O endpoint ainda calcula <code>previsoes</code>, que a tela ignora</td></tr>
+          <tr><td>14</td><td><strong>Janela de 2 h nos painéis</strong> (<code>HORAS_PAINEL</code>)</td><td>O PS funciona 24 horas</td><td>Parâmetro novo</td></tr>
+          <tr><td>15</td><td><strong>Especificação antes do código</strong> (OpenSpec)</td><td>Requisitos rastreáveis</td><td>Proposta, specs, design e tarefas por funcionalidade</td></tr>
+          <tr><td>16</td><td><strong>Catálogo de testes com IDs permanentes</strong></td><td>Evidência rastreável</td><td>CI recusa teste sem registro</td></tr>
+          <tr><td>17</td><td><strong>Documentação de referência gerada do código</strong></td><td>Não divergir do código</td><td>Rodar <code>gerar_docs.py</code> nos PRs que mudam o código</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="qualidade">5. Atributos de qualidade</h2>
+      <div class="tabela"><table>
+        <thead><tr><th>Atributo</th><th>Como é atendido</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Segurança de acesso</strong></td><td>Senha + código por e-mail; tentativas limitadas; token de 12 h; saída após 1 h sem uso; usuário desativado perde o acesso na hora; autorização no backend</td></tr>
+          <tr><td><strong>Privacidade</strong></td><td>Painéis e comprovante sem dados pessoais; CPF mascarado; aviso de privacidade; segredos fora do repositório</td></tr>
+          <tr><td><strong>Integridade e concorrência</strong></td><td>Transações com trava de linha na seleção de ficha e no consumo do código de login; uma ficha chamada por médico</td></tr>
+          <tr><td><strong>Auditabilidade</strong></td><td>Usuário, data, valor anterior e novo e justificativa em toda alteração; consulta e CSV</td></tr>
+          <tr><td><strong>Configurabilidade</strong></td><td>16 parâmetros editáveis e faixas de sinais vitais, com limites</td></tr>
+          <tr><td><strong>Resiliência</strong></td><td>Painéis mantêm o último estado com “Reconectando…”; dados persistem no Xano (RNF08)</td></tr>
+          <tr><td><strong>Desempenho e capacidade</strong></td><td>Listas limitadas (auditoria até 31 dias e 50 por página; painel com janela de 2 h). <strong>Limite do plano: 10 requisições a cada 20 s</strong></td></tr>
+          <tr><td><strong>Usabilidade</strong></td><td>Telas do Figma, mensagens que dizem o que fazer, modo claro e escuro</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="regras">6. Domínio e regras de negócio</h2>
+      <p>Fluxo da ficha: <code>EM_TRIAGEM</code> → <code>AGUARDANDO</code> → <code>CHAMADO</code> → <code>ATENDIDO</code> ou <code>DESISTENCIA</code>, com uma reentrada ao fim da fila.</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Regra</th><th>Resumo</th><th>Implementação</th></tr></thead>
+        <tbody>
+          <tr><td>Classificação</td><td>Sintomas (1–3) + sinais vitais (0–3). Azul de 0 a 4, Amarela de 5 a 9, Vermelha a partir de 10; item isolado de 3 pontos dá Vermelha. Automático só para 16+ anos, não gestante e com os 5 sinais</td><td><code>classificacao/pontuar</code></td></tr>
+          <tr><td>Condição prioritária</td><td>Idoso (60+), criança (até 11) e gestante passam à frente dentro da cor</td><td><code>fila/proxima_ficha</code></td></tr>
+          <tr><td>Direcionamento</td><td>Até 11 anos → Pediatria; senão sintoma de maior pontuação, maior soma, menor fila e menor ID; sem sintoma do catálogo → Clínica Geral</td><td><code>direcionamento/escolher_destino</code></td></tr>
+          <tr><td>Senha</td><td><code>COR-ESP-NNN</code>; número por especialidade e dia</td><td><code>direcionamento/*senha*</code></td></tr>
+          <tr><td>Pré-triagem</td><td>Pediátrico antes de preferencial; ciclo 2:1; 30 s / 10 s; 3 chamadas; uma reentrada</td><td><code>tickets_proximo_post.xs</code></td></tr>
+          <tr><td>Fila médica</td><td>Vermelhas primeiro; ciclo 2 Amarelas : 1 Azul; próprias antes, descobertas só com cor mais grave; reserva atômica</td><td><code>fila/selecionar_entre_filas</code>, <code>chamar_proximo</code></td></tr>
+          <tr><td>Status</td><td>Disponível, Pausa e Ausente manuais; Em atendimento automático</td><td><code>me_status_*.xs</code>, <code>agir_chamada</code></td></tr>
+          <tr><td>Registros parados</td><td>Mais de 24 h: o Administrador dispensa como desistência</td><td><code>manutencao/expirar_registros</code></td></tr>
+        </tbody>
+      </table></div>
+      <p>Detalhes: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/referencia/regras-de-negocio.md">regras de negócio</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/configuracao-e-regras.md">onde cada regra está no código</a> · ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/funcoes-xano.md">funções do Xano</a>.</p>
+
+      <h2 id="dados">7. Dados</h2>
+      <p>23 tabelas em 8 blocos: acesso, cadastros da equipe, catálogo clínico, configuração, pré-triagem, paciente e ficha, fila médica e auditoria. O dado nasce no Totem (ticket), ganha identidade na triagem (paciente → ficha), recebe cor e senha por cálculo do sistema, gera chamadas e termina num estado final. Toda alteração fica na auditoria.</p>
+      <p>Detalhes: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/modelo-de-dados.md">modelo de dados e caminho funcional</a> · ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/dicionario-de-dados.md">dicionário de dados e DER</a>.</p>
+
+      <h2 id="api">8. API</h2>
+      <ul>
+        <li>REST + JSON em 5 grupos (Autenticacao, Pacientes, Triagem, Fila, Cadastros), cada um com URL base no <code>.env</code>.</li>
+        <li>Protegidos: <code>Authorization: Bearer &lt;token&gt;</code>. Públicos: Totem (com chave do dispositivo), login, redefinição de senha e painel.</li>
+        <li>Erros: <code>{"code": "ERROR_CODE_...", "message": "..."}</code>, com 400, 401, 403, 404, 429 (limite do plano) e 500.</li>
+      </ul>
+      <p>Referência: ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/contratos-api.md">contratos de API</a> · ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/mapa-telas-api.md">mapa tela → estado → API</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/erros-e-metricas.md">tratamento de erros</a>.</p>
+
+      <h2 id="configuracao">9. Configuração e segredos</h2>
+      <div class="tabela"><table>
+        <thead><tr><th>Onde</th><th>O quê</th></tr></thead>
+        <tbody>
+          <tr><td>Xano → Environment Variables</td><td><code>TOKEN_TTL_SEGUNDOS</code>, <code>INATIVIDADE_SEGUNDOS</code>, <code>CODIGO_TTL_SEGUNDOS</code>, <code>CODIGO_REENVIO_SEGUNDOS</code>, <code>CODIGO_TENTATIVAS</code>, <code>BREVO_API_KEY</code>, <code>BREVO_REMETENTE</code>, <code>TOTEM_CHAVE</code></td></tr>
+          <tr><td><code>frontend/.env</code> (fora do Git)</td><td>URLs dos 5 grupos de API e <code>TOTEM_CHAVE</code></td></tr>
+          <tr><td>GitHub → Secrets</td><td>Credencial do Xano CLI para o CI (<code>XANO_CLI_CONFIG_YAML</code>)</td></tr>
+          <tr><td>Tabela <code>parametro</code></td><td>16 parâmetros de regra editáveis na tela Parâmetros (mais 1 interno)</td></tr>
+        </tbody>
+      </table></div>
+      <p>Detalhes: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/configuracao-e-regras.md">configuração, segredos e regras no código</a>.</p>
+
+      <h2 id="desenvolvimento">10. Ambiente de desenvolvimento</h2>
+<pre><code>git clone https://github.com/leonardo-sferreira/ps-fila-prioritaria.git &amp;&amp; cd ps-fila-prioritaria
+npm install -g @fission-ai/openspec @xano/cli
+cd frontend &amp;&amp; python -m venv .venv &amp;&amp; .\.venv\Scripts\Activate.ps1   # Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env    # preencher as URLs do Xano
+reflex run              # http://localhost:3000</code></pre>
+      <p>Requisitos: Python 3.12+, Node 20+, acesso ao workspace do Xano (pedir ao PO). Detalhes: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/guia-de-desenvolvimento.md">guia de desenvolvimento</a> e <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/CONTRIBUTING.md">CONTRIBUTING</a>.</p>
+
+      <h2 id="operacao">11. Entrega e operação</h2>
+      <pre class="mermaid">
+flowchart LR
+    B[Branch] --> X[Xano: dry-run e push restrito] --> PR[Pull Request] --> CI{CI: 6 jobs} -->|verde| MG[Merge na main] --> RX[reflex run]
+      </pre>
+      <div class="tabela"><table>
+        <thead><tr><th>Assunto</th><th>Resumo</th></tr></thead>
+        <tbody>
+          <tr><td>Ambientes</td><td>Xano <code>v1</code> (único banco; dados de teste sintéticos e removidos pelos testes); Reflex local; CI no GitHub Actions; esta documentação no GitHub Pages</td></tr>
+          <tr><td>Publicação no Xano</td><td>Sempre <code>--dry-run</code> antes; <code>--force -i &lt;arquivos alterados&gt;</code>; investigar UPDATE inesperado</td></tr>
+          <tr><td>Rollback</td><td>Republicar o <code>.xs</code> de um commit anterior; reverter o PR; parâmetros pela tela</td></tr>
+          <tr><td>Depuração</td><td>Mensagem na tela → contratos de API → Request History do Xano → função → auditoria</td></tr>
+        </tbody>
+      </table></div>
+      <p>Anexos: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/deploy-e-ambientes.md">deploy e ambientes</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/runbooks-e-depuracao.md">runbooks</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/erros-e-metricas.md">erros e métricas</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/validacoes-operacionais.md">validações operacionais</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/suporte-e-governanca.md">suporte e governança</a>.</p>
+
+      <h2 id="testes">12. Testes realizados</h2>
+      <h3>Estratégia</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Suíte</th><th>Tipo</th><th>Casos</th><th>Onde roda</th></tr></thead>
+        <tbody>
+          <tr><td><code>reflex</code></td><td>Unitário dos estados das telas, API simulada</td><td>297</td><td>CI e local</td></tr>
+          <tr><td><code>xano-static</code></td><td>Contratos lidos dos <code>.xs</code></td><td>13</td><td>CI e local</td></tr>
+          <tr><td><code>xano-safe</code></td><td>Funções puras executadas no Xano</td><td>97</td><td>CI</td></tr>
+          <tr><td><code>controlled</code></td><td>Integração ao vivo na <code>v1</code> com cenário sintético</td><td>33</td><td>Local, com autorização</td></tr>
+          <tr><td><code>e2e</code></td><td>Navegador (Playwright) nas telas públicas</td><td>2</td><td>CI</td></tr>
+          <tr><td><code>autotestes</code></td><td>Infraestrutura de evidências</td><td>42</td><td>CI e local</td></tr>
+          <tr><td><strong>Total</strong></td><td></td><td><strong>484</strong></td><td></td></tr>
+        </tbody>
+      </table></div>
+      <p>Catálogo com entrada e saída esperada de cada caso: ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/testes/catalogo-de-testes.md">catálogo de testes</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/testes/estrategia-de-testes.md">estratégia de testes</a>.</p>
+      <h3>Validação final (20/11/2026, <code>main</code>)</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Verificação</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>Suíte <code>reflex</code></td><td><span class="etiqueta ok">298 aprovados</span> 0 falhas</td></tr>
+          <tr><td>Suíte <code>xano-static</code></td><td><span class="etiqueta ok">13 aprovados</span></td></tr>
+          <tr><td>Suíte <code>xano-safe</code> (CI)</td><td>96 de 97 aprovados por rodada nas execuções com fila; o erro restante era instabilidade do CLI do Xano sob carga, corrigida no executor (PR #71)</td></tr>
+          <tr><td>E2E público (CI)</td><td><span class="etiqueta ok">Aprovado</span></td></tr>
+          <tr><td><code>openspec validate --specs</code></td><td><span class="etiqueta ok">22 de 22</span></td></tr>
+          <tr><td><code>reflex compile --dry</code></td><td><span class="etiqueta ok">Todas as telas compilam</span></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Testes ao vivo na <code>v1</code></h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Teste</th><th>O que comprovou</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td><code>tests/api/test_painel.py</code></td><td>Painel sem login e sem chave de dado pessoal; filtro; Vermelha antes de Amarela; chamada igual à primeira prevista (CA11); repetição; desistência; 3 aguardando mostram 3 e 8 mostram 5; ticket e rechamada</td><td><span class="etiqueta ok">2 testes, 9 verificações</span></td></tr>
+          <tr><td><code>tests/api/test_acompanhamento.py</code></td><td>Só o Administrador acessa; fila geral na ordem; detalhe com ajuste e duas tentativas; sessão encerrada sai da equipe; auditoria paginada e filtrada; <code>me/status</code></td><td><span class="etiqueta ok">2 testes, 10 verificações</span></td></tr>
+          <tr><td><code>tests/api/test_chamada.py</code></td><td>Dois médicos ao mesmo tempo recebem fichas diferentes; repetição, reentrada, desistência e comparecimento</td><td><span class="etiqueta ok">Aprovado</span></td></tr>
+          <tr><td>Login concorrente</td><td>O mesmo código enviado duas vezes ao mesmo tempo abre uma única sessão (defeito reproduzido antes da correção)</td><td><span class="etiqueta ok">3 execuções seguidas</span></td></tr>
+        </tbody>
+      </table></div>
+      <h3>Validações manuais do PO (20/11/2026)</h3>
+      <ul>
+        <li>Totem → pré-triagem → triagem → chamada do médico, acompanhado nos painéis: <span class="etiqueta ok">aprovado</span></li>
+        <li>Destaque e aviso sonoro nos painéis: <span class="etiqueta ok">aprovado</span></li>
+        <li>Fluxo do plantão com o Administrador acompanhando: <span class="etiqueta ok">aprovado</span></li>
+        <li>Dashboard e fila geral com dados reais: <span class="etiqueta ok">aprovado</span></li>
+        <li>Seletor de status da Recepção: <span class="etiqueta ok">aprovado</span></li>
+      </ul>
+
+      <h2 id="governanca">13. Governança e responsáveis</h2>
+      <div class="tabela"><table>
+        <thead><tr><th>Pessoa</th><th>Papel</th></tr></thead>
+        <tbody>
+          <tr><td>Leonardo dos Santos Ferreira</td><td>Product Owner: regras de negócio, aceite, documentação, esquema do banco, publicação no Xano e merges</td></tr>
+          <tr><td>Luisa Jeronimo de Lima</td><td>Backend e QA: infraestrutura de testes, evidências e CI</td></tr>
+          <tr><td>Leonardo Machado</td><td>Backend</td></tr>
+          <tr><td>Nicolas Rissato</td><td>Frontend</td></tr>
+          <tr><td>Gustavo Garcia</td><td>Frontend</td></tr>
+        </tbody>
+      </table></div>
+      <p>A <code>main</code> só recebe código por PR com CI verde; toda funcionalidade passa por uma change do OpenSpec; mudança de esquema só com o PO; planejamento no Trello, com sprints semanais.</p>
+
+      <h2 id="limitacoes">14. Limitações conhecidas, riscos e dívida técnica</h2>
+      <div class="tabela"><table>
+        <thead><tr><th>#</th><th>Item</th><th>Impacto</th><th>Recomendação</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>Plano gratuito do Xano: 10 requisições a cada 20 s</strong></td><td>Painéis e telas disputam o limite; erro 429; jobs do CI lentos quando vários PRs rodam juntos</td><td>Plano pago para uso real; CI com uma execução por PR</td></tr>
+          <tr><td>2</td><td><strong>Sem produção nem homologação</strong>; um só banco (<code>v1</code>)</td><td>Testes ao vivo escrevem dados sintéticos no mesmo banco</td><td>Branch de dados para testes; hospedar o Reflex</td></tr>
+          <tr><td>3</td><td><code>main</code> sem proteção técnica</td><td>Revisão combinada, não imposta</td><td>Ativar a proteção com checks obrigatórios</td></tr>
+          <tr><td>4</td><td>Três tabelas divergem do Xano (<code>contador_senha</code>, <code>ficha_atendimento</code>, <code>sintoma</code>)</td><td>Publicar pode sobrescrever o esquema real</td><td>Conciliar e versionar</td></tr>
+          <tr><td>5</td><td>Alterações feitas direto no Xano</td><td>Repositório atrás do publicado</td><td>Sempre <code>--dry-run</code> e comparar com <code>xano workspace pull</code></td></tr>
+          <tr><td>6</td><td><code>GET /painel</code> ainda calcula <code>previsoes</code></td><td>Consultas desnecessárias</td><td>Remover o cálculo e ajustar o teste</td></tr>
+          <tr><td>7</td><td>Sala do painel é a atual do médico</td><td>Trocar a sala muda as últimas chamadas</td><td>Gravar <code>sala_id</code> em <code>chamada</code></td></tr>
+          <tr><td>8</td><td>Sem monitoramento ou alertas</td><td>Falhas percebidas pelos usuários</td><td>Alertas de 5xx e 429</td></tr>
+          <tr><td>9</td><td>Credenciais <code>TEST_*</code> desatualizadas</td><td>6 testes de login com contas reais não rodam</td><td>Atualizar as senhas de teste</td></tr>
+          <tr><td>10</td><td>Autotestes com <code>os.killpg</code></td><td>Falham só no Windows</td><td>Tornar o helper portável</td></tr>
+          <tr><td>11</td><td>Casos antigos do catálogo sem descrição</td><td>Coluna “Entrada” vazia nesses casos</td><td>Completar o objetivo</td></tr>
+        </tbody>
+      </table></div>
+
+      <h2 id="primeira-semana">15. Primeira semana de quem assume o projeto</h2>
+      <ol class="passos">
+        <li>Ler este documento e o <a href="usuario.html">Manual do usuário</a>.</li>
+        <li>Pedir ao PO o acesso ao workspace do Xano, ao GitHub e ao Trello.</li>
+        <li>Configurar o ambiente e rodar o sistema (<a href="#desenvolvimento">seção 10</a>).</li>
+        <li>Percorrer o fluxo completo com os 4 perfis: Totem, triagem, médico, painéis e Administrador.</li>
+        <li>Rodar as suítes <code>reflex</code> e <code>xano-static</code> e ler um relatório de evidências.</li>
+        <li>Ler as especificações em <code>openspec/specs/</code> que vai mexer, e o <code>design.md</code> da change correspondente.</li>
+        <li>Fazer uma mudança pequena seguindo o fluxo completo: change → branch → Xano (dry-run) → testes → PR → <code>gerar_docs.py</code>.</li>
+        <li>Revisar a <a href="#limitacoes">seção 14</a> e escolher, com o PO, o que atacar primeiro.</li>
+      </ol>
+
+      <h2 id="anexos">16. Anexos</h2>
+      <div class="cartoes">
+        <div class="cartao"><h3>Manutenção</h3><p>
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/arquitetura.md">Arquitetura</a> ·
+          ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/mapa-telas-api.md">Mapa de telas</a> ·
+          ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/contratos-api.md">Contratos de API</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/configuracao-e-regras.md">Configuração</a> ·
+          ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/funcoes-xano.md">Funções</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/modelo-de-dados.md">Modelo de dados</a> ·
+          ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/dicionario-de-dados.md">Dicionário e DER</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/manutencao/guia-de-desenvolvimento.md">Guia de desenvolvimento</a></p></div>
+        <div class="cartao"><h3>Sustentação</h3><p>
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/deploy-e-ambientes.md">Deploy</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/runbooks-e-depuracao.md">Runbooks</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/erros-e-metricas.md">Erros e métricas</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/validacoes-operacionais.md">Validações</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/sustentacao/suporte-e-governanca.md">Suporte</a></p></div>
+        <div class="cartao"><h3>Evolução</h3><p>
+          ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/evolucao/dependencias.md">Dependências</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/evolucao/testes-de-regressao.md">Regressão</a> ·
+          ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/evolucao/changelog.md">Changelog</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/evolucao/guia-de-migracao.md">Migração</a></p></div>
+        <div class="cartao"><h3>Testes e referência</h3><p>
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/testes/estrategia-de-testes.md">Estratégia</a> ·
+          ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/testes/catalogo-de-testes.md">Catálogo</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/referencia/regras-de-negocio.md">Regras detalhadas</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/referencia/telas-e-campos.md">Telas e campos</a> ·
+          <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/domain-model.md">Modelo de domínio</a></p></div>
+      </div>
+    </main>
+  </div>
+
+  <footer class="rodape">
+    Prioriza · Documentação técnica · Fonte: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/README.md">docs/tecnica/README.md</a>
+  </footer>
+</body>
+</html>
