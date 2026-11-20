@@ -45,7 +45,10 @@ A tela `/admin` passa a abrir com o mesmo painel do plantão da Recepção/Triag
 - Atualiza sozinho a cada 30 s, como o painel da Recepção.
 - **Por quê:** o PO pediu que a tela inicial do Administrador tenha o mesmo dashboard da Recepção, mais detalhado. Indicadores estatísticos, antes fora do escopo, entram só nesse recorte do dia.
 
-### D7. "Visualizar como" Recepção ou Médico (decisão do PO em 11/11/2026)
+### D7. "Visualizar como" Recepção ou Médico (decisão do PO em 11/11/2026; **cancelada pelo PO em 20/11/2026**)
+
+> Cancelada em 20/11/2026: o Administrador já acompanha a operação pelo dashboard, pela fila geral, pelo detalhe da ficha e pela auditoria, todos só leitura. Nada foi implementado; o texto abaixo fica só como registro.
+
 O Administrador pode abrir as telas da Recepção/Triagem e do Médico só para ver, sem trocar o próprio perfil. A tela mostra uma faixa "Visualizando como …" e as ações ficam desabilitadas; o backend continua recusando ações de quem não é do perfil, então nada muda mesmo que um botão escape. Detalhamento na próxima fatia desta change (seção 6 das tasks).
 
 ## Riscos / Compromissos
@@ -66,4 +69,4 @@ Recorte autorizado da Sprint 4: concluir o seletor da Recepção e acrescentar t
 - StatusRecepcaoState usa api.py e AuthState existentes. A página /recepcao consulta na abertura; renderização e abertura nunca fazem PATCH. Disponível, Pausa e Ausente são as únicas opções manuais; Em atendimento continua automático no Médico.
 - Aceitar mudança somente após HTTP 200 e status correspondente ao solicitado. Em timeout, erro de conexão ou resposta incerta, não repetir, não anunciar sucesso e orientar atualização. Não presumir o estado anterior após resultado incerto. Publicar o estado de carregamento antes do HTTP, liberar o bloqueio mesmo no encerramento do evento e ignorar uma repetição do status já confirmado. Bloquear reentrada durante consulta/envio e validar o perfil local sem substituir a autorização do Xano.
 - Os testes novos usam transporte HTTP simulado. Contratos XS estáticos conferem permissões, sessão inicial, enum manual e transições médicas existentes; não comprovam execução do engine, rollback ou bloqueios concorrentes.
-- GET admin/fila-geral, detalhe administrativo, polling de 10 s e Visualizar como permanecem nas tarefas próprias, fora desta fatia. O dashboard e a auditoria existentes são preservados.
+- GET admin/fila-geral, detalhe administrativo, polling de 10 s e Visualizar como (este cancelado em 20/11/2026) permanecem nas tarefas próprias, fora desta fatia. O dashboard e a auditoria existentes são preservados.
