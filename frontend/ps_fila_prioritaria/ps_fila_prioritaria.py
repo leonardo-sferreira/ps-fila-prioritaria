@@ -24,6 +24,7 @@ from ps_fila_prioritaria.estados.fila_pre_triagem import FilaTicketsState
 from ps_fila_prioritaria.estados.medico import ImpressaoMedicoState, MedicoState
 from ps_fila_prioritaria.estados.plantao import PlantaoState
 from ps_fila_prioritaria.estados.totem import TotemState
+from ps_fila_prioritaria.estados.painel import PainelState
 from ps_fila_prioritaria.estados.usuarios import UsuariosState
 from ps_fila_prioritaria.paginas.autenticacao import (
     index,
@@ -57,6 +58,7 @@ from ps_fila_prioritaria.paginas.pacientes import pagina_recepcao_pacientes
 from ps_fila_prioritaria.paginas.plantao import area_recepcao
 from ps_fila_prioritaria.paginas.privacidade import privacidade
 from ps_fila_prioritaria.paginas.totem import totem
+from ps_fila_prioritaria.paginas.painel import painel
 from ps_fila_prioritaria.paginas.usuarios import pagina_usuarios
 
 
@@ -70,6 +72,7 @@ app.add_page(senha_nova, route="/senha/nova", title="Nova senha", on_load=SenhaS
 app.add_page(senha_sucesso, route="/senha/sucesso", title="Senha redefinida")
 app.add_page(privacidade, route="/privacidade", title="Aviso de privacidade")
 app.add_page(totem, route="/totem", title="Totem de autoatendimento", on_load=TotemState.concluir)
+app.add_page(painel, route="/painel", title="Painel de chamadas", on_load=PainelState.atualizar)
 app.add_page(carregando, route="/sair/inatividade", title="Sessão encerrada", on_load=AuthState.sair_por_inatividade)
 app.add_page(area_recepcao, route="/recepcao", title="Recepção/Triagem", on_load=[AuthState.verificar_sessao("RECEPCAO_TRIAGEM"), PlantaoState.carregar, StatusRecepcaoState.carregar])
 app.add_page(area_medico, route="/medico", title="Médico", on_load=[AuthState.verificar_sessao("MEDICO"), MedicoState.carregar, MeusPlantoesState.carregar])

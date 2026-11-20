@@ -214,6 +214,25 @@ O Totem fica em `http://localhost:3000/totem` e não pede login. Para emitir tic
 
 Roteiro manual: abra `/totem`, toque em cada tipo e confira o código na tela (`C-001`, `P-001`, `N-001` no primeiro do dia), depois toque em **Concluir**. Com a chave errada no `.env`, a tela mostra "Não foi possível emitir o ticket." e nenhum ticket é criado. Os tickets emitidos aparecem na fila da Recepção/Triagem (`/recepcao/fila`).
 
+### Painel público
+
+O painel da sala de espera fica em `http://localhost:3000/painel` e não pede login. Ele mostra a senha chamada pelo médico (com especialidade, Sala quando o médico tem uma, e "2ª chamada" na repetição), o último ticket chamado na triagem, as 4 chamadas anteriores e a previsão das próximas senhas de cada especialidade, pela mesma regra do "Chamar próximo". Nunca mostra nome, CPF ou dado clínico. Atualiza sozinho a cada 3 segundos. Chamadas e tickets ficam na tela por um tempo desde a chamada (parâmetro "Tempo que uma chamada fica no painel", padrão 2 horas), o que funciona com o PS aberto 24 horas. A Sala é a que está vinculada ao médico no cadastro.
+
+Para usar numa TV:
+
+1. Abra `/painel` no navegador da TV. Para mostrar só algumas especialidades, use as siglas no endereço: `/painel?especialidades=CLI,ORT`.
+2. Coloque em tela cheia (F11).
+3. Toque uma vez em **Toque para ativar o som**: o navegador só libera o aviso sonoro depois de um toque na página.
+
+Roteiro manual:
+
+1. Com o painel aberto em uma janela, chame um paciente em `/medico` em outra: em até 5 s a senha aparece em destaque, piscando, com o aviso sonoro, e sai da previsão da especialidade.
+2. Repita a chamada no médico: a senha volta a piscar com "2ª chamada".
+3. Chame um ticket na fila da triagem (`/recepcao/fila`): o painel mostra "Triagem — Senha C-004" (ou o ticket chamado).
+4. Abra `/painel?especialidades=CAR`: só Cardiologia aparece na chamada atual, nas últimas e na previsão.
+5. Desligue a rede por uns 30 s: o painel continua com a última informação e mostra "Reconectando…"; ao voltar a rede, volta a atualizar sozinho.
+6. Em nenhum momento aparece nome, CPF, nascimento, sintomas ou sinais vitais.
+
 Para os testes de integração do login, coloque no `frontend/.env` (nunca no repositório) as credenciais `TEST_ADMIN_*`, `TEST_RECEPCAO_*` e `TEST_MEDICO_*` de usuários de teste de cada perfil. Sem elas, esses testes são ignorados.
 
 Detalhes do ambiente, do Xano e do fluxo de trabalho no [guia de contribuição](CONTRIBUTING.md).

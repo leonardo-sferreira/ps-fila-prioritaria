@@ -56,3 +56,11 @@
   }
   .dark body { color: #000000; }
 }
+
+/* Painel público (add-painel-publico, D2): destaque curto a cada chamada nova ou repetida. */
+@keyframes ps-painel-pisca {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+  15%, 45%, 75% { transform: scale(1.03); box-shadow: 0 0 0 14px rgba(255, 255, 255, 0.35); }
+  30%, 60% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+.ps-painel-destaque { animation: ps-painel-pisca 2.4s ease-in-out 1; }

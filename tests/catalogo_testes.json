@@ -12254,6 +12254,206 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Destino com e sem Sala",
+      "objetivo": "Mostra 'Especialidade — Sala N' quando o médico tem Sala e só a especialidade quando não tem.",
+      "resultado_esperado": "Mostra 'Especialidade — Sala N' quando o médico tem Sala e só a especialidade quando não tem.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0272",
+      "seletor": "frontend/tests/test_painel_state.py::test_destino_com_e_sem_sala",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Indicação de repetição",
+      "objetivo": "'2ª chamada' só aparece a partir da segunda tentativa.",
+      "resultado_esperado": "'2ª chamada' só aparece a partir da segunda tentativa.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0273",
+      "seletor": "frontend/tests/test_painel_state.py::test_tentativa_so_aparece_na_repeticao",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Formatação do painel para a TV",
+      "objetivo": "Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas.",
+      "resultado_esperado": "Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0274",
+      "seletor": "frontend/tests/test_painel_state.py::test_montar_painel_formata_para_a_tv",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Painel sem chamadas",
+      "objetivo": "Sem chamada atual, ticket ou previsão, o painel monta vazio sem erro.",
+      "resultado_esperado": "Sem chamada atual, ticket ou previsão, o painel monta vazio sem erro.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0275",
+      "seletor": "frontend/tests/test_painel_state.py::test_painel_vazio",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Detecção de chamada nova",
+      "objetivo": "Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não.",
+      "resultado_esperado": "Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0276",
+      "seletor": "frontend/tests/test_painel_state.py::test_novidade_muda_com_chamada_repeticao_e_ticket",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Filtro de especialidades pelo endereço",
+      "objetivo": "?especialidades=car, ort vira CAR,ORT; vazio exibe todas.",
+      "resultado_esperado": "?especialidades=car, ort vira CAR,ORT; vazio exibe todas.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0277",
+      "seletor": "frontend/tests/test_painel_state.py::test_filtro_do_endereco",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Painel público",
+      "objetivo": "Painel sem token e sem dado pessoal; filtro por especialidade; Vermelha antes da Amarela; chamada igual à primeira prevista (CA11) e vira a atual; repetição como 2ª chamada; desistência sai da previsão.",
+      "resultado_esperado": "Painel sem token e sem dado pessoal; filtro por especialidade; Vermelha antes da Amarela; chamada igual à primeira prevista (CA11) e vira a atual; repetição como 2ª chamada; desistência sai da previsão.",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0143",
+      "seletor": "tests/api/test_painel.py::PainelTest.test_painel_publico",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Tamanho da previsão e ticket da triagem",
+      "objetivo": "Com 3 aguardando, a previsão mostra só 3; com 8, exatamente 5; ticket chamado na triagem aparece e a rechamada volta como 2ª chamada (pacientes e ticket fictícios, apagados no fim).",
+      "resultado_esperado": "Com 3 aguardando, a previsão mostra só 3; com 8, exatamente 5; ticket chamado na triagem aparece e a rechamada volta como 2ª chamada (pacientes e ticket fictícios, apagados no fim).",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0144",
+      "seletor": "tests/api/test_painel.py::PainelTest.test_tamanho_da_previsao_e_ticket_da_triagem",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }
