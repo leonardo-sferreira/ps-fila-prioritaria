@@ -36,11 +36,13 @@ query "auth/login/verificar" verb=POST {
       error = "Usuário inativo. Procure o administrador."
     }
 
+    // Primeiro confere sem consumir: o código errado conta tentativa fora da transação (não é desfeito).
     function.run "auth/conferir_codigo" {
       input = {
         usuario_id: $usuario.id
         finalidade: "LOGIN"
         codigo    : $input.codigo
+        consumir  : false
       }
     } as $conferido
 
@@ -53,19 +55,59 @@ query "auth/login/verificar" verb=POST {
       error = "Variável de ambiente TOKEN_TTL_SEGUNDOS não configurada."
     }
 
-    security.create_auth_token {
-      table = "usuario"
-      id = $usuario.id
-      extras = {}
-      expiration = $ttl
-    } as $token
+    db.query codigo_verificacao {
+      where = $db.codigo_verificacao.usuario_id == $usuario.id && $db.codigo_verificacao.finalidade == "LOGIN" && $db.codigo_verificacao.usado_em == null
+      sort = {criado_em: "desc"}
+      return = {type: "single"}
+    } as $conferido_aberto
 
-    db.add sessao {
-      data = {
-        usuario_id: $usuario.id,
-        login_em  : now,
-        expira_em : now|add_secs_to_timestamp:$ttl,
-        status_operacional: ($usuario.perfil == "RECEPCAO_TRIAGEM") ? "DISPONIVEL" : null
+    precondition ($conferido_aberto != null && $conferido_aberto.codigo_hash == ($input.codigo|hmac_sha256:("ps-codigo:" ~ ($usuario.id|to_text)))) {
+      error_type = "unauthorized"
+      error = "Código inválido ou expirado"
+    }
+
+    // Consumo atômico. A primeira escrita muda de fato a linha do código (tentativas + 1) e a trava até o fim da
+    // transação; uma verificação simultânea do mesmo código espera aqui, relê o código já usado e é recusada (a
+    // transação dela é desfeita). Ao consumir, as tentativas voltam ao valor anterior.
+    db.transaction {
+      stack {
+        db.edit codigo_verificacao {
+          field_name = "id"
+          field_value = $conferido_aberto.id
+          data = {tentativas: $conferido_aberto.tentativas + 1}
+        } as $codigo_travado
+
+        db.get codigo_verificacao {
+          field_name = "id"
+          field_value = $conferido_aberto.id
+        } as $aberto
+
+        precondition ($aberto != null && $aberto.usado_em == null && $aberto.expira_em > now) {
+          error_type = "unauthorized"
+          error = "Código inválido ou expirado"
+        }
+
+        db.edit codigo_verificacao {
+          field_name = "id"
+          field_value = $aberto.id
+          data = {usado_em: now, tentativas: $conferido_aberto.tentativas}
+        } as $consumido
+
+        security.create_auth_token {
+          table = "usuario"
+          id = $usuario.id
+          extras = {}
+          expiration = $ttl
+        } as $token
+
+        db.add sessao {
+          data = {
+            usuario_id: $usuario.id,
+            login_em  : now,
+            expira_em : now|add_secs_to_timestamp:$ttl,
+            status_operacional: ($usuario.perfil == "RECEPCAO_TRIAGEM") ? "DISPONIVEL" : null
+          }
+        }
       }
     }
   }

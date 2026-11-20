@@ -177,3 +177,16 @@ def test_usuario_inativo_nao_consegue_entrar(medico_sintetico):
     assert resposta.status_code >= 400
     assert "codigo_enviado" not in resposta.json() and "token" not in resposta.json()
     assert _cenario("CONSULTAR", m["marcador"])["sessoes_ativas"] == 0
+
+
+def test_mesmo_codigo_enviado_duas_vezes_ao_mesmo_tempo_abre_uma_sessao(medico_sintetico):
+    """Duas verificações simultâneas do mesmo código: só uma entra e só uma sessão é criada."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    m = medico_sintetico
+    corpo = {"email": m["email"], "codigo": m["codigo"]}
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        respostas = list(pool.map(lambda _: _chamar("POST", "/auth/login/verificar", json=corpo), range(2)))
+    codigos = sorted(r.status_code for r in respostas)
+    assert codigos[0] == 200 and codigos[1] == 401, [(r.status_code, r.text[:200]) for r in respostas]
+    assert _cenario("CONSULTAR", m["marcador"])["sessoes_ativas"] == 1
