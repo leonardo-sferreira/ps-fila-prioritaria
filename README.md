@@ -30,7 +30,7 @@ Em muitos prontos-socorros a fila ainda é organizada manualmente, por ordem de 
 | **Acesso da equipe** | Login por e-mail com perfil · redefinição de senha com código enviado por e-mail |
 | **Recepção/Triagem** | Fila pré-triagem por tipo de ticket · identificação e cadastro pelo CPF · ficha com sintomas e sinais vitais · classificação automática com ajuste manual justificado · especialidade sugerida e atribuída · senha e comprovante impresso |
 | **Médico** | Fila atribuída por elegibilidade · "Chamar próximo" sem duplicidade · 30 s entre chamadas, até 3 tentativas por oportunidade e uma reentrada ao fim da fila · Pausar/Retomar · encerrar plantão com fila zerada · impressão da ficha |
-| **Painel público** | Senha e sala da chamada em destaque · previsão das próximas 5 senhas · sem nome nem CPF |
+| **Painéis públicos** | Consultórios: senha e Sala da chamada em destaque e últimas chamadas · Triagem: ticket chamado e últimos tickets · sem nome nem CPF |
 | **Administrador** | Usuários e perfis · cadastros de Médicos e Recepção/Triagem · especialidades, sintomas e salas · disponibilidade por período · parâmetros e faixas de risco · acompanhamento da fila, da equipe e da auditoria |
 
 ## Como funciona
@@ -222,20 +222,27 @@ Roteiro manual: abra `/totem`, toque em cada tipo e confira o código na tela (`
 
 ### Painel público
 
-O painel da sala de espera fica em `http://localhost:3000/painel` e não pede login. Ele mostra a senha chamada pelo médico (com especialidade, Sala quando o médico tem uma, e "2ª chamada" na repetição), o último ticket chamado na triagem, as 4 chamadas anteriores e a previsão das próximas senhas de cada especialidade, pela mesma regra do "Chamar próximo". Nunca mostra nome, CPF ou dado clínico. Atualiza sozinho a cada 3 segundos. Chamadas e tickets ficam na tela por um tempo desde a chamada (parâmetro "Tempo que uma chamada fica no painel", padrão 2 horas), o que funciona com o PS aberto 24 horas. A Sala é a que está vinculada ao médico no cadastro.
+São duas telas públicas, sem login, uma para cada TV (decisão do PO), no padrão da tela 5 do Figma:
+
+- **Consultórios** (`http://localhost:3000/painel/medico`): cartão "Chamando agora" com a senha chamada pelo médico e "Dirija-se à {especialidade} · {Sala} · {n}ª chamada", e a tabela das 4 chamadas anteriores (senha, especialidade, Sala e horário).
+- **Triagem** (`http://localhost:3000/painel/triagem`): cartão "Chamando agora" com o ticket chamado pela Recepção/Triagem e a tabela dos 4 tickets chamados antes.
+
+`/painel` só mostra os dois endereços. Nenhuma tela mostra a previsão das próximas senhas, nome, CPF ou dado clínico. As telas atualizam sozinhas a cada 5 segundos. Chamadas e tickets ficam na tela por um tempo desde a chamada (parâmetro "Tempo que uma chamada fica no painel", padrão 2 horas), o que funciona com o PS aberto 24 horas. A Sala é a que está vinculada ao médico no cadastro.
+
+**Limite do Xano:** o plano gratuito aceita 10 requisições a cada 20 segundos para o sistema inteiro, e cada tela de painel aberta faz 4 nesse tempo. Deixe aberta só uma aba de cada painel; com mais, a equipe pode receber erro de limite e o painel mostra "Reconectando…".
 
 Para usar numa TV:
 
-1. Abra `/painel` no navegador da TV. Para mostrar só algumas especialidades, use as siglas no endereço: `/painel?especialidades=CLI,ORT`.
+1. Abra `/painel/medico` ou `/painel/triagem` no navegador da TV. No painel dos consultórios, para mostrar só algumas especialidades, use as siglas no endereço: `/painel/medico?especialidades=CLI,ORT`.
 2. Coloque em tela cheia (F11).
 3. Toque uma vez em **Toque para ativar o som**: o navegador só libera o aviso sonoro depois de um toque na página.
 
 Roteiro manual:
 
-1. Com o painel aberto em uma janela, chame um paciente em `/medico` em outra: em até 5 s a senha aparece em destaque, piscando, com o aviso sonoro, e sai da previsão da especialidade.
-2. Repita a chamada no médico: a senha volta a piscar com "2ª chamada".
-3. Chame um ticket na fila da triagem (`/recepcao/fila`): o painel mostra "Triagem — Senha C-004" (ou o ticket chamado).
-4. Abra `/painel?especialidades=CAR`: só Cardiologia aparece na chamada atual, nas últimas e na previsão.
+1. Abra `/painel/medico` numa janela e chame um paciente em `/medico` em outra: em até 5 s a senha aparece em "Chamando agora", com destaque e aviso sonoro, e a anterior desce para "Últimas chamadas".
+2. Repita a chamada no médico: o cartão pisca de novo com "2ª chamada".
+3. Abra `/painel/triagem` e chame um ticket na fila da triagem (`/recepcao/fila`): o ticket aparece em "Chamando agora" (por exemplo, `C-004`); chamando outro, o anterior desce para "Últimos tickets chamados".
+4. Abra `/painel/medico?especialidades=CAR`: só chamadas de Cardiologia aparecem.
 5. Desligue a rede por uns 30 s: o painel continua com a última informação e mostra "Reconectando…"; ao voltar a rede, volta a atualizar sozinho.
 6. Em nenhum momento aparece nome, CPF, nascimento, sintomas ou sinais vitais.
 
