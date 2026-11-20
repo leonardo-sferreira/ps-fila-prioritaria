@@ -275,7 +275,19 @@ Cada caso tem ID permanente, entrada e saída esperada: ⚙ [catálogo de testes
 | Dashboard e fila geral com dados reais | Aprovado |
 | Seletor de status da Recepção | Aprovado |
 
-Roteiros manuais ainda sem registro de execução: privacidade (card 105, passos 1 a 3) e os cards de teste 101 a 104 e 106 no Trello ([roteiros](../testes-roteiros-sprint5.md)).
+### Roteiro de privacidade (card 105), executado em navegador real (20/11/2026)
+
+Chromium (Playwright) com o sistema ligado ao Xano `v1` e paciente fictício de cenário encerrado no fim.
+
+| Passo | Resultado |
+|---|---|
+| CPF mascarado na ficha (`***.674.464-**`), número completo ausente da tela | Aprovado |
+| CPF completo no campo de busca de "Identificar paciente" | Aprovado |
+| "Aviso de privacidade" abre `/privacidade` pelo rodapé do login, sem entrar | Aprovado |
+| Sem uso por 1 h (relógio do navegador adiantado): volta ao login com "Sua sessão foi encerrada por inatividade." e o token é apagado | Aprovado |
+| Controle: com movimento do mouse, a sessão continua | Aprovado |
+
+Roteiros manuais ainda sem registro de execução: cards de teste 101 a 104 e passos 3, 4, 5 e 7 do card 106 no Trello ([roteiros](../testes-roteiros-sprint5.md)).
 
 ## 13. Governança e responsáveis
 
