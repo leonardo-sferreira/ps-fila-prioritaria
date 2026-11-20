@@ -4,8 +4,8 @@ Usa o cenário sintético da fila (fila/teste_criar_cenario: duas fichas de Card
 A-CAR-<marcador> Amarela, e dois médicos). O painel é consultado sem token. No fim, fila/teste_encerrar_cenario com
 finalizar_pendentes fecha as fichas do cenário, mesmo se o teste parar no meio.
 
-Fora daqui: o tamanho da previsão (8 e 3 elegíveis) é coberto pelos testes nativos de fila/prever_fila, e o ticket
-da triagem não é chamado aqui para não mexer na fila real da pré-triagem; o teste confere só o formato dele.
+O tamanho da previsão (3 e 8 aguardando) e o ticket da triagem usam pacientes e um ticket fictícios de
+fila/teste_painel_extras (ticket com número a partir de 900), apagados no fim.
 """
 
 import json
@@ -160,6 +160,48 @@ class PainelTest(unittest.TestCase):
                 final = self.painel(especialidades="CAR").json()
                 self.assertNotIn(self.vermelha, self.previsao(final, "CAR"))
                 self.assertIn(self.amarela, self.previsao(final, "CAR"))
+
+    def test_tamanho_da_previsao_e_ticket_da_triagem(self):
+        """Pacientes e ticket fictícios de fila/teste_painel_extras; LIMPAR roda mesmo se o teste falhar."""
+        estado = {"ticket_id": None}
+
+        def limpar():
+            funcao("fila/teste_painel_extras", {"acao": "LIMPAR", "marcador": self.marcador, "ticket_id": estado["ticket_id"]})
+
+        self.addCleanup(limpar)
+        inicial = self.painel().json()
+        # A especialidade com menos senhas previstas (fora a Cardiologia do cenário) recebe as fichas fictícias.
+        candidatas = [p for p in inicial["previsoes"] if p["sigla"] != "CAR"]
+        alvo = min(candidatas, key=lambda p: len(p["senhas"]))
+        sigla, ja_tinha = alvo["sigla"], len(alvo["senhas"])
+
+        def extras(quantidade: int):
+            criadas = funcao("fila/teste_painel_extras", {"acao": "FICHAS", "marcador": self.marcador, "sigla": sigla, "quantidade": quantidade})
+            self.assertEqual(criadas["status"], "ok", criadas)
+
+        if ja_tinha <= 3:
+            with self.subTest("com 3 aguardando, mostra só as 3"):
+                if ja_tinha < 3:
+                    extras(3 - ja_tinha)
+                self.assertEqual(len(self.previsao(self.painel(especialidades=sigla).json(), sigla)), 3)
+
+            with self.subTest("com 8 aguardando, mostra exatamente 5 (tamanho_previsao padrão)"):
+                extras(5)
+                self.assertEqual(len(self.previsao(self.painel(especialidades=sigla).json(), sigla)), 5)
+
+        with self.subTest("ticket chamado na triagem aparece e a rechamada volta como 2ª chamada"):
+            ticket = funcao("fila/teste_painel_extras", {"acao": "TICKET", "marcador": self.marcador})
+            self.assertEqual(ticket["status"], "ok", ticket)
+            estado["ticket_id"] = ticket["result"]["ticket_id"]
+            triagem = self.painel().json()["triagem"]
+            self.assertEqual((triagem["ticket_id"], triagem["tipo"], triagem["numero"], triagem["tentativa"]),
+                             (estado["ticket_id"], "NORMAL", ticket["result"]["numero"], 1))
+            self.assertGreaterEqual(triagem["numero"], 900)
+            rechamado = funcao("fila/teste_painel_extras", {"acao": "RECHAMAR", "marcador": self.marcador, "ticket_id": estado["ticket_id"]})
+            self.assertEqual(rechamado["status"], "ok", rechamado)
+            depois = self.painel().json()["triagem"]
+            self.assertEqual((depois["ticket_id"], depois["tentativa"]), (estado["ticket_id"], 2))
+            self.assertGreater(depois["chamado_em"], triagem["chamado_em"])
 
 
 if __name__ == "__main__":

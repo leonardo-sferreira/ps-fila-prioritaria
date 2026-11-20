@@ -105,9 +105,9 @@ def coluna_previsao(p: Any) -> rx.Component:
             rx.text("Fila vazia", color=APAGADO, font_size="clamp(14px, 1.3vw, 24px)"),
             rx.vstack(
                 rx.foreach(p["senhas"].to(list[dict[str, str]]), lambda s, i: rx.hstack(
-                    rx.text(i + 1, "º", color=APAGADO, font_size="clamp(14px, 1.3vw, 24px)", width="2.2em"),
+                    rx.text(i + 1, "º", color=APAGADO, font_size="clamp(14px, 1.3vw, 24px)", min_width="1.8em"),
                     rx.box(width="12px", height="12px", border_radius="50%", background=cor_de(s["cor"]), flex_shrink="0"),
-                    rx.text(s["senha"], color=TEXTO, font_size="clamp(16px, 1.6vw, 30px)", font_weight="600"),
+                    rx.text(s["senha"], color=TEXTO, font_size="clamp(16px, 1.6vw, 30px)", font_weight="600", white_space="nowrap"),
                     align="center", spacing="2")),
                 spacing="1",
             ),

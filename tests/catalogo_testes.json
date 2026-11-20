@@ -12429,6 +12429,31 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Tamanho da previsão e ticket da triagem",
+      "objetivo": "Com 3 aguardando, a previsão mostra só 3; com 8, exatamente 5; ticket chamado na triagem aparece e a rechamada volta como 2ª chamada (pacientes e ticket fictícios, apagados no fim).",
+      "resultado_esperado": "Com 3 aguardando, a previsão mostra só 3; com 8, exatamente 5; ticket chamado na triagem aparece e a rechamada volta como 2ª chamada (pacientes e ticket fictícios, apagados no fim).",
+      "componente": "Xano",
+      "classe_seguranca": "escrita_isolada",
+      "id": "CT-XANO-0144",
+      "seletor": "tests/api/test_painel.py::PainelTest.test_tamanho_da_previsao_e_ticket_da_triagem",
+      "suite": "controlled",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }
