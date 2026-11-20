@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="claro">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Manual do usuário — Prioriza</title>
+  <meta name="description" content="Como usar o Prioriza: telas por perfil, regras explicadas de forma simples e perguntas frequentes.">
+  <link rel="icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/estilo.css">
+  <script src="assets/app.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <header class="topo">
+    <button class="botao-icone abrir-menu" id="abrir-menu" type="button" aria-label="Abrir o menu">☰</button>
+    <a class="marca" href="index.html"><img src="assets/icone-branco.svg" alt=""><span>Prioriza<small>Manual do usuário</small></span></a>
+    <nav aria-label="Principal">
+      <a href="usuario.html" aria-current="page">Manual do usuário</a>
+      <a class="texto" href="tecnica.html">Documentação técnica</a>
+      <button class="botao-icone" id="alternar-tema" type="button" aria-label="Alternar tema">☾</button>
+    </nav>
+  </header>
+
+  <div class="pagina">
+    <aside class="menu-lateral" aria-label="Seções">
+      <h2>Neste manual</h2>
+      <ol>
+        <li><a href="#o-que-e">1. O que é o Prioriza</a></li>
+        <li><a href="#caminho">2. O caminho do paciente</a></li>
+        <li><a href="#acesso">3. Como acessar</a></li>
+        <li><a href="#paciente">4. Paciente: Totem e painéis</a></li>
+        <li><a href="#recepcao">5. Recepção/Triagem</a></li>
+        <li><a href="#medico">6. Médico</a></li>
+        <li><a href="#administrador">7. Administrador</a></li>
+        <li><a href="#regras">8. As regras, explicadas</a></li>
+        <li><a href="#privacidade">9. Privacidade e segurança</a></li>
+        <li><a href="#faq">10. Perguntas frequentes</a></li>
+        <li><a href="#palavras">11. Palavras das telas</a></li>
+      </ol>
+    </aside>
+
+    <main class="conteudo">
+      <h1>Manual do usuário</h1>
+      <p class="subtitulo">Para que serve o Prioriza, como cada pessoa usa as telas e quais regras ele segue, em linguagem simples.</p>
+      <div class="aviso"><p>Projeto acadêmico (Faculdade Impacta). As regras clínicas foram criadas para estudo e não substituem um protocolo real de triagem.</p></div>
+
+      <h2 id="o-que-e">1. O que é o Prioriza</h2>
+      <p>Em muitos prontos-socorros, quem chega primeiro é atendido primeiro. O Prioriza muda isso: ele dá preferência a <strong>quem está mais grave</strong>, com base nos sintomas e nos sinais vitais medidos na triagem.</p>
+      <ul>
+        <li><strong>Classifica</strong> cada paciente em uma cor: <span class="cor vermelha">Vermelha</span> (mais grave), <span class="cor amarela">Amarela</span> ou <span class="cor azul">Azul</span> (menos grave).</li>
+        <li><strong>Escolhe sozinho</strong> o próximo paciente que o médico vai chamar, com as mesmas regras para todos.</li>
+        <li><strong>Mostra as chamadas</strong> em painéis na sala de espera, sem mostrar o nome de ninguém.</li>
+        <li><strong>Registra</strong> tudo o que é feito, para consulta posterior.</li>
+      </ul>
+      <div class="cartoes">
+        <div class="cartao"><h3>Paciente</h3><p>Retira um ticket no Totem e acompanha as chamadas nos painéis. Não precisa de cadastro nem de senha.</p></div>
+        <div class="cartao"><h3>Recepção/Triagem</h3><p>Chama os tickets, identifica o paciente, faz a triagem e entrega a senha.</p></div>
+        <div class="cartao"><h3>Médico</h3><p>Chama o próximo paciente e confirma se ele compareceu.</p></div>
+        <div class="cartao"><h3>Administrador</h3><p>Cadastra a equipe e as configurações e acompanha o plantão.</p></div>
+      </div>
+
+      <h2 id="caminho">2. O caminho do paciente</h2>
+      <pre class="mermaid">
+flowchart LR
+    A[1. Totem&lt;br/&gt;retira o ticket] --> B[2. Painel da triagem&lt;br/&gt;espera ser chamado]
+    B --> C[3. Triagem&lt;br/&gt;sintomas e sinais vitais]
+    C --> D[4. Recebe a senha&lt;br/&gt;cor e especialidade]
+    D --> E[5. Painel dos consultórios&lt;br/&gt;espera a senha]
+    E --> F[6. Consultório&lt;br/&gt;atendimento]
+      </pre>
+      <ol class="passos">
+        <li>Na entrada, o paciente toca no <strong>Totem</strong> e recebe um <strong>ticket</strong>, como <code>N-012</code>.</li>
+        <li>Aguarda até o ticket aparecer no <strong>painel da triagem</strong>.</li>
+        <li>Na <strong>triagem</strong>, a equipe confirma quem ele é pelo CPF, pergunta os sintomas e mede pressão, batimentos, respiração, temperatura e oxigenação.</li>
+        <li>O sistema calcula a <strong>cor</strong> e a <strong>especialidade</strong> e gera a <strong>senha</strong>, como <code>A-CAR-003</code>. O paciente recebe um comprovante impresso.</li>
+        <li>Aguarda até a senha aparecer no <strong>painel dos consultórios</strong>, com a especialidade e a sala.</li>
+        <li>Vai à sala indicada e é atendido.</li>
+      </ol>
+
+      <h2 id="acesso">3. Como acessar</h2>
+      <p>O Prioriza é um site; não há aplicativo para baixar. Use o endereço do sistema informado pela equipe (em testes, <code>http://localhost:3000</code>).</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Para</th><th>Endereço</th><th>Precisa de senha?</th></tr></thead>
+        <tbody>
+          <tr><td>Totem da entrada</td><td><code>/totem</code></td><td>Não</td></tr>
+          <tr><td>TV da sala de espera da triagem</td><td><code>/painel/triagem</code></td><td>Não</td></tr>
+          <tr><td>TV da sala de espera dos consultórios</td><td><code>/painel/medico</code></td><td>Não</td></tr>
+          <tr><td>Equipe (Recepção, Médico e Administrador)</td><td><code>/login</code></td><td>Sim</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Entrar no sistema (equipe)</h3>
+      <ol class="passos">
+        <li>Abra <code>/login</code> e digite seu <strong>e-mail</strong> e sua <strong>senha</strong>.</li>
+        <li>Você recebe por e-mail um <strong>código de 6 dígitos</strong>. Digite-o na tela seguinte.</li>
+        <li>O sistema abre a sua tela inicial, de acordo com o seu perfil.</li>
+      </ol>
+      <div class="aviso"><p><strong>Primeiro acesso:</strong> ninguém se cadastra sozinho. O <strong>Administrador</strong> cria o seu acesso e informa o e-mail e a senha inicial. Para trocar a senha, use <strong>“Esqueci minha senha”</strong> na tela de login.</p></div>
+      <p>Por segurança, o sistema sai sozinho depois de <strong>1 hora sem uso</strong> e, em qualquer caso, depois de <strong>12 horas</strong>. Basta entrar de novo; nada do que estava salvo se perde.</p>
+
+      <h2 id="paciente">4. Paciente: Totem e painéis</h2>
+      <h3>Totem</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Botão</th><th>Para quem</th><th>Ticket</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Pediátrico</strong></td><td>Crianças até 11 anos</td><td><code>C-001</code>, <code>C-002</code>…</td></tr>
+          <tr><td><strong>Preferencial</strong></td><td>60 anos ou mais, gestantes e demais pessoas com atendimento preferencial</td><td><code>P-001</code>…</td></tr>
+          <tr><td><strong>Normal</strong></td><td>Todos os demais</td><td><code>N-001</code>…</td></tr>
+        </tbody>
+      </table></div>
+      <p>O ticket aparece na tela. Guarde o código e toque em <strong>Concluir</strong>. Nenhum dado pessoal é pedido.</p>
+      <h3>Painéis da sala de espera</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Painel</th><th>Mostra</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Triagem</strong></td><td>O ticket chamado agora, em destaque (“Dirija-se à Recepção/Triagem”), e os últimos tickets chamados</td></tr>
+          <tr><td><strong>Consultórios</strong></td><td>A senha chamada agora, com “Dirija-se à {especialidade} · {sala}”, e as últimas senhas chamadas</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li>A cada chamada, a senha pisca e toca um aviso sonoro.</li>
+        <li>Se a mesma senha aparecer de novo com “2ª chamada” ou “3ª chamada”, é porque a pessoa ainda não se apresentou.</li>
+        <li>Os painéis <strong>nunca</strong> mostram nome, CPF ou informação de saúde.</li>
+      </ul>
+
+      <h2 id="recepcao">5. Recepção/Triagem</h2>
+      <h3>Tela inicial</h3>
+      <p>Mostra o resumo do plantão e o campo <strong>Meu status</strong>. Escolha <strong>Disponível</strong> ao começar, <strong>Pausa</strong> em um intervalo e <strong>Ausente</strong> ao sair. O Administrador vê o status de cada pessoa da equipe.</p>
+      <h3>Chamar os tickets — “Fila de pré-triagem”</h3>
+      <ol class="passos">
+        <li>Clique em <strong>Chamar próximo</strong>. O sistema escolhe o ticket certo (<a href="#regras">seção 8</a>) e ele aparece no painel da triagem.</li>
+        <li>Se a pessoa não vier, espere o tempo indicado na tela e use <strong>Chamar novamente</strong> (até 3 vezes).</li>
+        <li>Ainda sem a pessoa: <strong>Não compareceu</strong>. Na primeira vez, o ticket volta para o fim da fila; na segunda, sai da fila.</li>
+        <li>A pessoa chegou: <strong>Marcar presente</strong> e depois <strong>Identificar paciente</strong>.</li>
+        <li>Se a pessoa desistir de esperar: <strong>Desistência</strong>.</li>
+      </ol>
+      <p>Nada acontece sozinho: sem um clique, o ticket fica parado esperando.</p>
+      <h3>Identificar o paciente</h3>
+      <ol class="passos">
+        <li>Digite o <strong>CPF</strong> e pesquise.</li>
+        <li><strong>Primeira visita:</strong> preencha nome completo, data de nascimento e telefone (opcional) e salve.</li>
+        <li>Clique em <strong>Continuar</strong> para abrir a ficha.</li>
+      </ol>
+      <p>Se o paciente já tiver uma ficha aberta, a tela oferece <strong>“Abrir ficha atual”</strong>, para não duplicar.</p>
+      <h3>Fazer a triagem — “Ficha de atendimento”</h3>
+      <ol class="passos">
+        <li><strong>Sintomas:</strong> busque e marque os sintomas da lista. Se não encontrar, use <strong>Adicionar</strong> para um sintoma não listado e escolha a gravidade (1, 2 ou 3).</li>
+        <li><strong>Observação:</strong> escreva a queixa do paciente, se quiser.</li>
+        <li><strong>Sinais vitais:</strong> pressão (máxima), batimentos por minuto, respirações por minuto, temperatura e oxigenação (SpO₂). A glicemia é opcional. Marque <strong>Gestante</strong> quando for o caso.</li>
+        <li>A <strong>cor aparece sozinha</strong> quando os dados estiverem completos. Se faltar algo, a tela avisa o que é.</li>
+        <li>Se discordar da cor, use <strong>Ajustar prioridade</strong>, escolha a cor e escreva a <strong>justificativa</strong> (obrigatória).</li>
+        <li>Clique em <strong>Confirmar e gerar senha</strong>. O sistema define a especialidade, gera a senha e abre o <strong>comprovante</strong>. Entregue o comprovante ao paciente.</li>
+      </ol>
+      <div class="aviso atencao"><p>Para crianças menores de 16 anos e gestantes, o sistema não calcula a cor sozinho. A tela pede que você escolha a cor e explique o motivo.</p></div>
+      <h3>Corrigir uma ficha — “Fichas do dia”</h3>
+      <p>Lista as fichas de hoje, com busca por nome ou senha. Enquanto o paciente ainda <strong>não foi chamado pelo médico</strong>, é possível abrir a ficha e corrigir sintomas, sinais vitais ou cor:</p>
+      <ul>
+        <li>se só a cor mudar, a senha troca a letra e mantém o número (<code>A-CAR-003</code> vira <code>V-CAR-003</code>);</li>
+        <li>se mudar a especialidade, sai uma senha nova. <strong>Reimprima o comprovante</strong> e entregue o novo ao paciente.</li>
+      </ul>
+
+      <h2 id="medico">6. Médico</h2>
+      <ol class="passos">
+        <li>Ao entrar, clique em <strong>Ficar disponível</strong>. O sistema começa com você indisponível, para não receber pacientes sem querer.</li>
+        <li>Clique em <strong>Chamar próximo</strong>. <strong>O sistema escolhe o paciente</strong>; a senha aparece no painel dos consultórios e a ficha aparece na sua tela, com sintomas, sinais vitais e histórico.</li>
+        <li>O paciente chegou: <strong>Compareceu</strong>. Seu status passa a <strong>Em atendimento</strong>, e você pode <strong>Imprimir</strong> a ficha.</li>
+        <li>O paciente não veio: espere 30 segundos e use <strong>Repetir chamada</strong> (até 3 vezes). Se ele não vier, a ficha volta uma vez para o fim da fila; na segunda vez, é encerrada como desistência.</li>
+        <li>Se o paciente avisar que vai embora: <strong>Registrar desistência</strong> (pede confirmação).</li>
+        <li>Para parar de receber pacientes: <strong>Pausar</strong> ou <strong>Ausente</strong>. Para voltar: <strong>Ficar disponível</strong>.</li>
+      </ol>
+      <p>Em <strong>Meus plantões</strong>, você vê os plantões que o Administrador cadastrou para você.</p>
+
+      <h2 id="administrador">7. Administrador</h2>
+      <div class="tabela"><table>
+        <thead><tr><th>Menu</th><th>Para que serve</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Início</strong></td><td>Plantão do dia, quem está conectado e o status de cada um. Mostra fichas e tickets parados há mais de 24 horas, com o botão <strong>Dispensar todos</strong></td></tr>
+          <tr><td><strong>Fila geral</strong></td><td>Todos os pacientes em triagem, aguardando e chamados, na ordem em que serão chamados. Só para consulta; atualiza sozinha</td></tr>
+          <tr><td><strong>Detalhe da ficha</strong></td><td>Tudo o que aconteceu com uma ficha: triagem, senhas, ajustes, chamadas e histórico</td></tr>
+          <tr><td><strong>Auditoria</strong></td><td>Quem fez o quê e quando: alterações, chamadas e entradas no sistema. Pode exportar para planilha (CSV)</td></tr>
+          <tr><td><strong>Usuários</strong></td><td>Criar e editar o acesso da equipe, trocar o perfil, ativar e desativar</td></tr>
+          <tr><td><strong>Médicos</strong> e <strong>Recepção/Triagem</strong></td><td>Dados profissionais: CRM, especialidades e sala do médico; CPF da Recepção</td></tr>
+          <tr><td><strong>Especialidades</strong>, <strong>Sintomas</strong> e <strong>Salas</strong></td><td>O que o PS atende, a lista de sintomas com pontos e destino, e as salas</td></tr>
+          <tr><td><strong>Plantões</strong></td><td>Quando cada médico está de plantão (pode repetir em escala 12x36)</td></tr>
+          <tr><td><strong>Parâmetros</strong></td><td>Os números das regras: limites das cores, idades, tempos de chamada, ciclos e prazos, cada um com mínimo e máximo permitidos</td></tr>
+        </tbody>
+      </table></div>
+      <ul>
+        <li>Nada que tem histórico é apagado: é <strong>desativado</strong>. Toda mudança fica na Auditoria, com o seu nome.</li>
+        <li>Você não consegue desativar a si mesmo nem o último Administrador.</li>
+        <li>O Administrador <strong>acompanha</strong>, mas não faz triagem nem chama pacientes.</li>
+      </ul>
+
+      <h2 id="regras">8. As regras do sistema, explicadas</h2>
+      <h3>Quem é chamado primeiro na triagem</h3>
+      <ul>
+        <li>Tickets <strong>Pediátricos</strong> vêm antes dos <strong>Preferenciais</strong>.</li>
+        <li>Para ninguém esperar para sempre, a cada <strong>2 tickets prioritários</strong> é chamado <strong>1 Normal</strong>.</li>
+      </ul>
+      <h3>Como a cor é decidida</h3>
+      <p>Cada sintoma vale de <strong>1 a 3 pontos</strong>, e cada sinal vital fora do normal soma de <strong>1 a 3 pontos</strong>. O sistema soma tudo:</p>
+      <div class="tabela"><table>
+        <thead><tr><th>Total de pontos</th><th>Cor</th></tr></thead>
+        <tbody>
+          <tr><td>0 a 4</td><td><span class="cor azul">Azul</span></td></tr>
+          <tr><td>5 a 9</td><td><span class="cor amarela">Amarela</span></td></tr>
+          <tr><td>10 ou mais</td><td><span class="cor vermelha">Vermelha</span></td></tr>
+        </tbody>
+      </table></div>
+      <div class="aviso atencao"><p><strong>Atenção:</strong> um único item muito grave (3 pontos), como oxigenação de 91% ou um sintoma de 3 pontos, já torna a ficha <strong>Vermelha</strong>, mesmo com poucos pontos no total.</p></div>
+      <p><em>Exemplo:</em> dor no peito (2) + falta de ar (2) + batimentos em 115 (2) = 6 pontos → <span class="cor amarela">Amarela</span>.</p>
+      <p><strong>Idosos (60+), crianças (até 11) e gestantes</strong> passam à frente das outras pessoas <strong>da mesma cor</strong>, mas isso não muda a cor.</p>
+      <h3>Para qual especialidade o paciente vai</h3>
+      <ul>
+        <li>Crianças até 11 anos vão para a <strong>Pediatria</strong>.</li>
+        <li>Os demais vão para a especialidade do sintoma mais grave. Por exemplo, dor no peito leva à Cardiologia.</li>
+        <li>Sem nenhum sintoma da lista, o paciente vai para a <strong>Clínica Geral</strong>.</li>
+      </ul>
+      <h3>O que a senha quer dizer</h3>
+      <p>A senha <code>A-CAR-003</code> significa: <strong>A</strong> = Amarela (V = Vermelha, B = Azul), <strong>CAR</strong> = Cardiologia, <strong>003</strong> = terceira senha da Cardiologia hoje.</p>
+      <h3>Quem o médico chama</h3>
+      <ul>
+        <li>Primeiro os <span class="cor vermelha">Vermelhos</span>. Depois, a cada <strong>2 Amarelos</strong>, <strong>1 Azul</strong>.</li>
+        <li>O médico atende primeiro as suas especialidades, mas pode ajudar outra especialidade que esteja sem médico, quando lá houver alguém mais grave.</li>
+        <li>Dois médicos nunca chamam o mesmo paciente.</li>
+      </ul>
+      <h3>Chamadas e ausências</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Onde</th><th>Espera entre chamadas</th><th>Chamadas por vez</th><th>Se não comparecer</th></tr></thead>
+        <tbody>
+          <tr><td>Triagem</td><td>30 s depois da 1ª; 10 s depois das seguintes</td><td>até 3</td><td>Volta ao fim da fila uma vez; na segunda, sai da fila</td></tr>
+          <tr><td>Médico</td><td>30 s</td><td>até 3</td><td>Volta ao fim da fila uma vez; na segunda, desistência</td></tr>
+        </tbody>
+      </table></div>
+      <h3>Painéis</h3>
+      <p>As chamadas ficam na tela por <strong>2 horas</strong>, o que funciona mesmo com o PS aberto 24 horas. A sala mostrada é a sala cadastrada para o médico.</p>
+      <div class="aviso"><p>Os números acima são os valores iniciais. O Administrador pode ajustá-los em <strong>Parâmetros</strong>.</p></div>
+
+      <h2 id="privacidade">9. Privacidade e segurança</h2>
+      <ul>
+        <li>Os painéis e o comprovante <strong>não mostram</strong> nome, CPF, sintomas nem sinais vitais.</li>
+        <li>Nas telas da equipe, o CPF aparece escondido (<code>***.456.789-**</code>), exceto onde precisa ser digitado.</li>
+        <li>Cada pessoa vê só as telas do seu perfil.</li>
+        <li>Tudo o que é alterado fica registrado na Auditoria.</li>
+        <li>O texto completo sobre os dados está em <strong>Aviso de privacidade</strong>, no rodapé da tela de login.</li>
+      </ul>
+
+      <h2 id="faq">10. Perguntas frequentes</h2>
+      <h3>Acesso</h3>
+      <details class="faq"><summary>O código não chegou no e-mail.</summary><p>Olhe a caixa de spam. Depois de 60 segundos, use <strong>Reenviar</strong>.</p></details>
+      <details class="faq"><summary>Apareceu “Código inválido ou expirado”.</summary><p>O código está errado, vencido ou já foi usado. Peça um novo. Errar muitas vezes bloqueia aquele código.</p></details>
+      <details class="faq"><summary>Apareceu “Usuário inativo”.</summary><p>Seu acesso foi desativado. Fale com o Administrador.</p></details>
+      <details class="faq"><summary>Esqueci a senha.</summary><p>Use <strong>“Esqueci minha senha”</strong> na tela de login.</p></details>
+      <details class="faq"><summary>O sistema me mandou de volta para o login.</summary><p>Ficou 1 hora sem uso ou passou o tempo da sessão. Entre de novo; nada se perde.</p></details>
+      <details class="faq"><summary>Abri um endereço e caí na minha tela inicial.</summary><p>Aquela tela é de outro perfil.</p></details>
+      <h3>Triagem</h3>
+      <details class="faq"><summary>A ficha não mostra a cor.</summary><p>Falta algum sinal vital, ou o paciente tem menos de 16 anos ou é gestante. Complete os dados ou ajuste a cor com justificativa.</p></details>
+      <details class="faq"><summary>O paciente já tem uma ficha aberta.</summary><p>Use “Abrir ficha atual” na identificação, ou “Fichas do dia”.</p></details>
+      <details class="faq"><summary>Corrigi a ficha e a senha mudou.</summary><p>Mudou a especialidade. Reimprima o comprovante.</p></details>
+      <details class="faq"><summary>Não consigo mais alterar a ficha.</summary><p>O médico já chamou o paciente. Depois da chamada, a ficha não pode ser mudada.</p></details>
+      <details class="faq"><summary>Quero ajustar a cor.</summary><p>Use <strong>Ajustar prioridade</strong>; a justificativa é obrigatória e fica registrada.</p></details>
+      <h3>Médico</h3>
+      <details class="faq"><summary>Não consigo chamar.</summary><p>Confira se está <strong>Disponível</strong>, se tem plantão cadastrado hoje e se não há outro paciente chamado esperando sua confirmação.</p></details>
+      <details class="faq"><summary>Apareceu “Aguarde N segundos para repetir a chamada”.</summary><p>É o tempo mínimo entre chamadas. Espere e tente de novo.</p></details>
+      <details class="faq"><summary>Por que o sistema chamou alguém de outra especialidade?</summary><p>Aquela especialidade estava sem médico e havia um caso mais grave.</p></details>
+      <details class="faq"><summary>Por que não posso escolher o paciente?</summary><p>Para garantir a mesma regra para todos: o sistema chama sempre o mais adequado naquele momento.</p></details>
+      <h3>Painéis e uso geral</h3>
+      <details class="faq"><summary>O painel mostra “Reconectando…”.</summary><p>A conexão caiu por um momento. O painel continua mostrando a última informação e volta sozinho. Deixe só uma aba de cada painel aberta.</p></details>
+      <details class="faq"><summary>O painel não toca som.</summary><p>Toque uma vez em <strong>“Toque para ativar o som”</strong>. O navegador exige isso.</p></details>
+      <details class="faq"><summary>Uma ficha ficou esquecida aberta desde ontem.</summary><p>O Administrador usa <strong>Dispensar todos</strong> na tela Início.</p></details>
+      <details class="faq"><summary>Telas da equipe mostram erro de conexão.</summary><p>Feche abas e painéis abertos sem uso, espere alguns segundos e tente de novo.</p></details>
+
+      <h2 id="palavras">11. Palavras que aparecem nas telas</h2>
+      <div class="tabela"><table>
+        <thead><tr><th>Palavra</th><th>Significado</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Ticket</strong></td><td>Código do Totem (<code>C-</code>, <code>P-</code> ou <code>N-</code>), usado até a triagem</td></tr>
+          <tr><td><strong>Senha</strong></td><td>Código depois da triagem (<code>V-</code>, <code>A-</code> ou <code>B-</code> + especialidade + número), usado até o médico</td></tr>
+          <tr><td><strong>Ficha</strong></td><td>O registro da visita do paciente: sintomas, sinais vitais, cor e senha</td></tr>
+          <tr><td><strong>Escore</strong></td><td>O total de pontos que define a cor</td></tr>
+          <tr><td><strong>Condição prioritária</strong></td><td>Idoso, criança ou gestante: passa à frente dentro da mesma cor</td></tr>
+          <tr><td><strong>Oportunidade</strong></td><td>A vez do paciente na fila. Cada oportunidade tem até 3 chamadas</td></tr>
+          <tr><td><strong>Desistência</strong></td><td>Saída da fila sem atendimento</td></tr>
+          <tr><td><strong>Plantão</strong></td><td>Período em que o médico está trabalhando</td></tr>
+          <tr><td><strong>Em atendimento</strong></td><td>O médico está com um paciente; o sistema marca sozinho</td></tr>
+          <tr><td><strong>Auditoria</strong></td><td>O registro de tudo o que foi feito, por quem e quando</td></tr>
+        </tbody>
+      </table></div>
+    </main>
+  </div>
+
+  <footer class="rodape">
+    Prioriza · Manual do usuário · Fonte: <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/usuario/manual-do-usuario.md">docs/usuario/manual-do-usuario.md</a>
+  </footer>
+</body>
+</html>

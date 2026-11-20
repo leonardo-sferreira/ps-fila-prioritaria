@@ -88,6 +88,7 @@ flowchart LR
 |---|---|
 | Protótipo de telas | [Figma — Protótipo de Fluxos](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1) |
 | Fluxogramas, regras e modelo de dados | [FigJam — Fluxo do Sistema](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI) |
+| **Site da documentação** (HTML, GitHub Pages) | [leonardo-sferreira.github.io/ps-fila-prioritaria/](https://leonardo-sferreira.github.io/ps-fila-prioritaria/) |
 | **Manual do usuário** (uso do sistema, regras e perguntas frequentes) | [docs/usuario/manual-do-usuario.md](docs/usuario/manual-do-usuario.md) |
 | **Documentação técnica** (arquitetura, decisões, operação e testes realizados) | [docs/tecnica/README.md](docs/tecnica/README.md) |
 | Visão geral do projeto | [docs/project-overview.md](docs/project-overview.md) |
