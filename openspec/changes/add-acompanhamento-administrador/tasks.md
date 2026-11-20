@@ -41,7 +41,8 @@
 
 ## 4. Integração e documentação
 
-- [ ] 4.1 Verificação ponta a ponta do plantão: com Administrador, Recepção/Triagem, dois Médicos e o painel abertos, executar o fluxo totem → triagem → chamada → comparecimento/desistência e conferir que a tela de acompanhamento reflete fila, status e auditoria em até 10 s
+- [x] 4.1 Verificação ponta a ponta do plantão: com Administrador, Recepção/Triagem, dois Médicos e o painel abertos, executar o fluxo totem → triagem → chamada → comparecimento/desistência e conferir que a tela de acompanhamento reflete fila, status e auditoria em até 10 s
+  - Verificada pelo PO em 20/11/2026: fluxo do plantão de ponta a ponta funcionando, com a tela do Administrador acompanhando.
 - [x] 4.2 Conferir `docs/domain-model.md` (Sessão com status operacional, Histórico_Alteração) com a implementação e ajustar o que divergir
   - Concluída em 15/11/2026: `docs/domain-model.md` atualizado (EM_ATENDIMENTO automático, status escolhido pelo Médico e pela Recepção, Administrador sem status; auditoria "Sistema" e consulta em `/admin/auditoria`); bate com `table/sessao.xs` e `table/historico_alteracao.xs`.
 
@@ -51,8 +52,9 @@
   - Evidência (11/11/2026): `api/cadastros/admin_equipe_get.xs` novo; `api/triagem/fichas_get.xs` e `tickets_get.xs` com `ADMINISTRADOR`; válidos no `xano_validate_xanoscript`; `--dry-run` na `v1`: 1 criação e 2 atualizações.
 - [x] 5.2 [Reflex] Tela inicial `/admin` com o painel do plantão reaproveitado, indicadores do dia, equipe agora e o cartão de fichas paradas; atualização a cada 30 s; verificar com testes de estado e compilação
   - Evidência (11/11/2026): `paginas/painel_admin.py` e `estados/equipe.py`; indicadores em `resumir_plantao`; `painel_plantao` aceita blocos extras e percurso sem links; 8 testes em `tests/test_painel_admin.py`; suíte do frontend com 242 aprovados; `reflex compile --dry` concluiu.
-- [ ] 5.3 Publicar na `v1` (o PO roda o push) e conferir a tela com dados reais
+- [x] 5.3 Publicar na `v1` (o PO roda o push) e conferir a tela com dados reais
   - Publicação (11/11/2026): o PO publicou os 3 documentos na `v1` (GUID de `admin/equipe` sincronizada). Falta conferir a tela com dados reais.
+  - Validada pelo PO em 20/11/2026: dashboard e fila geral conferidos com dados reais na `v1`.
 
 ## 6. "Visualizar como" (decisão do PO em 11/11/2026, D7)
 
