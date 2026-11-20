@@ -25,7 +25,9 @@ Cada tela (rota do Reflex) é desenhada por uma função em `frontend/ps_fila_pr
 | `/login/codigo` | público | `paginas/autenticacao.py` → `login_codigo` | `autenticacao` |
 | `/medico` | MEDICO | `paginas/medico.py` → `area_medico` | `cadastros`, `medico` |
 | `/medico/ficha/[id]/imprimir` | MEDICO | `paginas/medico.py` → `pagina_impressao_medico` | `cadastros`, `medico` |
-| `/painel` | público | `paginas/painel.py` → `painel` | `painel` |
+| `/painel` | público | `paginas/painel.py` → `painel_escolha` | `painel` |
+| `/painel/medico` | público | `paginas/painel.py` → `painel_medico` | `painel` |
+| `/painel/triagem` | público | `paginas/painel.py` → `painel_triagem` | `painel` |
 | `/privacidade` | público | `paginas/privacidade.py` → `privacidade` | — |
 | `/recepcao` | RECEPCAO_TRIAGEM | `paginas/plantao.py` → `area_recepcao` | `autenticacao`, `plantao`, `status_equipe` |
 | `/recepcao/comprovante/[id]` | RECEPCAO_TRIAGEM | `paginas/comprovante.py` → `pagina_comprovante` | `comprovante` |

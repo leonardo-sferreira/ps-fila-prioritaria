@@ -9,10 +9,10 @@ Fonte: `tests/catalogo_testes.json`. Cada caso tem um ID permanente; o CI recusa
 | Autotestes da infraestrutura de evidências | 41 | CI e local |
 | Integração ao vivo (escrita isolada na v1) | 33 | Local, com autorização |
 | E2E público (navegador) | 2 | CI |
-| Reflex (estado das telas, API simulada) | 296 | CI e local |
+| Reflex (estado das telas, API simulada) | 297 | CI e local |
 | Xano funções puras (testes nativos remotos) | 97 | CI (CLI do Xano) |
 | Xano estático (contratos lidos do código) | 13 | CI e local |
-| **Total** | **482** | |
+| **Total** | **483** | |
 
 Colunas: **Entrada** = o que o teste prepara ou envia (resumo do objetivo); **Saída esperada** = o resultado que precisa acontecer para o teste passar.
 
@@ -376,12 +376,13 @@ Colunas: **Entrada** = o que o teste prepara ou envia (resumo do objetivo); **Sa
 | CT-REFLEX-0269 | Filtros vazios não vão para a API | UNITARIO | A consulta envia só os filtros escolhidos. | A consulta envia só os filtros escolhidos. | `frontend/tests/test_acompanhamento_state.py` |
 | CT-REFLEX-0270 | Detalhe mostra ajuste, chamadas e histórico | UNITARIO | O detalhe mostra o ajuste com justificativa, as tentativas de chamada e o histórico. | O detalhe mostra o ajuste com justificativa, as tentativas de chamada e o histórico. | `frontend/tests/test_acompanhamento_state.py` |
 | CT-REFLEX-0271 | Trocar filtro consulta de novo | UNITARIO | Trocar um filtro da fila geral consulta o backend com o filtro novo. | Trocar um filtro da fila geral consulta o backend com o filtro novo. | `frontend/tests/test_acompanhamento_state.py` |
-| CT-REFLEX-0272 | Destino com e sem Sala | UNITARIO | Mostra 'Especialidade — Sala N' quando o médico tem Sala e só a especialidade quando não tem. | Mostra 'Especialidade — Sala N' quando o médico tem Sala e só a especialidade quando não tem. | `frontend/tests/test_painel_state.py` |
-| CT-REFLEX-0273 | Indicação de repetição | UNITARIO | '2ª chamada' só aparece a partir da segunda tentativa. | '2ª chamada' só aparece a partir da segunda tentativa. | `frontend/tests/test_painel_state.py` |
-| CT-REFLEX-0274 | Formatação do painel para a TV | UNITARIO | Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas. | Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas. | `frontend/tests/test_painel_state.py` |
+| CT-REFLEX-0272 | Destino com e sem Sala | UNITARIO | Mostra 'Especialidade · Sala N' quando o médico tem Sala e só a especialidade quando não tem. | Mostra 'Especialidade · Sala N' quando o médico tem Sala e só a especialidade quando não tem. | `frontend/tests/test_painel_state.py` |
+| CT-REFLEX-0273 | Indicação da tentativa | UNITARIO | A chamada atual sempre indica a tentativa: 1ª, 2ª ou 3ª chamada. | A chamada atual sempre indica a tentativa: 1ª, 2ª ou 3ª chamada. | `frontend/tests/test_painel_state.py` |
+| CT-REFLEX-0274 | Formatação do painel para a TV | UNITARIO | Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas, com especialidade e Sala em colunas; sem previsão. | Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas, com especialidade e Sala em colunas; sem previsão. | `frontend/tests/test_painel_state.py` |
 | CT-REFLEX-0275 | Painel sem chamadas | UNITARIO | Sem chamada atual, ticket ou previsão, o painel monta vazio sem erro. | Sem chamada atual, ticket ou previsão, o painel monta vazio sem erro. | `frontend/tests/test_painel_state.py` |
-| CT-REFLEX-0276 | Detecção de chamada nova | UNITARIO | Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não. | Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não. | `frontend/tests/test_painel_state.py` |
+| CT-REFLEX-0276 | Detecção de chamada nova | UNITARIO | No painel dos médicos só a chamada médica nova ou repetida dispara destaque e som; no da triagem, só o ticket chamado ou rechamado. | No painel dos médicos só a chamada médica nova ou repetida dispara destaque e som; no da triagem, só o ticket chamado ou rechamado. | `frontend/tests/test_painel_state.py` |
 | CT-REFLEX-0277 | Filtro de especialidades pelo endereço | UNITARIO | ?especialidades=car, ort vira CAR,ORT; vazio exibe todas. | ?especialidades=car, ort vira CAR,ORT; vazio exibe todas. | `frontend/tests/test_painel_state.py` |
+| CT-REFLEX-0278 | Tela do painel pela rota | UNITARIO | /painel/triagem abre o painel da triagem; /painel/medico, o dos consultórios. | /painel/triagem abre o painel da triagem; /painel/medico, o dos consultórios. | `frontend/tests/test_painel_state.py` |
 | CT-STATUS-S4-001 | Consulta status real da api sem escrita | INTEGRACAO | — | Consulta status real da api sem escrita. | `frontend/tests/test_status_equipe.py` |
 | CT-STATUS-S4-002 | Altera tres estados manuais somente apos confirmacao | INTEGRACAO | — | Altera tres estados manuais somente apos confirmacao. | `frontend/tests/test_status_equipe.py` |
 | CT-STATUS-S4-003 | Estado manual invalido inclusive em atendimento nao envia | INTEGRACAO | — | Estado manual invalido inclusive em atendimento nao envia. | `frontend/tests/test_status_equipe.py` |

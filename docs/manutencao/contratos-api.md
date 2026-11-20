@@ -1125,6 +1125,7 @@ Painel público da sala de espera (add-painel-publico, D2 e D3). Sem sessão e s
     atual    : $atual
     ultimas  : $ultimas
     triagem  : ($ticket == null) ? null : {ticket_id: $ticket.id, tipo: $ticket.tipo, numero: $ticket.numero, tentativa: $ticket.tentativas, chamado_em: $ticket.chamado_em}
+    triagem_ultimas: $tickets_anteriores
     previsoes: $previsoes
     gerado_em: now
   }

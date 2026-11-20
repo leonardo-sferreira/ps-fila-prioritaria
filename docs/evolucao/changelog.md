@@ -39,3 +39,7 @@ Histórico do que foi entregue, montado a partir das changes arquivadas do OpenS
 - **15/11/2026 — `aprimorar-evidencias-qualidade-testes`**: O repositório já produz evidências em JUnit XML, JSON e Markdown, mas a aprovação técnica das suítes pode ser confundida com validação completa: o consolidado histórico de 335 casos aprovados convive com três verificações pendentes nos roteiros da Sprint 5. IDs derivados de nomes de arquivos, classificação por arquivo e interrupção da consolidação quando falta um artifact também fragilizam a rastreabilidade e o diagnóstico de falhas. ([change](../../openspec/changes/archive/2026-11-15-aprimorar-evidencias-qualidade-testes))
 - **15/11/2026 — `corrigir-isolamento-autotestes-ci`**: O job de autotestes falhou no GitHub Actions embora os testes locais passassem: as fixtures herdavam `GITHUB_*` do processo executor. A reprodução local com contexto de Actions resultou em 34 aprovações e seis falhas, além de resumos sintéticos escritos no Job Summary do job real. ([change](../../openspec/changes/archive/2026-11-15-corrigir-isolamento-autotestes-ci))
 
+## Sprint 5 — Painel público, testes e apresentação
+
+- **20/11/2026 — `add-painel-publico`**: Os pacientes que aguardam precisam saber quando e para onde ir, sem ter seus dados expostos. O painel público é a única interface do sistema voltada ao paciente e mostra, em tempo quase real, a senha chamada e a previsão das próximas, com o mesmo algoritmo da chamada real. ([change](../../openspec/changes/archive/2026-11-20-add-painel-publico))
+
