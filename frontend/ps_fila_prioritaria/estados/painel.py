@@ -1,7 +1,7 @@
 """Painel público da sala de espera (add-painel-publico, D2 e D4). Sem login e só leitura.
 
 O Xano devolve só campos permitidos (senha, cor, especialidade, Sala, tentativa e horários); aqui eles são
-formatados para a TV. Uma chamada nova ou repetida é reconhecida pelo `chamada_id` da atual e pelo ticket e horário
+formatados para a TV. Decisão do PO (20/11/2026): a tela não mostra a previsão das próximas senhas. Uma chamada nova ou repetida é reconhecida pelo `chamada_id` da atual e pelo ticket e horário
 da triagem: quando mudam, a tela destaca a senha e toca um aviso curto. Em falha de rede, mantém o último estado e
 mostra "reconectando".
 """
@@ -36,18 +36,21 @@ SCRIPT_SOM = """
 
 
 def tentativa_texto(tentativa: Any) -> str:
-    n = int(tentativa or 1)
-    return f"{n}ª chamada" if n > 1 else ""
+    return f"{int(tentativa or 1)}ª chamada"
+
+
+def sala_texto(chamada: dict[str, Any]) -> str:
+    """Sala vinculada ao médico que chamou ("Sala 2"), ou vazio quando ele não tem Sala (D3)."""
+    sala = str(chamada.get("sala") or "").strip()
+    if not sala:
+        return ""
+    return sala if sala.lower().startswith("sala") else f"Sala {sala}"
 
 
 def destino(chamada: dict[str, Any]) -> str:
-    """Para onde ir: "Cardiologia — Sala 2", ou só a especialidade quando o médico não tem Sala (D3)."""
-    especialidade = str(chamada.get("especialidade") or "")
-    sala = str(chamada.get("sala") or "").strip()
-    if not sala:
-        return especialidade
-    rotulo = sala if sala.lower().startswith("sala") else f"Sala {sala}"
-    return f"{especialidade} — {rotulo}" if especialidade else rotulo
+    """Para onde ir: "Cardiologia · Sala 2", ou só a especialidade quando o médico não tem Sala (D3)."""
+    especialidade, sala = str(chamada.get("especialidade") or ""), sala_texto(chamada)
+    return " · ".join(p for p in (especialidade, sala) if p)
 
 
 def chave_novidade(corpo: dict[str, Any]) -> str:
@@ -68,16 +71,13 @@ def montar_painel(corpo: dict[str, Any]) -> dict[str, Any]:
             "tentativa": tentativa_texto(atual.get("tentativa")),
             "hora": _hora_brasilia(atual.get("chamado_em")),
         },
-        "ultimas": [{"senha": str(u.get("senha") or "—"), "cor": str(u.get("cor") or ""), "destino": destino(u),
-                     "hora": _hora_brasilia(u.get("chamado_em"))} for u in (corpo.get("ultimas") or [])[:4]],
+        "ultimas": [{"senha": str(u.get("senha") or "—"), "cor": str(u.get("cor") or ""), "especialidade": str(u.get("especialidade") or "—"),
+                     "sala": sala_texto(u) or "—", "hora": _hora_brasilia(u.get("chamado_em"))} for u in (corpo.get("ultimas") or [])[:4]],
         "triagem": None if not triagem else {
             "ticket": formatar_ticket(triagem.get("tipo"), triagem.get("numero")),
             "tentativa": tentativa_texto(triagem.get("tentativa")),
             "hora": _hora_brasilia(triagem.get("chamado_em")),
         },
-        "previsoes": [{"especialidade": str(p.get("especialidade") or ""), "sigla": str(p.get("sigla") or ""),
-                       "senhas": [{"senha": str(s.get("senha") or ""), "cor": str(s.get("cor") or "")} for s in (p.get("senhas") or [])]}
-                      for p in (corpo.get("previsoes") or [])],
     }
 
 
@@ -90,7 +90,6 @@ class PainelState(rx.State):
     atual: dict[str, str] = {}
     ultimas: list[dict[str, str]] = []
     triagem: dict[str, str] = {}
-    previsoes: list[dict[str, Any]] = []
     carregado: bool = False
     reconectando: bool = False
     aviso: str = ""
@@ -117,7 +116,6 @@ class PainelState(rx.State):
         self.atual = painel["atual"] or {}
         self.ultimas = painel["ultimas"]
         self.triagem = painel["triagem"] or {}
-        self.previsoes = painel["previsoes"]
         self.reconectando, self.aviso = False, ""
         chave = chave_novidade(corpo)
         novidade = self.carregado and chave != self._chave

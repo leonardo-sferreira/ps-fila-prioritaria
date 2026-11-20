@@ -30,7 +30,7 @@ Em muitos prontos-socorros a fila ainda é organizada manualmente, por ordem de 
 | **Acesso da equipe** | Login por e-mail com perfil · redefinição de senha com código enviado por e-mail |
 | **Recepção/Triagem** | Fila pré-triagem por tipo de ticket · identificação e cadastro pelo CPF · ficha com sintomas e sinais vitais · classificação automática com ajuste manual justificado · especialidade sugerida e atribuída · senha e comprovante impresso |
 | **Médico** | Fila atribuída por elegibilidade · "Chamar próximo" sem duplicidade · 30 s entre chamadas, até 3 tentativas por oportunidade e uma reentrada ao fim da fila · Pausar/Retomar · encerrar plantão com fila zerada · impressão da ficha |
-| **Painel público** | Senha e sala da chamada em destaque · previsão das próximas 5 senhas · sem nome nem CPF |
+| **Painel público** | Senha e sala da chamada em destaque · ticket da triagem · últimas chamadas · sem nome nem CPF |
 | **Administrador** | Usuários e perfis · cadastros de Médicos e Recepção/Triagem · especialidades, sintomas e salas · disponibilidade por período · parâmetros e faixas de risco · acompanhamento da fila, da equipe e da auditoria |
 
 ## Como funciona
@@ -216,7 +216,9 @@ Roteiro manual: abra `/totem`, toque em cada tipo e confira o código na tela (`
 
 ### Painel público
 
-O painel da sala de espera fica em `http://localhost:3000/painel` e não pede login. Ele mostra a senha chamada pelo médico (com especialidade, Sala quando o médico tem uma, e "2ª chamada" na repetição), o último ticket chamado na triagem, as 4 chamadas anteriores e a previsão das próximas senhas de cada especialidade, pela mesma regra do "Chamar próximo". Nunca mostra nome, CPF ou dado clínico. Atualiza sozinho a cada 3 segundos. Chamadas e tickets ficam na tela por um tempo desde a chamada (parâmetro "Tempo que uma chamada fica no painel", padrão 2 horas), o que funciona com o PS aberto 24 horas. A Sala é a que está vinculada ao médico no cadastro.
+O painel da sala de espera fica em `http://localhost:3000/painel` e não pede login. Segue a tela 5 do Figma: cartão "Chamando agora" com a senha chamada pelo médico (especialidade, Sala quando o médico tem uma, e a tentativa: 1ª, 2ª ou 3ª chamada), cartão com o último ticket chamado na triagem e a tabela das 4 chamadas anteriores. Não mostra a previsão das próximas senhas (decisão do PO) nem nome, CPF ou dado clínico. Atualiza sozinho a cada 5 segundos. Chamadas e tickets ficam na tela por um tempo desde a chamada (parâmetro "Tempo que uma chamada fica no painel", padrão 2 horas), o que funciona com o PS aberto 24 horas. A Sala é a que está vinculada ao médico no cadastro.
+
+Cada painel aberto faz 4 requisições ao Xano a cada 20 segundos. No plano gratuito (25 requisições a cada 20 s para tudo), deixe só uma aba do painel aberta; com várias, a equipe pode começar a receber erro de limite e o painel mostra "Reconectando…".
 
 Para usar numa TV:
 
@@ -226,10 +228,10 @@ Para usar numa TV:
 
 Roteiro manual:
 
-1. Com o painel aberto em uma janela, chame um paciente em `/medico` em outra: em até 5 s a senha aparece em destaque, piscando, com o aviso sonoro, e sai da previsão da especialidade.
-2. Repita a chamada no médico: a senha volta a piscar com "2ª chamada".
-3. Chame um ticket na fila da triagem (`/recepcao/fila`): o painel mostra "Triagem — Senha C-004" (ou o ticket chamado).
-4. Abra `/painel?especialidades=CAR`: só Cardiologia aparece na chamada atual, nas últimas e na previsão.
+1. Com o painel aberto em uma janela, chame um paciente em `/medico` em outra: em até 5 s a senha aparece em "Chamando agora", com destaque e aviso sonoro, e a anterior desce para "Últimas chamadas".
+2. Repita a chamada no médico: o cartão pisca de novo com "2ª chamada".
+3. Chame um ticket na fila da triagem (`/recepcao/fila`): o cartão da triagem mostra o ticket (por exemplo, `C-004`).
+4. Abra `/painel?especialidades=CAR`: só chamadas de Cardiologia aparecem.
 5. Desligue a rede por uns 30 s: o painel continua com a última informação e mostra "Reconectando…"; ao voltar a rede, volta a atualizar sozinho.
 6. Em nenhum momento aparece nome, CPF, nascimento, sintomas ou sinais vitais.
 

@@ -14,9 +14,9 @@
 ## 2. Reflex — página do painel
 
 - [ ] 2.1 [Reflex] Criar a página `/painel` sem login, com o layout de TV (D4) e o filtro por parâmetro de URL; verificar manualmente em tela cheia com duas especialidades
-  - Implementada em 20/11/2026: `/painel` sem login (`paginas/painel.py`), layout 16:9 com fundo escuro, senha atual na cor da prioridade, triagem e últimas chamadas à direita e previsão por especialidade embaixo; filtro `?especialidades=CAR,ORT`. Falta a verificação manual do PO.
+  - Implementada em 20/11/2026: `/painel` sem login (`paginas/painel.py`), refeita pela tela 5 do Figma a pedido do PO: cabeçalho padrão com data e hora, cartão "Chamando agora", cartão da triagem e tabela de últimas chamadas (senha, especialidade, Sala, horário); sem previsão das próximas senhas (D5); filtro `?especialidades=CAR,ORT`. Falta a verificação manual do PO.
 - [ ] 2.2 [Reflex] Implementar o polling de 3 s, a detecção de nova chamada com destaque e som, e o aviso "Toque para ativar o som" (D2); verificar manualmente com uma chamada e uma repetição feitas em outra aba
-  - Implementada em 20/11/2026: polling de 3 s (`rx.moment`), destaque que pisca a cada chamada nova ou repetida e na rechamada de ticket, aviso sonoro de dois tons pela Web Audio API (sem arquivo em `assets/`) e botão "Toque para ativar o som". 6 testes em `frontend/tests/test_painel_state.py`. Falta a verificação manual do PO.
+  - Implementada em 20/11/2026: polling de 5 s (`rx.moment`; era 3 s, mudado pelo limite do plano gratuito do Xano), destaque que pisca a cada chamada nova ou repetida e na rechamada de ticket, aviso sonoro de dois tons pela Web Audio API (sem arquivo em `assets/`) e botão "Toque para ativar o som". 6 testes em `frontend/tests/test_painel_state.py`. Falta a verificação manual do PO.
 - [ ] 2.3 [Reflex] Implementar o estado "reconectando", que mantém a última informação; verificar manualmente parando o acesso à rede por 30 s
   - Implementada em 20/11/2026: em falha de rede, mantém o último estado e mostra "Reconectando…". Falta a verificação manual do PO.
 - [x] 2.4 Adicionar ao README como abrir o painel numa TV (URL com filtro, tela cheia, ativação do som) e o roteiro manual da seção 2; verificar executando-o

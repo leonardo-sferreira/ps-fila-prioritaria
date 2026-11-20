@@ -15,30 +15,32 @@ CORPO = {
 
 
 def test_destino_com_e_sem_sala():
-    assert destino({"especialidade": "Clínica Geral", "sala": "2"}) == "Clínica Geral — Sala 2"
-    assert destino({"especialidade": "Clínica Geral", "sala": "Sala 3"}) == "Clínica Geral — Sala 3"
+    assert destino({"especialidade": "Clínica Geral", "sala": "2"}) == "Clínica Geral · Sala 2"
+    assert destino({"especialidade": "Clínica Geral", "sala": "Sala 3"}) == "Clínica Geral · Sala 3"
     assert destino({"especialidade": "Ortopedia", "sala": None}) == "Ortopedia"
 
 
-def test_tentativa_so_aparece_na_repeticao():
-    assert tentativa_texto(1) == ""
-    assert tentativa_texto(None) == ""
+def test_tentativa_sempre_indicada():
+    assert tentativa_texto(1) == "1ª chamada"
+    assert tentativa_texto(None) == "1ª chamada"
     assert tentativa_texto(2) == "2ª chamada"
 
 
 def test_montar_painel_formata_para_a_tv():
     painel = montar_painel(CORPO)
     assert painel["atual"]["senha"] == "V-CAR-003"
-    assert painel["atual"]["destino"] == "Cardiologia — Sala 2"
+    assert painel["atual"]["destino"] == "Cardiologia · Sala 2"
     assert painel["atual"]["tentativa"] == "2ª chamada"
     assert painel["atual"]["cor_nome"] == "Vermelha"
     assert len(painel["ultimas"]) == 4
     assert painel["triagem"]["ticket"] == "C-004"
-    assert painel["previsoes"][1]["senhas"] == []
+    assert (painel["ultimas"][0]["especialidade"], painel["ultimas"][0]["sala"]) == ("Clínica Geral", "—")
+    # Decisão do PO: o painel não mostra a previsão das próximas senhas.
+    assert "previsoes" not in painel
 
 
 def test_painel_vazio():
-    painel = montar_painel({"atual": None, "ultimas": [], "triagem": None, "previsoes": []})
+    painel = montar_painel({"atual": None, "ultimas": [], "triagem": None})
     assert painel["atual"] is None and painel["triagem"] is None and painel["ultimas"] == []
 
 

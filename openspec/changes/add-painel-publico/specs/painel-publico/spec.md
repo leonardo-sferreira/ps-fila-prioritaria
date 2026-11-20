@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Informa aos pacientes na sala de espera a senha chamada, para onde ir e a previsão das próximas chamadas, sem expor nenhum dado pessoal.
+Informa aos pacientes na sala de espera a senha chamada, para onde ir e as últimas chamadas, sem expor nenhum dado pessoal. Decisão do PO (20/11/2026): o painel não mostra a previsão das próximas senhas.
 
 ## ADDED Requirements
 
@@ -14,7 +14,7 @@ O painel DEVE ser acessível sem login e DEVE apenas exibir informações; NÃO 
 - **ENTÃO** o painel é exibido normalmente
 
 ### Requirement: Privacidade
-O painel e o endpoint que o alimenta NÃO DEVEM retornar nem exibir nome, CPF, data de nascimento, telefone, sintomas, sinais vitais ou qualquer outro dado pessoal ou clínico; somente senhas, números de ticket, cores, especialidades e horários de chamada (RN35, RNF06).
+O painel e o endpoint que o alimenta NÃO DEVEM retornar nem exibir nome, CPF, data de nascimento, telefone, sintomas, sinais vitais ou qualquer outro dado pessoal ou clínico; somente senhas, números de ticket, cores, especialidades, Salas e horários de chamada (RN35, RNF06).
 
 #### Scenario: Conferência da resposta do painel
 - **QUANDO** o endpoint do painel é consultado com fichas chamadas e aguardando
@@ -25,7 +25,7 @@ O painel DEVE exibir, com o maior destaque visual, a chamada mais recente (prime
 
 #### Scenario: Nova chamada
 - **QUANDO** um médico chama `V-CLI-003`
-- **ENTÃO** em até 5 segundos o painel mostra `V-CLI-003 — Clínica Geral — Sala 2` em destaque, se a chamada estiver associada à Sala 2, e emite o aviso sonoro
+- **ENTÃO** em até 5 segundos o painel mostra `V-CLI-003` em destaque, com "Dirija-se à Clínica Geral · Sala 2", se a chamada estiver associada à Sala 2, e emite o aviso sonoro
 
 #### Scenario: Repetição de chamada
 - **QUANDO** o médico repete a chamada de `A-CAR-014`
@@ -37,25 +37,6 @@ O painel DEVE listar as últimas chamadas (no mínimo as 4 anteriores à atual),
 #### Scenario: Histórico curto
 - **QUANDO** ocorreram 6 chamadas
 - **ENTÃO** o painel mostra a atual em destaque e as 4 anteriores na lista de últimas chamadas
-
-### Requirement: Previsão das próximas senhas
-Para cada especialidade exibida, o painel DEVE mostrar a previsão das próximas senhas calculada pela mesma regra de ordenação da fila daquela especialidade, com o tamanho configurado (inicial 5), e com a indicação de que é uma previsão sujeita a mudança. A ordem global entre especialidades depende da decisão registrada em `add-fila-chamada-medico`; até essa decisão, o painel NÃO DEVE sugerir uma ordem global de chamada médica. Com menos fichas elegíveis, DEVE mostrar só as existentes; sem nenhuma, DEVE indicar que a fila está vazia.
-
-#### Scenario: Cinco ou mais aguardando
-- **QUANDO** Clínica Geral tem 8 fichas AGUARDANDO
-- **ENTÃO** o painel mostra exatamente 5 senhas previstas para Clínica Geral (CA10)
-
-#### Scenario: Coerência com a chamada
-- **QUANDO** a fila daquela especialidade não muda entre a atualização do painel e a próxima seleção de uma ficha dessa fila
-- **ENTÃO** a senha chamada é a primeira que estava prevista no painel (CA11)
-
-#### Scenario: Entrada de prioridade alta
-- **QUANDO** uma ficha de prioridade alta entra na fila de Clínica Geral
-- **ENTÃO** na atualização seguinte ela aparece na primeira posição da previsão (CA12)
-
-#### Scenario: Desistência sai da previsão
-- **QUANDO** uma ficha é marcada como DESISTÊNCIA ou CANCELADO
-- **ENTÃO** ela não aparece mais na previsão (CA13)
 
 ### Requirement: Tickets da pré-triagem
 O painel DEVE exibir o número do ticket da pré-triagem chamado mais recentemente pela Recepção/Triagem (inclusive rechamadas do mesmo ticket), com a indicação "Triagem".
@@ -76,4 +57,4 @@ O painel DEVE aceitar a seleção de quais especialidades exibir, pelo endereço
 
 #### Scenario: Painel da ortopedia
 - **QUANDO** o painel é aberto com a seleção apenas de Ortopedia
-- **ENTÃO** a senha atual, as últimas chamadas e a previsão consideram somente Ortopedia
+- **ENTÃO** a senha atual e as últimas chamadas consideram somente Ortopedia
