@@ -1,4 +1,7 @@
-"""Painel público da sala de espera (add-painel-publico, D2 e D4). Sem login e só leitura.
+"""Painéis públicos da sala de espera (add-painel-publico, D2, D4 e D6). Sem login e só leitura.
+
+Duas telas (decisão do PO, 20/11/2026): /painel/medico, com a senha chamada pelo médico e as últimas chamadas, e
+/painel/triagem, com o ticket chamado pela Recepção/Triagem e os últimos tickets. As duas usam o mesmo GET painel.
 
 O Xano devolve só campos permitidos (senha, cor, especialidade, Sala, tentativa e horários); aqui eles são
 formatados para a TV. Decisão do PO (20/11/2026): a tela não mostra a previsão das próximas senhas. Uma chamada nova ou repetida é reconhecida pelo `chamada_id` da atual e pelo ticket e horário
@@ -53,10 +56,17 @@ def destino(chamada: dict[str, Any]) -> str:
     return " · ".join(p for p in (especialidade, sala) if p)
 
 
-def chave_novidade(corpo: dict[str, Any]) -> str:
-    """Muda a cada chamada médica nova ou repetida e a cada chamada ou rechamada de ticket na triagem."""
-    atual, triagem = corpo.get("atual") or {}, corpo.get("triagem") or {}
-    return f"{atual.get('chamada_id', '')}|{triagem.get('ticket_id', '')}:{triagem.get('chamado_em', '')}"
+def tela_da_rota(caminho: str) -> str:
+    """/painel/triagem → "triagem"; /painel/medico → "medico"."""
+    return "triagem" if str(caminho or "").rstrip("/").endswith("/triagem") else "medico"
+
+
+def chave_novidade(corpo: dict[str, Any], tela: str) -> str:
+    """Muda a cada chamada nova ou repetida da própria tela: médico (chamada_id) ou triagem (ticket e horário)."""
+    if tela == "triagem":
+        triagem = corpo.get("triagem") or {}
+        return f"{triagem.get('ticket_id', '')}:{triagem.get('chamado_em', '')}"
+    return str((corpo.get("atual") or {}).get("chamada_id", ""))
 
 
 def montar_painel(corpo: dict[str, Any]) -> dict[str, Any]:
@@ -78,6 +88,8 @@ def montar_painel(corpo: dict[str, Any]) -> dict[str, Any]:
             "tentativa": tentativa_texto(triagem.get("tentativa")),
             "hora": _hora_brasilia(triagem.get("chamado_em")),
         },
+        "triagem_ultimas": [{"ticket": formatar_ticket(t.get("tipo"), t.get("numero")), "hora": _hora_brasilia(t.get("chamado_em"))}
+                            for t in (corpo.get("triagem_ultimas") or [])[:4]],
     }
 
 
@@ -90,6 +102,7 @@ class PainelState(rx.State):
     atual: dict[str, str] = {}
     ultimas: list[dict[str, str]] = []
     triagem: dict[str, str] = {}
+    triagem_ultimas: list[dict[str, str]] = []
     carregado: bool = False
     reconectando: bool = False
     aviso: str = ""
@@ -99,7 +112,9 @@ class PainelState(rx.State):
     _chave: str = ""
 
     async def atualizar(self, _=None):
-        filtro = siglas_do_filtro(self.router.url.query_parameters.get("especialidades", ""))
+        tela = tela_da_rota(self.router.url.path)
+        # O filtro por especialidade só vale para o painel dos médicos; a triagem é comum a todas.
+        filtro = siglas_do_filtro(self.router.url.query_parameters.get("especialidades", "")) if tela == "medico" else ""
         try:
             resposta = api.requisitar("GET", "XANO_FILA_API_URL", "/painel", params={"especialidades": filtro} if filtro else None)
         except (api.ConfiguracaoAusente, httpx.RequestError):
@@ -116,14 +131,22 @@ class PainelState(rx.State):
         self.atual = painel["atual"] or {}
         self.ultimas = painel["ultimas"]
         self.triagem = painel["triagem"] or {}
+        self.triagem_ultimas = painel["triagem_ultimas"]
         self.reconectando, self.aviso = False, ""
-        chave = chave_novidade(corpo)
+        chave = chave_novidade(corpo, tela)
         novidade = self.carregado and chave != self._chave
         self._chave, self.carregado = chave, True
         if novidade:
             self.destaques += 1
             if self.som_ativo:
                 yield rx.call_script(SCRIPT_SOM)
+
+    async def abrir(self):
+        """Ao abrir uma das telas, recomeça a detecção de novidade (a outra tela pode ter deixado outra chave)."""
+        self.carregado, self._chave, self.destaques = False, "", 0
+        self.atual, self.ultimas, self.triagem, self.triagem_ultimas = {}, [], {}, []
+        async for evento in self.atualizar():
+            yield evento
 
     def ativar_som(self):
         self.som_ativo = True

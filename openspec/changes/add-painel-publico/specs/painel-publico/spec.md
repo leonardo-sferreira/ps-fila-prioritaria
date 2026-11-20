@@ -39,11 +39,11 @@ O painel DEVE listar as últimas chamadas (no mínimo as 4 anteriores à atual),
 - **ENTÃO** o painel mostra a atual em destaque e as 4 anteriores na lista de últimas chamadas
 
 ### Requirement: Tickets da pré-triagem
-O painel DEVE exibir o número do ticket da pré-triagem chamado mais recentemente pela Recepção/Triagem (inclusive rechamadas do mesmo ticket), com a indicação "Triagem".
+O painel da triagem, tela própria separada do painel dos consultórios (decisão do PO, 20/11/2026), DEVE exibir em destaque o número do ticket da pré-triagem chamado mais recentemente pela Recepção/Triagem (inclusive rechamadas do mesmo ticket) e os últimos tickets chamados antes dele.
 
 #### Scenario: Ticket chamado para a triagem
 - **QUANDO** a Recepção/Triagem chama o ticket 42
-- **ENTÃO** o painel mostra "Triagem — senha 42" em até 5 segundos
+- **ENTÃO** o painel da triagem mostra o ticket 42 em destaque em até 5 segundos
 
 ### Requirement: Atualização contínua e resiliência
 O painel DEVE se atualizar automaticamente em até 5 segundos após qualquer mudança na fila ou nas chamadas, sem ação do usuário, e DEVE continuar exibindo a última informação obtida, com indicação discreta de "reconectando", se a comunicação falhar.

@@ -29,7 +29,7 @@ Sem autenticação. Monta a resposta com campos escolhidos um a um:
 
 ### D2. Polling de 5 s no Reflex com detecção de novidade
 
-> Alterado em 20/11/2026: 5 s em vez de 3 s, porque o plano gratuito do Xano limita 25 requisições a cada 20 s para todo o sistema.
+> Alterado em 20/11/2026: 5 s em vez de 3 s, porque o plano gratuito do Xano limita 10 requisições a cada 20 s para todo o sistema (cada tela aberta usa 4).
 O state do painel guarda o `chamado_em` da chamada atual e do ticket; se algum mudar, dispara a animação de destaque e o som (arquivo curto em `assets/`). Em caso de erro, mantém o último estado e mostra "reconectando". O navegador pode bloquear o som até a primeira interação: a tela mostra "Toque para ativar o som" na primeira vez.
 - **Alternativa:** SSE. Descartada por complexidade e pelo suporte limitado no Xano.
 
@@ -41,6 +41,9 @@ Segue a tela "5 — Painel público — Chamando o paciente" do protótipo, no p
 
 ### D5. Sem previsão na tela (decisão do PO, 20/11/2026)
 O painel mostra só a chamada atual, o ticket da triagem e as últimas chamadas; a previsão das próximas senhas não aparece. O endpoint ainda devolve `previsoes` (feito antes da decisão e coberto por `test_painel.py`); a tela ignora esse campo.
+
+### D6. Duas telas: consultórios e triagem (decisão do PO, 20/11/2026)
+Cada TV abre a sua: `/painel/medico` (senha chamada pelo médico e últimas chamadas, com filtro por especialidade) e `/painel/triagem` (ticket chamado pela Recepção/Triagem e últimos tickets). As duas usam o mesmo `GET painel`, que passou a devolver também `triagem_ultimas` (até 4 tickets chamados antes do atual, na janela `HORAS_PAINEL`). Cada tela só toca o aviso para as próprias chamadas. `/painel` mostra os dois endereços.
 
 ## Riscos / Compromissos
 

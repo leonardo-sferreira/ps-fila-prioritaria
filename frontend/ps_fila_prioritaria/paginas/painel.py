@@ -1,8 +1,9 @@
-"""Painel público da sala de espera (add-painel-publico; tela 5 do Figma, "Painel público — Chamando o paciente").
+"""Painéis públicos da sala de espera (add-painel-publico; tela 5 do Figma, D4 e D6).
 
-Sem login e sem nenhuma ação que altere dados. Cabeçalho padrão com data e hora, cartão "Chamando agora" com a senha
-atual, cartão da triagem com o último ticket chamado e a tabela das últimas chamadas. Decisão do PO (20/11/2026): o
-painel não mostra a previsão das próximas senhas, só a chamada atual e as que já foram chamadas.
+Sem login e sem nenhuma ação que altere dados. Decisão do PO (20/11/2026): duas telas, cada uma numa TV.
+- /painel/medico: cartão "Chamando agora" com a senha chamada pelo médico e a tabela das últimas chamadas.
+- /painel/triagem: cartão "Chamando agora" com o ticket chamado pela Recepção/Triagem e os últimos tickets.
+/painel só oferece os dois endereços. Nenhuma tela mostra a previsão das próximas senhas.
 """
 
 from typing import Any
@@ -25,6 +26,11 @@ from ps_fila_prioritaria.estados.painel import PainelState
 # Faixa lateral do cartão na cor clínica da senha (mesmas variáveis do painel do plantão, claro e escuro).
 COR_CLINICA = {"VERMELHA": "var(--ps-clinica-vermelha)", "AMARELA": "var(--ps-clinica-amarela)", "AZUL": "var(--ps-clinica-azul)"}
 SOMBRA = "0 2px 8px rgba(18, 60, 107, 0.08)"
+# Intervalo da atualização (D2): o plano do Xano aceita poucas requisições por janela de 20 s para o sistema inteiro.
+INTERVALO_MS = 5000
+SUBTITULO = "Sistema de Gerenciamento de Filas Prioritárias"
+COLUNAS_MEDICO = [("Senha", "30%"), ("Especialidade", "30%"), ("Sala", "20%"), ("Horário", "20%")]
+COLUNAS_TRIAGEM = [("Ticket", "60%"), ("Horário", "40%")]
 
 
 def cor_clinica(cor: Any) -> rx.Var:
@@ -35,92 +41,92 @@ def rotulo(texto: Any) -> rx.Component:
     return rx.text(texto, size="2", weight="medium", color=COR_SECUNDARIA, text_transform="uppercase", letter_spacing="0.04em")
 
 
-def cartao_atual() -> rx.Component:
-    a = PainelState.atual
+def aguardando() -> rx.Component:
+    return rx.vstack(rotulo("Chamando agora"), rx.text("Aguardando a próxima chamada", size="6", weight="medium", color=COR_SECUNDARIA),
+                     spacing="3")
+
+
+def cartao_destaque(conteudo: rx.Component, borda: Any) -> rx.Component:
     return rx.box(
-        rx.cond(
-            a.length() > 0,
-            rx.vstack(
-                rotulo("Chamando agora"),
-                rx.text(a["senha"], weight="bold", font_size="clamp(56px, 7vw, 120px)", line_height="1.05", color=COR_MARINHO),
-                rx.text("Dirija-se à ", a["destino"], " · ", a["tentativa"], size="5", color=COR_TEXTO),
-                spacing="3",
-            ),
-            rx.vstack(rotulo("Chamando agora"), rx.text("Aguardando a próxima chamada", size="6", weight="medium", color=COR_SECUNDARIA),
-                      spacing="3"),
-        ),
+        conteudo,
         # A key muda a cada chamada nova ou repetida e remonta o cartão, o que reinicia o destaque.
         key=PainelState.destaques.to_string(),
         class_name=rx.cond(PainelState.destaques > 0, "ps-painel-destaque", ""),
         background=COR_SUPERFICIE,
         border=f"1px solid {COR_BORDA}",
-        border_left=rx.cond(a.length() > 0, "8px solid " + cor_clinica(a["cor"]).to(str), f"8px solid {COR_BORDA}"),
+        border_left=borda,
         border_radius="16px",
         box_shadow=SOMBRA,
-        padding="32px 48px",
+        padding="40px 48px",
         width="100%",
-        min_height="200px",
+        min_height="240px",
         display="flex",
         align_items="center",
     )
 
 
+def cartao_medico() -> rx.Component:
+    a = PainelState.atual
+    return cartao_destaque(
+        rx.cond(
+            a.length() > 0,
+            rx.vstack(
+                rotulo("Chamando agora"),
+                rx.text(a["senha"], weight="bold", font_size="clamp(56px, 8vw, 140px)", line_height="1.05", color=COR_MARINHO),
+                rx.text("Dirija-se à ", a["destino"], " · ", a["tentativa"], size="5", color=COR_TEXTO),
+                spacing="3",
+            ),
+            aguardando(),
+        ),
+        rx.cond(a.length() > 0, "8px solid " + cor_clinica(a["cor"]).to(str), f"8px solid {COR_BORDA}"),
+    )
+
+
 def cartao_triagem() -> rx.Component:
     t = PainelState.triagem
-    return rx.center(
-        rx.vstack(
-            rx.box(width="8px", height="8px", border_radius="50%", background=COR_AZUL),
-            rx.text("Triagem · Ticket chamado", size="1", weight="bold", color=COR_SECUNDARIA, text_transform="uppercase"),
-            rx.cond(
-                t.length() > 0,
-                rx.fragment(
-                    rx.text(t["ticket"], weight="bold", font_size="clamp(36px, 4vw, 64px)", line_height="1.1", color=COR_MARINHO),
-                    rx.text(t["tentativa"], size="2", color=COR_TEXTO),
-                ),
-                rx.text("—", weight="bold", font_size="clamp(36px, 4vw, 64px)", line_height="1.1", color=COR_SECUNDARIA),
+    return cartao_destaque(
+        rx.cond(
+            t.length() > 0,
+            rx.vstack(
+                rotulo("Chamando agora"),
+                rx.text(t["ticket"], weight="bold", font_size="clamp(56px, 8vw, 140px)", line_height="1.05", color=COR_MARINHO),
+                rx.text("Dirija-se à Recepção/Triagem · ", t["tentativa"], size="5", color=COR_TEXTO),
+                spacing="3",
             ),
-            rx.text("Dirija-se à Recepção/Triagem", size="2", color=COR_SECUNDARIA),
-            align="center",
-            spacing="2",
+            aguardando(),
         ),
-        background=COR_SUPERFICIE,
-        border=f"1px solid {COR_BORDA}",
-        border_radius="16px",
-        box_shadow=SOMBRA,
-        padding="24px",
-        width="100%",
-        min_height="200px",
+        rx.cond(t.length() > 0, f"8px solid {COR_AZUL}", f"8px solid {COR_BORDA}"),
     )
 
 
-COLUNAS = [("Senha", "30%"), ("Especialidade", "30%"), ("Sala", "20%"), ("Horário", "20%")]
+def celula(valor: Any, largura: str, destaque: bool = False) -> rx.Component:
+    return rx.text(valor, size="4" if destaque else "3", weight="bold" if destaque else "regular", color=COR_TEXTO, width=largura)
 
 
-def linha_ultima(u: Any, i: Any) -> rx.Component:
-    return rx.hstack(
-        rx.text(u["senha"], size="4", weight="bold", color=COR_TEXTO, width="30%"),
-        rx.text(u["especialidade"], size="3", color=COR_TEXTO, width="30%"),
-        rx.text(u["sala"], size="3", color=COR_TEXTO, width="20%"),
-        rx.text(u["hora"], size="3", color=COR_TEXTO, width="20%"),
-        padding="14px 24px",
-        width="100%",
-        align="center",
-        background=rx.cond(i % 2 == 1, COR_HOVER, "transparent"),
-        border_radius="8px",
-    )
+def linha_medico(u: Any, i: Any) -> rx.Component:
+    return linha(i, celula(u["senha"], "30%", True), celula(u["especialidade"], "30%"), celula(u["sala"], "20%"), celula(u["hora"], "20%"))
 
 
-def tabela_ultimas() -> rx.Component:
+def linha_triagem(t: Any, i: Any) -> rx.Component:
+    return linha(i, celula(t["ticket"], "60%", True), celula(t["hora"], "40%"))
+
+
+def linha(i: Any, *celulas: rx.Component) -> rx.Component:
+    return rx.hstack(*celulas, padding="14px 24px", width="100%", align="center",
+                     background=rx.cond(i % 2 == 1, COR_HOVER, "transparent"), border_radius="8px")
+
+
+def tabela(titulo: str, colunas: list[tuple[str, str]], itens: Any, desenhar: Any) -> rx.Component:
     return rx.vstack(
-        rx.text("Últimas chamadas", size="4", weight="bold", color=COR_TEXTO),
+        rx.text(titulo, size="4", weight="bold", color=COR_TEXTO),
         rx.box(
             rx.hstack(*[rx.text(nome, size="1", weight="bold", color=COR_SECUNDARIA, text_transform="uppercase", width=largura)
-                        for nome, largura in COLUNAS],
+                        for nome, largura in colunas],
                       padding="14px 24px", width="100%", border_bottom=f"1px solid {COR_BORDA}"),
             rx.cond(
-                PainelState.ultimas.length() == 0,
+                itens.length() == 0,
                 rx.text("Nenhuma chamada anterior.", size="3", color=COR_SECUNDARIA, padding="16px 24px"),
-                rx.vstack(rx.foreach(PainelState.ultimas, linha_ultima), spacing="0", padding="8px", width="100%"),
+                rx.vstack(rx.foreach(itens, desenhar), spacing="0", padding="8px", width="100%"),
             ),
             background=COR_SUPERFICIE,
             border=f"1px solid {COR_BORDA}",
@@ -133,15 +139,13 @@ def tabela_ultimas() -> rx.Component:
     )
 
 
-def painel() -> rx.Component:
+def layout_painel(titulo: str, *conteudo: rx.Component) -> rx.Component:
     return rx.box(
-        rx.moment(interval=5000, on_change=lambda _: PainelState.atualizar, display="none"),
-        cabecalho("PAINEL DE CHAMADAS", "Sistema de Gerenciamento de Filas Prioritárias", com_sessao=False),
+        rx.moment(interval=INTERVALO_MS, on_change=lambda _: PainelState.atualizar, display="none"),
+        cabecalho(titulo, SUBTITULO, com_sessao=False),
         rx.vstack(
             rx.cond(PainelState.aviso != "", rx.callout(PainelState.aviso, color_scheme="orange", width="100%")),
-            rx.grid(cartao_atual(), cartao_triagem(), grid_template_columns=rx.breakpoints(initial="1fr", md="2.2fr 1fr"),
-                    gap="24px", width="100%"),
-            tabela_ultimas(),
+            *conteudo,
             spacing="6",
             padding="36px 48px",
             width="100%",
@@ -163,4 +167,40 @@ def painel() -> rx.Component:
         font_family="Inter, sans-serif",
         min_height="100vh",
         width="100%",
+    )
+
+
+def painel_medico() -> rx.Component:
+    return layout_painel("PAINEL DE CHAMADAS — CONSULTÓRIOS", cartao_medico(),
+                         tabela("Últimas chamadas", COLUNAS_MEDICO, PainelState.ultimas, linha_medico))
+
+
+def painel_triagem() -> rx.Component:
+    return layout_painel("PAINEL DE CHAMADAS — TRIAGEM", cartao_triagem(),
+                         tabela("Últimos tickets chamados", COLUNAS_TRIAGEM, PainelState.triagem_ultimas, linha_triagem))
+
+
+def opcao(titulo: str, descricao: str, href: str) -> rx.Component:
+    return rx.link(
+        rx.vstack(rx.text(titulo, size="5", weight="bold", color=COR_TEXTO), rx.text(descricao, size="2", color=COR_SECUNDARIA),
+                  rx.text(href, size="2", weight="medium", color=COR_AZUL), spacing="2"),
+        href=href, underline="none", background=COR_SUPERFICIE, border=f"1px solid {COR_BORDA}", border_radius="16px",
+        box_shadow=SOMBRA, padding="28px", flex="1", _hover={"border_color": COR_AZUL},
+    )
+
+
+def painel_escolha() -> rx.Component:
+    """/painel: cada TV abre o painel do seu local."""
+    return rx.box(
+        cabecalho("PAINEL DE CHAMADAS", SUBTITULO, com_sessao=False),
+        rx.vstack(
+            rx.text("Escolha o painel desta TV", size="6", weight="bold", color=COR_TEXTO),
+            rx.flex(
+                opcao("Consultórios", "Senha chamada pelo médico, com especialidade e Sala, e as últimas chamadas.", "/painel/medico"),
+                opcao("Triagem", "Ticket chamado pela Recepção/Triagem e os últimos tickets chamados.", "/painel/triagem"),
+                gap="24px", width="100%", direction=rx.breakpoints(initial="column", md="row"),
+            ),
+            spacing="5", padding="48px", width="100%", max_width="1100px", margin="0 auto",
+        ),
+        background=COR_FUNDO, font_family="Inter, sans-serif", min_height="100vh", width="100%",
     )

@@ -12357,15 +12357,15 @@
     },
     {
       "nome": "Detecção de chamada nova",
-      "objetivo": "Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não.",
-      "resultado_esperado": "Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não.",
+      "objetivo": "No painel dos médicos só a chamada médica nova ou repetida dispara destaque e som; no da triagem, só o ticket chamado ou rechamado.",
+      "resultado_esperado": "No painel dos médicos só a chamada médica nova ou repetida dispara destaque e som; no da triagem, só o ticket chamado ou rechamado.",
       "componente": "Reflex",
       "classe_seguranca": "nao_mutavel",
       "suite": "reflex",
       "tipo": "UNITARIO",
       "modo_dependencia": "LOCAL",
       "id": "CT-REFLEX-0276",
-      "seletor": "frontend/tests/test_painel_state.py::test_novidade_muda_com_chamada_repeticao_e_ticket",
+      "seletor": "frontend/tests/test_painel_state.py::test_novidade_de_cada_tela",
       "referencias": {
         "openspec": [
           {
@@ -12441,6 +12441,31 @@
       "suite": "controlled",
       "tipo": "INTEGRACAO",
       "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Tela do painel pela rota",
+      "objetivo": "/painel/triagem abre o painel da triagem; /painel/medico, o dos consultórios.",
+      "resultado_esperado": "/painel/triagem abre o painel da triagem; /painel/medico, o dos consultórios.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0278",
+      "seletor": "frontend/tests/test_painel_state.py::test_tela_pela_rota",
       "referencias": {
         "openspec": [
           {
