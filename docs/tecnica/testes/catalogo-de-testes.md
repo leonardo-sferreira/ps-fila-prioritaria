@@ -6,13 +6,13 @@ Fonte: `tests/catalogo_testes.json`. Cada caso tem um ID permanente; o CI recusa
 
 | Suíte | Casos | Onde roda |
 |---|---|---|
-| Autotestes da infraestrutura de evidências | 41 | CI e local |
+| Autotestes da infraestrutura de evidências | 42 | CI e local |
 | Integração ao vivo (escrita isolada na v1) | 33 | Local, com autorização |
 | E2E público (navegador) | 2 | CI |
 | Reflex (estado das telas, API simulada) | 297 | CI e local |
-| Xano funções puras (testes nativos remotos) | 97 | CI (CLI do Xano) |
+| Xano funções puras (testes nativos remotos) | 99 | CI (CLI do Xano) |
 | Xano estático (contratos lidos do código) | 13 | CI e local |
-| **Total** | **483** | |
+| **Total** | **486** | |
 
 Colunas: **Entrada** = o que o teste prepara ou envia (resumo do objetivo); **Saída esperada** = o resultado que precisa acontecer para o teste passar.
 
@@ -61,6 +61,7 @@ Colunas: **Entrada** = o que o teste prepara ou envia (resumo do objetivo); **Sa
 | CT-FERRAMENTA-0039 | E2e destino inicializacao e timeout sem logs sensiveis | UNITARIO | — | E2e destino inicializacao e timeout sem logs sensiveis. | `tests/test_evidence_pipeline.py` |
 | CT-FERRAMENTA-0040 | Workflow topologia publicacao e gates preservados | UNITARIO | — | Workflow topologia publicacao e gates preservados. | `tests/test_evidence_pipeline.py` |
 | CT-FERRAMENTA-0041 | Fixtures isolam Actions sem apagar contexto do runner | UNITARIO | Verificar que as fixtures sintéticas não herdam identidade nem publicam no Summary externo, preservando o contexto da execução intencional. | Os seis cenários antes reprovados passam sob ambiente CI; o Summary sentinela permanece intacto e o runner intencional mantém SHA, run, tentativa e job. | `tests/test_evidence_pipeline.py` |
+| CT-FERRAMENTA-0042 | Resposta fora de JSON do CLI Xano espera a janela e repete | INTEGRACAO | Resposta fora de JSON do CLI Xano (recusa por limite do plano) espera a janela de 20 s e repete até duas vezes; depois disso, falha. | Resposta fora de JSON do CLI Xano (recusa por limite do plano) espera a janela de 20 s e repete até duas vezes; depois disso, falha. | `tests/test_evidence_runner.py` |
 
 ## Integração ao vivo (escrita isolada na v1)
 
@@ -510,6 +511,8 @@ Colunas: **Entrada** = o que o teste prepara ou envia (resumo do objetivo); **Sa
 | CT-XANO-0095 | Reentrada usa ordem efetiva | UNITARIO | — | Reentrada usa ordem efetiva. Valores esperados: id = 2. | `backend/xano/function/fila/proxima_ficha.xs` |
 | CT-XANO-0096 | Três fichas retornam três senhas sem dados pessoais | UNITARIO | — | Três fichas retornam três senhas sem dados pessoais. | `backend/xano/function/fila/prever_fila.xs` |
 | CT-XANO-0097 | Pausa e ausência não cobrem; atendimento cobre | UNITARIO | — | Pausa e ausência não cobrem; atendimento cobre. | `backend/xano/function/fila/avaliar_cobertura.xs` |
+| CT-XANO-0145 | Soma vence mesmo com fila maior (Cardiologia 2+2 com 3 na fila contra Clínica 2) | UNITARIO | — | Soma vence mesmo com fila maior (Cardiologia 2+2 com 3 na fila contra Clínica 2). | `backend/xano/function/direcionamento/escolher_destino.xs` |
+| CT-XANO-0146 | Soma vence o menor ID (Clínica 2+2 contra Cardiologia 2) | UNITARIO | — | Soma vence o menor ID (Clínica 2+2 contra Cardiologia 2). | `backend/xano/function/direcionamento/escolher_destino.xs` |
 
 ## Xano estático (contratos lidos do código)
 

@@ -12499,6 +12499,60 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Soma vence mesmo com fila maior (Cardiologia 2+2 com 3 na fila contra Clínica 2)",
+      "objetivo": "Soma vence mesmo com fila maior (Cardiologia 2+2 com 3 na fila contra Clínica 2)",
+      "resultado_esperado": "Soma vence mesmo com fila maior (Cardiologia 2+2 com 3 na fila contra Clínica 2).",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0145",
+      "seletor": "backend/xano/function/direcionamento/escolher_destino.xs::soma vence mesmo com fila maior (Cardiologia 2+2 com 3 na fila contra Clínica 2)",
+      "suite": "xano-safe",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/specs/direcionamento/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "native_function": "direcionamento/escolher_destino",
+      "native_name": "soma vence mesmo com fila maior (Cardiologia 2+2 com 3 na fila contra Clínica 2)",
+      "adaptador_de": null
+    },
+    {
+      "nome": "Soma vence o menor ID (Clínica 2+2 contra Cardiologia 2)",
+      "objetivo": "Soma vence o menor ID (Clínica 2+2 contra Cardiologia 2)",
+      "resultado_esperado": "Soma vence o menor ID (Clínica 2+2 contra Cardiologia 2).",
+      "componente": "Xano",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-XANO-0146",
+      "seletor": "backend/xano/function/direcionamento/escolher_destino.xs::soma vence o menor ID (Clínica 2+2 contra Cardiologia 2)",
+      "suite": "xano-safe",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "REAL",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/specs/direcionamento/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "native_function": "direcionamento/escolher_destino",
+      "native_name": "soma vence o menor ID (Clínica 2+2 contra Cardiologia 2)",
+      "adaptador_de": null
     }
   ]
 }
