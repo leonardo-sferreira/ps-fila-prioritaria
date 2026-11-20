@@ -297,6 +297,17 @@ flowchart LR
           <tr><td>Controle: com movimento do mouse, a sessão continua</td><td><span class="etiqueta ok">aprovado</span></td></tr>
         </tbody>
       </table></div>
+      <h3>Roteiros dos cards 101 a 104, na <code>v1</code> (20/11/2026)</h3>
+      <div class="tabela"><table>
+        <thead><tr><th>Card</th><th>Resultado</th></tr></thead>
+        <tbody>
+          <tr><td>101 — Totem e fila de pré-triagem</td><td><span class="etiqueta ok">aprovado</span> tickets sem dado pessoal, emissão simultânea sem repetição, ordem 2:1, intervalos, segunda oportunidade, nada automático</td></tr>
+          <tr><td>102 — Paciente e classificação</td><td><span class="etiqueta ok">19 de 19</span> cadastro por CPF, cores por escore, item crítico, pendências, classificação manual, ajuste e descarte</td></tr>
+          <tr><td>103 — Direcionamento, senha e comprovante</td><td><span class="etiqueta ok">11 de 11</span> depois da correção do desempate por soma</td></tr>
+          <tr><td>104 — Fila do médico</td><td><span class="etiqueta ok">aprovado</span> concorrência, repetição, reentrada, comparecimento, desistência, Pausa/Ausente</td></tr>
+        </tbody>
+      </table></div>
+      <div class="aviso atencao"><p><strong>Defeito encontrado e corrigido:</strong> no empate da maior pontuação, o direcionamento ignorava a soma e decidia pela fila menor (Peito + Palpitações + Falta de ar iam para Clínica Geral quando a Cardiologia tinha fila). Corrigido em <code>direcionamento/escolher_destino</code>, com 2 testes nativos novos.</p></div>
       <h3>Roteiro do Administrador (card 106), na <code>v1</code> (20/11/2026)</h3>
       <p>Pela mesma API das telas do Administrador; registros de teste desativados no fim e parâmetro restaurado.</p>
       <div class="tabela"><table>

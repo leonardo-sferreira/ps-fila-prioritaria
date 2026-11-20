@@ -86,11 +86,13 @@ function "fila/teste_painel_extras" {
       }
 
       elseif ($input.acao == "TICKET") {
+        // Data fixa no passado: o ticket fictício não entra na numeração diária real do Totem (que continua a partir
+        // do maior número do dia). O painel acha o ticket pelo chamado_em, não pela data.
         var $hoje {
-          value = now|format_timestamp:"Y-m-d":"America/Sao_Paulo"
+          value = "2000-01-01"
         }
 
-        // Número único por dia: o próximo livre a partir de 900 (reconhecível na tela da Recepção).
+        // Número único nessa data: o próximo livre a partir de 900.
         db.query ticket_pre_triagem {
           where = $db.ticket_pre_triagem.data == $hoje && $db.ticket_pre_triagem.numero >= 900
           return = {type: "count"}

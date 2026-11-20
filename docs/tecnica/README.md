@@ -303,7 +303,18 @@ Executado pela mesma API das telas do Administrador. Os registros criados ("TEST
 
 A regra do último Administrador é coberta pelo endpoint e por 3 testes nativos (`usuarios/deixa_sem_admin`), sem desativar administradores reais.
 
-Roteiros manuais ainda sem registro de execução: cards de teste 101 a 104 no Trello ([roteiros](../testes-roteiros-sprint5.md)).
+### Roteiros dos cards 101 a 104, executados na `v1` (20/11/2026)
+
+Pela mesma API das telas, com Recepção, médicos, pacientes e tickets sintéticos, todos encerrados no fim.
+
+| Card | Resultado |
+|---|---|
+| 101 — Totem e fila de pré-triagem | Aprovado: tickets sem dado pessoal; chave errada recusada; 6 emissões simultâneas sem número repetido; ordem e ciclo 2:1; intervalos 30 s / 10 s e limite de 3 chamadas; segunda oportunidade e saída; nada automático; presente e desistência |
+| 102 — Paciente e classificação | Aprovado (19 de 19): CPF duplicado e inválido, nascimento futuro, Azul/Amarela/Vermelha por escore, item crítico, sintoma não listado, pendências, glicemia, classificação manual, ajuste e descarte, valores impossíveis |
+| 103 — Direcionamento, senha e comprovante | Aprovado (11 de 11) depois da correção abaixo: destino por sintomas, Pediatria, especialidade padrão, comprovante sem dados pessoais, numeração seguida, reimpressão e renumeração na reavaliação |
+| 104 — Fila do médico | Aprovado: `test_chamada.py` e `test_recuperacao_sessao_medico.py` ao vivo; desistência registrada; médico com ficha chamada não pode ser desativado |
+
+**Defeito encontrado e corrigido (card 103):** quando a maior pontuação individual empatava, `direcionamento/escolher_destino` ignorava a soma e decidia pela fila menor. Exemplo: Peito, Palpitações e Falta de ar iam para Clínica Geral sempre que a Cardiologia tinha fila. A comparação foi reescrita com variáveis simples, com 2 testes nativos novos (`CT-XANO-0145` e `CT-XANO-0146`), e publicada na `v1`. O teste antigo não pegava o defeito porque, com as filas vazias, a Cardiologia vencia pelo menor ID.
 
 ## 13. Governança e responsáveis
 
