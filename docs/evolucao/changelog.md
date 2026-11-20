@@ -41,5 +41,6 @@ Histórico do que foi entregue, montado a partir das changes arquivadas do OpenS
 
 ## Sprint 5 — Painel público, testes e apresentação
 
+- **20/11/2026 — `add-acompanhamento-administrador`**: Depois do feedback do professor, o Administrador ganhou uma tela de acompanhamento com três blocos: fila geral, pessoas logadas e seus status, e auditoria (Figma de 26–27/09/2026). Com o fluxo completo funcionando (changes 1 a 7), falta dar ao Administrador essa visão consolidada do plantão e deixar a trilha de auditoria consultável (RNF07). ([change](../../openspec/changes/archive/2026-11-20-add-acompanhamento-administrador))
 - **20/11/2026 — `add-painel-publico`**: Os pacientes que aguardam precisam saber quando e para onde ir, sem ter seus dados expostos. O painel público é a única interface do sistema voltada ao paciente e mostra, em tempo quase real, a senha chamada e a previsão das próximas, com o mesmo algoritmo da chamada real. ([change](../../openspec/changes/archive/2026-11-20-add-painel-publico))
 
