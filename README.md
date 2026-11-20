@@ -216,7 +216,7 @@ Roteiro manual: abra `/totem`, toque em cada tipo e confira o código na tela (`
 
 ### Painel público
 
-O painel da sala de espera fica em `http://localhost:3000/painel` e não pede login. Ele mostra a senha chamada pelo médico (com especialidade, Sala quando o médico tem uma, e "2ª chamada" na repetição), o último ticket chamado na triagem, as 4 chamadas anteriores e a previsão das próximas senhas de cada especialidade, pela mesma regra do "Chamar próximo". Nunca mostra nome, CPF ou dado clínico. Atualiza sozinho a cada 3 segundos.
+O painel da sala de espera fica em `http://localhost:3000/painel` e não pede login. Ele mostra a senha chamada pelo médico (com especialidade, Sala quando o médico tem uma, e "2ª chamada" na repetição), o último ticket chamado na triagem, as 4 chamadas anteriores e a previsão das próximas senhas de cada especialidade, pela mesma regra do "Chamar próximo". Nunca mostra nome, CPF ou dado clínico. Atualiza sozinho a cada 3 segundos. Chamadas e tickets ficam na tela por um tempo desde a chamada (parâmetro "Tempo que uma chamada fica no painel", padrão 2 horas), o que funciona com o PS aberto 24 horas. A Sala é a que está vinculada ao médico no cadastro.
 
 Para usar numa TV:
 

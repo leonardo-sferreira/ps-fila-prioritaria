@@ -452,6 +452,7 @@ DESCRICAO_PARAMETRO = {
     "amarelas_por_ciclo": "Na fila médica, quantas fichas Amarelas são chamadas em cada rodada.",
     "azuis_por_ciclo": "Na fila médica, quantas fichas Azuis são chamadas em cada rodada, depois das Amarelas.",
     "tamanho_previsao": "Quantas próximas senhas aparecem na previsão do painel da sala de espera.",
+    "HORAS_PAINEL": "Por quanto tempo uma chamada (médico ou triagem) continua aparecendo no painel da sala de espera. Funciona com o PS aberto 24 horas: conta o tempo desde a chamada, não o dia.",
     "ESPECIALIDADE_PADRAO": "Para onde vai a ficha quando nenhum sintoma do catálogo indica uma especialidade.",
 }
 

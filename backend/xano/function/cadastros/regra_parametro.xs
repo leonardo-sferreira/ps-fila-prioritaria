@@ -25,6 +25,7 @@ function "cadastros/regra_parametro" {
         amarelas_por_ciclo            : {tipo: "INTEIRO", minimo: 1, maximo: 10, rotulo: "Fila médica: Amarelas por ciclo", unidade: "fichas"}
         azuis_por_ciclo               : {tipo: "INTEIRO", minimo: 1, maximo: 10, rotulo: "Fila médica: Azuis por ciclo", unidade: "fichas"}
         tamanho_previsao              : {tipo: "INTEIRO", minimo: 1, maximo: 20, rotulo: "Senhas na previsão do painel", unidade: "senhas"}
+        HORAS_PAINEL                  : {tipo: "INTEIRO", minimo: 1, maximo: 24, rotulo: "Tempo que uma chamada fica no painel", unidade: "horas"}
         ESPECIALIDADE_PADRAO          : {tipo: "ESPECIALIDADE", minimo: null, maximo: null, rotulo: "Especialidade padrão (ficha sem sintoma do catálogo)", unidade: ""}
       }
     }

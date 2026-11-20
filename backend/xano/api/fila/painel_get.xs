@@ -44,6 +44,17 @@ query painel verb=GET {
       value = $selecionadas|map:$$.id
     }
 
+    // Janela do painel (HORAS_PAINEL, padrão 2 h): chamadas e tickets mais antigos saem da tela. Conta o tempo desde
+    // a chamada, não o dia, para funcionar com o PS aberto 24 horas.
+    db.get parametro {
+      field_name = "chave"
+      field_value = "HORAS_PAINEL"
+    } as $param_janela
+
+    var $desde {
+      value = now|add_secs_to_timestamp:(0 - ((($param_janela == null) ? 2 : ($param_janela.valor|to_int)) * 3600))
+    }
+
     // Chamadas médicas mais recentes das especialidades exibidas; 30 bastam para achar 5 senhas distintas.
     // Com join, só o que está no eval vem com certeza; a ordem usa o horário da chamada, não o da ficha.
     db.query chamada {
@@ -54,7 +65,7 @@ query painel verb=GET {
         }
       }
 
-      where = $db.chamada.tipo == "CHAMADA" && $db.ficha_atendimento.especialidade_atribuida_id in $ids_especialidades
+      where = $db.chamada.tipo == "CHAMADA" && $db.chamada.created_at >= $desde && $db.ficha_atendimento.especialidade_atribuida_id in $ids_especialidades
       sort = {chamado_em: "desc"}
       eval = {
         senha           : $db.ficha_atendimento.senha
@@ -150,9 +161,9 @@ query painel verb=GET {
       value = ($itens|slice:1:4)|map:{senha: $$.senha, cor: $$.cor, especialidade: $$.especialidade, sigla: $$.sigla, sala: $$.sala, chamado_em: $$.chamado_em}
     }
 
-    // A triagem é comum a todas as especialidades: o último ticket chamado aparece em qualquer painel.
+    // A triagem é comum a todas as especialidades: o último ticket chamado na janela aparece em qualquer painel.
     db.query ticket_pre_triagem {
-      where = $db.ticket_pre_triagem.chamado_em != null
+      where = $db.ticket_pre_triagem.chamado_em != null && $db.ticket_pre_triagem.chamado_em >= $desde
       sort = {chamado_em: "desc"}
       return = {type: "single"}
     } as $ticket
