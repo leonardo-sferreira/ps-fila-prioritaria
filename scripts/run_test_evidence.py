@@ -520,13 +520,20 @@ def xano_env(tmp: Path) -> dict:
 
 
 def executar_teste_nativo(record_id: str, profile: str, env: dict) -> tuple:
-    for attempt,timeout in enumerate((50,90)):
+    # Tempo esgotado: repete uma vez, com prazo maior. Resposta fora de JSON (recusa pelo limite do plano, de 10
+    # requisições a cada 20 s, ou saída truncada sob carga): espera a janela seguinte e repete até duas vezes.
+    prazos,esperas_json=[50,90],2
+    while True:
         try:
-            proc=subprocess.run(['xano','unit_test','run',record_id,'-p',profile,'--branch','v1','-o','json'],env=env,text=True,capture_output=True,timeout=timeout,check=False)
+            proc=subprocess.run(['xano','unit_test','run',record_id,'-p',profile,'--branch','v1','-o','json'],env=env,text=True,capture_output=True,timeout=prazos[0],check=False)
+        except subprocess.TimeoutExpired:
+            if len(prazos)==1:raise
+            prazos.pop(0);time.sleep(2.5);continue
+        try:
             return proc,json.loads(proc.stdout)
-        except (subprocess.TimeoutExpired,json.JSONDecodeError):
-            if attempt:raise
-            time.sleep(2.5)
+        except json.JSONDecodeError:
+            if not esperas_json:raise
+            esperas_json-=1;time.sleep(21)
 
 
 def run_native(cases: list[dict]) -> list[dict]:
