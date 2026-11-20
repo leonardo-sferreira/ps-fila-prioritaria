@@ -13,15 +13,19 @@
 
 ## 2. Reflex — página do painel
 
-- [ ] 2.1 [Reflex] Criar a página `/painel` sem login, com o layout de TV (D4) e o filtro por parâmetro de URL; verificar manualmente em tela cheia com duas especialidades
-  - Implementada em 20/11/2026: `/painel` sem login (`paginas/painel.py`), layout 16:9 com fundo escuro, senha atual na cor da prioridade, triagem e últimas chamadas à direita e previsão por especialidade embaixo; filtro `?especialidades=CAR,ORT`. Falta a verificação manual do PO.
-- [ ] 2.2 [Reflex] Implementar o polling de 3 s, a detecção de nova chamada com destaque e som, e o aviso "Toque para ativar o som" (D2); verificar manualmente com uma chamada e uma repetição feitas em outra aba
-  - Implementada em 20/11/2026: polling de 3 s (`rx.moment`), destaque que pisca a cada chamada nova ou repetida e na rechamada de ticket, aviso sonoro de dois tons pela Web Audio API (sem arquivo em `assets/`) e botão "Toque para ativar o som". 6 testes em `frontend/tests/test_painel_state.py`. Falta a verificação manual do PO.
-- [ ] 2.3 [Reflex] Implementar o estado "reconectando", que mantém a última informação; verificar manualmente parando o acesso à rede por 30 s
+- [x] 2.1 [Reflex] Criar a página `/painel` sem login, com o layout de TV (D4) e o filtro por parâmetro de URL; verificar manualmente em tela cheia com duas especialidades
+  - Implementada em 20/11/2026: `/painel` sem login (`paginas/painel.py`), refeita pela tela 5 do Figma a pedido do PO: cabeçalho padrão com data e hora, cartão "Chamando agora", cartão da triagem e tabela de últimas chamadas (senha, especialidade, Sala, horário); sem previsão das próximas senhas (D5); filtro `?especialidades=CAR,ORT`. Depois separada em duas telas (D6): `/painel/medico` e `/painel/triagem`, com `/painel` mostrando os dois endereços. Falta a verificação manual do PO.
+  - Verificada pelo PO em 20/11/2026: painéis dos consultórios e da triagem testados no fluxo real.
+- [x] 2.2 [Reflex] Implementar o polling de 3 s, a detecção de nova chamada com destaque e som, e o aviso "Toque para ativar o som" (D2); verificar manualmente com uma chamada e uma repetição feitas em outra aba
+  - Implementada em 20/11/2026: polling de 5 s (`rx.moment`; era 3 s, mudado pelo limite do plano gratuito do Xano), destaque que pisca a cada chamada nova ou repetida e na rechamada de ticket, aviso sonoro de dois tons pela Web Audio API (sem arquivo em `assets/`) e botão "Toque para ativar o som". 6 testes em `frontend/tests/test_painel_state.py`. Falta a verificação manual do PO.
+  - Verificada pelo PO em 20/11/2026: destaque e aviso sonoro funcionando na chamada e na repetição.
+- [x] 2.3 [Reflex] Implementar o estado "reconectando", que mantém a última informação; verificar manualmente parando o acesso à rede por 30 s
   - Implementada em 20/11/2026: em falha de rede, mantém o último estado e mostra "Reconectando…". Falta a verificação manual do PO.
+  - Aceita pelo PO em 20/11/2026 sem o teste manual de queda de rede (não havia como desligar a rede). O "Reconectando…" foi visto na prática quando o Xano recusou consultas por limite (429): o painel manteve a tela e mostrou o aviso.
 - [x] 2.4 Adicionar ao README como abrir o painel numa TV (URL com filtro, tela cheia, ativação do som) e o roteiro manual da seção 2; verificar executando-o
   - Concluída em 20/11/2026: seção "Painel público" no README (TV, filtro, tela cheia, som e roteiro de 6 passos); a execução do roteiro fica com o PO.
 
 ## 3. Integração
 
-- [ ] 3.1 Verificação ponta a ponta com três janelas (recepção, médico e painel): chamar um ticket na pré-triagem, triar e confirmar um paciente, chamá-lo pelo médico e repetir a chamada, conferindo em cada passo o que o painel mostra e que nenhum dado pessoal aparece
+- [x] 3.1 Verificação ponta a ponta com três janelas (recepção, médico e painel): chamar um ticket na pré-triagem, triar e confirmar um paciente, chamá-lo pelo médico e repetir a chamada, conferindo em cada passo o que o painel mostra e que nenhum dado pessoal aparece
+  - Verificada pelo PO em 20/11/2026: fluxo do Totem até a chamada do médico, acompanhado nos painéis (ticket na triagem e senha nos consultórios), funcionando.

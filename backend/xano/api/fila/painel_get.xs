@@ -161,12 +161,24 @@ query painel verb=GET {
       value = ($itens|slice:1:4)|map:{senha: $$.senha, cor: $$.cor, especialidade: $$.especialidade, sigla: $$.sigla, sala: $$.sala, chamado_em: $$.chamado_em}
     }
 
-    // A triagem é comum a todas as especialidades: o último ticket chamado na janela aparece em qualquer painel.
+    // A triagem é comum a todas as especialidades. O primeiro é o ticket chamado agora (inclusive rechamada) e os
+    // seguintes, até 4, são os últimos tickets chamados (painel da triagem). Só tickets chamados dentro da janela.
     db.query ticket_pre_triagem {
       where = $db.ticket_pre_triagem.chamado_em != null && $db.ticket_pre_triagem.chamado_em >= $desde
       sort = {chamado_em: "desc"}
-      return = {type: "single"}
-    } as $ticket
+      return = {
+        type  : "list"
+        paging: {page: 1, per_page: 5, metadata: false}
+      }
+    } as $tickets
+
+    var $ticket {
+      value = (($tickets|count) == 0) ? null : ($tickets|first)
+    }
+
+    var $tickets_anteriores {
+      value = ($tickets|slice:1:4)|map:{ticket_id: $$.id, tipo: $$.tipo, numero: $$.numero, chamado_em: $$.chamado_em}
+    }
 
     var $previsoes {
       value = []
@@ -190,6 +202,7 @@ query painel verb=GET {
     atual    : $atual
     ultimas  : $ultimas
     triagem  : ($ticket == null) ? null : {ticket_id: $ticket.id, tipo: $ticket.tipo, numero: $ticket.numero, tentativa: $ticket.tentativas, chamado_em: $ticket.chamado_em}
+    triagem_ultimas: $tickets_anteriores
     previsoes: $previsoes
     gerado_em: now
   }

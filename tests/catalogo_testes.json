@@ -12257,8 +12257,8 @@
     },
     {
       "nome": "Destino com e sem Sala",
-      "objetivo": "Mostra 'Especialidade — Sala N' quando o médico tem Sala e só a especialidade quando não tem.",
-      "resultado_esperado": "Mostra 'Especialidade — Sala N' quando o médico tem Sala e só a especialidade quando não tem.",
+      "objetivo": "Mostra 'Especialidade · Sala N' quando o médico tem Sala e só a especialidade quando não tem.",
+      "resultado_esperado": "Mostra 'Especialidade · Sala N' quando o médico tem Sala e só a especialidade quando não tem.",
       "componente": "Reflex",
       "classe_seguranca": "nao_mutavel",
       "suite": "reflex",
@@ -12269,7 +12269,7 @@
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
@@ -12281,20 +12281,20 @@
       "adaptador_de": null
     },
     {
-      "nome": "Indicação de repetição",
-      "objetivo": "'2ª chamada' só aparece a partir da segunda tentativa.",
-      "resultado_esperado": "'2ª chamada' só aparece a partir da segunda tentativa.",
+      "nome": "Indicação da tentativa",
+      "objetivo": "A chamada atual sempre indica a tentativa: 1ª, 2ª ou 3ª chamada.",
+      "resultado_esperado": "A chamada atual sempre indica a tentativa: 1ª, 2ª ou 3ª chamada.",
       "componente": "Reflex",
       "classe_seguranca": "nao_mutavel",
       "suite": "reflex",
       "tipo": "UNITARIO",
       "modo_dependencia": "LOCAL",
       "id": "CT-REFLEX-0273",
-      "seletor": "frontend/tests/test_painel_state.py::test_tentativa_so_aparece_na_repeticao",
+      "seletor": "frontend/tests/test_painel_state.py::test_tentativa_sempre_indicada",
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
@@ -12307,8 +12307,8 @@
     },
     {
       "nome": "Formatação do painel para a TV",
-      "objetivo": "Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas.",
-      "resultado_esperado": "Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas.",
+      "objetivo": "Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas, com especialidade e Sala em colunas; sem previsão.",
+      "resultado_esperado": "Senha, destino, cor, ticket da triagem e no máximo 4 últimas chamadas, com especialidade e Sala em colunas; sem previsão.",
       "componente": "Reflex",
       "classe_seguranca": "nao_mutavel",
       "suite": "reflex",
@@ -12319,7 +12319,7 @@
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
@@ -12344,7 +12344,7 @@
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
@@ -12357,19 +12357,19 @@
     },
     {
       "nome": "Detecção de chamada nova",
-      "objetivo": "Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não.",
-      "resultado_esperado": "Chamada nova, repetição e rechamada de ticket disparam destaque e som; mudança só na previsão não.",
+      "objetivo": "No painel dos médicos só a chamada médica nova ou repetida dispara destaque e som; no da triagem, só o ticket chamado ou rechamado.",
+      "resultado_esperado": "No painel dos médicos só a chamada médica nova ou repetida dispara destaque e som; no da triagem, só o ticket chamado ou rechamado.",
       "componente": "Reflex",
       "classe_seguranca": "nao_mutavel",
       "suite": "reflex",
       "tipo": "UNITARIO",
       "modo_dependencia": "LOCAL",
       "id": "CT-REFLEX-0276",
-      "seletor": "frontend/tests/test_painel_state.py::test_novidade_muda_com_chamada_repeticao_e_ticket",
+      "seletor": "frontend/tests/test_painel_state.py::test_novidade_de_cada_tela",
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
@@ -12394,7 +12394,7 @@
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
@@ -12419,7 +12419,7 @@
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
@@ -12444,7 +12444,32 @@
       "referencias": {
         "openspec": [
           {
-            "arquivo": "openspec/changes/add-painel-publico/specs/painel-publico/spec.md",
+            "arquivo": "openspec/specs/painel-publico/spec.md",
+            "cenario": null
+          }
+        ],
+        "formais": [],
+        "estado_formal": "PENDENTE"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
+    },
+    {
+      "nome": "Tela do painel pela rota",
+      "objetivo": "/painel/triagem abre o painel da triagem; /painel/medico, o dos consultórios.",
+      "resultado_esperado": "/painel/triagem abre o painel da triagem; /painel/medico, o dos consultórios.",
+      "componente": "Reflex",
+      "classe_seguranca": "nao_mutavel",
+      "suite": "reflex",
+      "tipo": "UNITARIO",
+      "modo_dependencia": "LOCAL",
+      "id": "CT-REFLEX-0278",
+      "seletor": "frontend/tests/test_painel_state.py::test_tela_pela_rota",
+      "referencias": {
+        "openspec": [
+          {
+            "arquivo": "openspec/specs/painel-publico/spec.md",
             "cenario": null
           }
         ],
