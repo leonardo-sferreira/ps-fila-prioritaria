@@ -56,9 +56,10 @@
   - Publicação (11/11/2026): o PO publicou os 3 documentos na `v1` (GUID de `admin/equipe` sincronizada). Falta conferir a tela com dados reais.
   - Validada pelo PO em 20/11/2026: dashboard e fila geral conferidos com dados reais na `v1`.
 
-## 6. "Visualizar como" (decisão do PO em 11/11/2026, D7)
+## 6. "Visualizar como" (decisão do PO em 11/11/2026, D7; cancelado pelo PO em 20/11/2026)
 
-- [ ] 6.1 Detalhar no design quais telas e leituras entram, e como as ações ficam desabilitadas; depois quebrar em tarefas
+- [x] 6.1 Detalhar no design quais telas e leituras entram, e como as ações ficam desabilitadas; depois quebrar em tarefas
+  - Cancelada pelo PO em 20/11/2026: o "Visualizar como" não será feito (D7). Nada foi implementado.
 
 ## 7. Fatia local da Sprint 4 — status da Recepção (15/11/2026)
 

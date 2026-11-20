@@ -7,7 +7,7 @@
 | Fatias no Trello | Acompanhamento do Administrador e status da equipe (escopo informado pelo responsável) |
 | Responsável pelo recorte local | Nicolas Rissato Marques |
 | Depende de | Todas as changes anteriores |
-| Situação | Em revisão; dashboard do Administrador e "visualizar como" aprovados pelo PO em 11/11/2026 |
+| Situação | Concluída em 20/11/2026; dashboard do Administrador aprovado pelo PO em 11/11/2026; "visualizar como" cancelado pelo PO em 20/11/2026 |
 | RFs novos ou esclarecidos (Confluence, 04/10/2026) | RF44 (status da equipe); RF45 (fila geral e auditoria) |
 
 > Esquema físico: as tabelas já estão publicadas em `backend/xano/table/`. Onde as tasks dizem "criar a tabela", conferir o arquivo `.xs`; mudança de esquema passa pelo PO (ver CONTRIBUTING).
@@ -25,7 +25,7 @@ Depois do feedback do professor, o Administrador ganhou uma tela de acompanhamen
 - **Detalhe da ficha para o Administrador**, somente leitura, com o histórico da ficha.
 
 - **Dashboard do Administrador** na tela inicial: o painel do plantão da Recepção/Triagem, com indicadores do dia e a equipe logada (D6).
-- **"Visualizar como"**: o Administrador vê as telas da Recepção/Triagem e do Médico sem poder agir (D7).
+- ~~**"Visualizar como"**: o Administrador vê as telas da Recepção/Triagem e do Médico sem poder agir (D7).~~ Cancelado pelo PO em 20/11/2026.
 
 ### Fora do escopo
 
