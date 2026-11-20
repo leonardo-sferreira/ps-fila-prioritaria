@@ -31,6 +31,18 @@ class EvidenceRunnerTest(unittest.TestCase):
         self.assertEqual([call.kwargs["timeout"] for call in cli.call_args_list], [50, 90])
         espera.assert_called_once_with(2.5)
 
+    def test_resposta_fora_de_json_do_cli_xano_espera_a_janela_e_repete(self):
+        recusado = SimpleNamespace(returncode=2, stdout="Your plan only supports 10 requests per 20 seconds")
+        aprovado = SimpleNamespace(returncode=0, stdout='{"status":"ok","results":[{"status":"pass"}]}')
+        with patch("run_test_evidence.subprocess.run", side_effect=[recusado, recusado, aprovado]) as cli, patch("run_test_evidence.time.sleep") as espera:
+            proc, result = executar_teste_nativo("teste-1", "ps-impacta", {})
+        self.assertEqual(result["results"][0]["status"], "pass")
+        self.assertEqual(cli.call_count, 3)
+        self.assertEqual([call.args[0] for call in espera.call_args_list], [21, 21])
+        with patch("run_test_evidence.subprocess.run", return_value=recusado), patch("run_test_evidence.time.sleep"):
+            with self.assertRaises(json.JSONDecodeError):
+                executar_teste_nativo("teste-1", "ps-impacta", {})
+
     def test_resultado_json_tem_texto_legivel_sem_alterar_rastreabilidade(self):
         import hashlib
         from run_test_evidence import catalog

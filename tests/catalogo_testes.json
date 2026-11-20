@@ -12479,6 +12479,26 @@
       "aliases_historicos": [],
       "variantes": [],
       "adaptador_de": null
+    },
+    {
+      "nome": "Resposta fora de JSON do CLI Xano espera a janela e repete",
+      "objetivo": "Resposta fora de JSON do CLI Xano (recusa por limite do plano) espera a janela de 20 s e repete até duas vezes; depois disso, falha.",
+      "resultado_esperado": "Resposta fora de JSON do CLI Xano (recusa por limite do plano) espera a janela de 20 s e repete até duas vezes; depois disso, falha.",
+      "componente": "Ferramenta",
+      "classe_seguranca": "nao_mutavel",
+      "id": "CT-FERRAMENTA-0042",
+      "seletor": "tests/test_evidence_runner.py::EvidenceRunnerTest.test_resposta_fora_de_json_do_cli_xano_espera_a_janela_e_repete",
+      "suite": "autotestes",
+      "tipo": "INTEGRACAO",
+      "modo_dependencia": "MOCK",
+      "referencias": {
+        "openspec": [],
+        "formais": [],
+        "estado_formal": "NAO_APLICAVEL"
+      },
+      "aliases_historicos": [],
+      "variantes": [],
+      "adaptador_de": null
     }
   ]
 }
