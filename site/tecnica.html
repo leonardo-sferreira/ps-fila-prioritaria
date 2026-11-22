@@ -72,8 +72,8 @@
         <div class="indicador"><strong>33</strong><span>telas em 4 perfis</span></div>
         <div class="indicador"><strong>71</strong><span>endpoints em 5 grupos</span></div>
         <div class="indicador"><strong>23</strong><span>tabelas</span></div>
-        <div class="indicador"><strong>52</strong><span>funções de regra (103 testes nativos)</span></div>
-        <div class="indicador"><strong>484</strong><span>testes catalogados</span></div>
+        <div class="indicador"><strong>52</strong><span>funções de regra (105 testes nativos)</span></div>
+        <div class="indicador"><strong>486</strong><span>testes catalogados</span></div>
         <div class="indicador"><strong>25</strong><span>changes entregues</span></div>
       </div>
       <p><strong>Stack:</strong> Reflex 0.10 (Python) + Xano (XanoScript, PostgreSQL gerenciado) + Brevo (e-mail). <strong>Estado:</strong> todas as funcionalidades planejadas estão entregues e validadas pelo PO. Não há ambiente de produção publicado: o frontend roda em máquina local e aponta para o Xano (<a href="#operacao">seção 11</a>).</p>
@@ -148,7 +148,7 @@ flowchart LR
           <tr><td>6</td><td><strong>Auditoria imutável</strong> na mesma transação da escrita</td><td>Rastreabilidade (RNF07)</td><td>Toda escrita relevante chama <code>registrar_alteracao</code></td></tr>
           <tr><td>7</td><td><strong>Nada com histórico é excluído</strong> (desativação)</td><td>Preservar auditoria e vínculos</td><td>Listas filtram por <code>ativo</code></td></tr>
           <tr><td>8</td><td><strong>Seleção do próximo paciente no servidor, atômica</strong>, com trava de linha por escrita real</td><td>O médico não escolhe (RN24); dois médicos nunca pegam a mesma ficha (RF38, RNF04)</td><td>Lógica concentrada em <code>fila/chamar_proximo</code>; escrita sem mudança real não trava no Xano</td></tr>
-          <tr><td>9</td><td><strong>Funções puras separadas</strong> das que acessam o banco</td><td>Testar regras sem banco</td><td>103 testes nativos cobrindo as regras</td></tr>
+          <tr><td>9</td><td><strong>Funções puras separadas</strong> das que acessam o banco</td><td>Testar regras sem banco</td><td>105 testes nativos cobrindo as regras</td></tr>
           <tr><td>10</td><td><strong>Chamadas sempre manuais</strong></td><td>Uma pessoa responde por cada chamada</td><td>Prazos só liberam botões</td></tr>
           <tr><td>11</td><td><strong>Polling</strong> em vez de WebSocket/SSE</td><td>Simplicidade; o plano não oferece push</td><td>Custo de requisições; painéis em 5 s</td></tr>
           <tr><td>12</td><td><strong>Painéis com resposta campo a campo</strong> e teste de chaves proibidas</td><td>Privacidade por construção (RNF06, RN35)</td><td>Campo novo exige inclusão explícita</td></tr>
@@ -248,11 +248,11 @@ flowchart LR
         <tbody>
           <tr><td><code>reflex</code></td><td>Unitário dos estados das telas, API simulada</td><td>297</td><td>CI e local</td></tr>
           <tr><td><code>xano-static</code></td><td>Contratos lidos dos <code>.xs</code></td><td>13</td><td>CI e local</td></tr>
-          <tr><td><code>xano-safe</code></td><td>Funções puras executadas no Xano</td><td>97</td><td>CI</td></tr>
+          <tr><td><code>xano-safe</code></td><td>Funções puras executadas no Xano</td><td>99</td><td>CI</td></tr>
           <tr><td><code>controlled</code></td><td>Integração ao vivo na <code>v1</code> com cenário sintético</td><td>33</td><td>Local, com autorização</td></tr>
           <tr><td><code>e2e</code></td><td>Navegador (Playwright) nas telas públicas</td><td>2</td><td>CI</td></tr>
           <tr><td><code>autotestes</code></td><td>Infraestrutura de evidências</td><td>42</td><td>CI e local</td></tr>
-          <tr><td><strong>Total</strong></td><td></td><td><strong>484</strong></td><td></td></tr>
+          <tr><td><strong>Total</strong></td><td></td><td><strong>486</strong></td><td></td></tr>
         </tbody>
       </table></div>
       <p>Catálogo com entrada e saída esperada de cada caso: ⚙ <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/testes/catalogo-de-testes.md">catálogo de testes</a> · <a href="https://github.com/leonardo-sferreira/ps-fila-prioritaria/blob/main/docs/tecnica/testes/estrategia-de-testes.md">estratégia de testes</a>.</p>

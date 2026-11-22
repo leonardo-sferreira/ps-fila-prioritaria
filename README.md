@@ -1,277 +1,417 @@
-# Sistema de Fila Prioritária para Pronto-Socorro
+<div align="center">
 
-Sistema web que organiza a entrada e a chamada de pacientes em um pronto-socorro, priorizando pela **gravidade clínica** (sintomas e sinais vitais), e não apenas pela ordem de chegada.
+<img src="frontend/assets/logo/icone-prioriza.svg" alt="Logotipo do Prioriza" width="72">
 
-![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)
+# Prioriza
+
+**Sistema de fila prioritária para pronto-socorro: o próximo paciente é escolhido pela gravidade clínica,**
+**e não só pela ordem de chegada, com regras auditáveis e painéis públicos que não expõem dados pessoais.**
+
+[![CI](https://github.com/leonardo-sferreira/ps-fila-prioritaria/actions/workflows/ci.yml/badge.svg)](https://github.com/leonardo-sferreira/ps-fila-prioritaria/actions/workflows/ci.yml)
+[![Documentação](https://github.com/leonardo-sferreira/ps-fila-prioritaria/actions/workflows/pages.yml/badge.svg)](https://leonardo-sferreira.github.io/ps-fila-prioritaria/)
 ![Versão](https://img.shields.io/github/v/release/leonardo-sferreira/ps-fila-prioritaria?include_prereleases&label=vers%C3%A3o)
-![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
-![Reflex](https://img.shields.io/badge/frontend-Reflex-5646ED)
-![Xano](https://img.shields.io/badge/backend-Xano-0A0A0A)
-![OpenSpec](https://img.shields.io/badge/metodologia-OpenSpec-2EA44F)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Reflex](https://img.shields.io/badge/Frontend-Reflex_0.10-5646ED)
+![Xano](https://img.shields.io/badge/Backend-Xano-1A1A1A)
+![Brevo](https://img.shields.io/badge/E--mail-Brevo-0B996E)
+![OpenSpec](https://img.shields.io/badge/Spec-OpenSpec-6E56CF)
+
+### [📘 Manual do usuário](https://leonardo-sferreira.github.io/ps-fila-prioritaria/usuario.html) · [🛠️ Documentação técnica](https://leonardo-sferreira.github.io/ps-fila-prioritaria/tecnica.html) · [🎨 Protótipo no Figma](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1)
+
+[Sobre](#sobre-o-projeto) · [Funcionalidades](#funcionalidades) · [Como funciona](#como-funciona) · [Telas](#telas) · [Arquitetura](#arquitetura) ·
+[Regras](#regras-de-negócio-em-destaque) · [Segurança](#segurança-e-privacidade) · [Qualidade](#qualidade-e-testes) · [Como rodar](#como-rodar) · [Histórico](#histórico-do-projeto) · [Equipe](#equipe)
+
+</div>
 
 ---
 
 ## Sobre o projeto
 
-Em muitos prontos-socorros a fila ainda é organizada manualmente, por ordem de chegada. Assim, um paciente com dor no peito pode esperar o mesmo tempo que alguém com um resfriado. Este sistema apoia a equipe de triagem com regras objetivas e auditáveis:
+Em muitos prontos-socorros a fila ainda é organizada à mão, por ordem de chegada. Assim, um paciente com dor no peito pode esperar o mesmo tempo que alguém com um resfriado. Além disso:
+- a decisão de quem é chamado depende de quem está no balcão;
+- não fica registrado por que um paciente passou à frente de outro;
+- o painel da sala de espera muitas vezes mostra o nome completo do paciente.
 
-- **classifica** cada paciente em três cores (Vermelha, Amarela e Azul), somando a pontuação de todos os sintomas aos pontos dos sinais vitais;
-- **direciona** a ficha à especialidade indicada pelos sintomas e a distribui para um médico elegível, sem restringir atendimento pela especialidade cadastral do profissional;
-- **escolhe automaticamente** o próximo paciente a ser chamado, sem que o médico escolha manualmente;
-- **informa** o público por um painel de chamadas que não expõe dados pessoais.
+O **Prioriza** apoia a equipe com regras objetivas e auditáveis, em quatro frentes de acesso: **Totem e painéis públicos, Recepção/Triagem, Médico e Administrador**. O sistema:
 
-> Projeto acadêmico desenvolvido na Faculdade Impacta. As regras clínicas são uma modelagem de estudo e não substituem protocolos reais de triagem.
+- **classifica** cada paciente em três cores (Vermelha, Amarela e Azul), somando os pontos dos sintomas aos pontos dos sinais vitais;
+- **direciona** a ficha à especialidade indicada pelos sintomas e gera uma senha;
+- **escolhe sozinho** o próximo paciente quando o médico clica em "Chamar próximo": o médico não escolhe quem atender;
+- **informa** a sala de espera por painéis que mostram só a senha e a sala, nunca nome ou CPF.
 
-## Principais funcionalidades
+Todos os limiares, intervalos e ciclos são **parâmetros editáveis** pelo Administrador, e toda alteração relevante fica na **auditoria**: quem fez, o quê, quando, o valor anterior e a justificativa.
 
-| Área | Funcionalidades |
+> **Trabalho acadêmico** da Faculdade Impacta, feito em grupo. As regras clínicas são uma modelagem de estudo e não substituem protocolos reais de triagem.
+
+### Em números
+
+<table>
+<tr>
+<td align="center"><b>33</b><br>telas</td>
+<td align="center"><b>71</b><br>endpoints de API</td>
+<td align="center"><b>23</b><br>tabelas</td>
+<td align="center"><b>52</b><br>funções de regra</td>
+<td align="center"><b>127</b><br>requisitos na spec</td>
+<td align="center"><b>486</b><br>testes catalogados</td>
+<td align="center"><b>25</b><br>changes entregues</td>
+</tr>
+</table>
+
+Todas as funcionalidades planejadas foram **entregues, testadas e validadas pelo PO** e estão arquivadas no OpenSpec. Os roteiros de teste da Sprint 5 foram executados no sistema integrado (Xano `v1`). A documentação de usuário e técnica fica num [site próprio](https://leonardo-sferreira.github.io/ps-fila-prioritaria/), atualizado sozinho a cada merge na `main`.
+
+---
+
+## Funcionalidades
+
+### 🎫 Paciente (sem login)
+
+| Área | O que faz |
 |---|---|
-| **Totem** | Retirada de ticket sem dados pessoais, por tipo: Pediátrico (`C-001`), Preferencial (`P-001`) ou Normal (`N-001`) |
-| **Acesso da equipe** | Login por e-mail com perfil · redefinição de senha com código enviado por e-mail |
-| **Recepção/Triagem** | Fila pré-triagem por tipo de ticket · identificação e cadastro pelo CPF · ficha com sintomas e sinais vitais · classificação automática com ajuste manual justificado · especialidade sugerida e atribuída · senha e comprovante impresso |
-| **Médico** | Fila atribuída por elegibilidade · "Chamar próximo" sem duplicidade · 30 s entre chamadas, até 3 tentativas por oportunidade e uma reentrada ao fim da fila · Pausar/Retomar · encerrar plantão com fila zerada · impressão da ficha |
-| **Painéis públicos** | Consultórios: senha e Sala da chamada em destaque e últimas chamadas · Triagem: ticket chamado e últimos tickets · sem nome nem CPF |
-| **Administrador** | Usuários e perfis · cadastros de Médicos e Recepção/Triagem · especialidades, sintomas e salas · disponibilidade por período · parâmetros e faixas de risco · acompanhamento da fila, da equipe e da auditoria |
+| **Totem** | Retirada de ticket sem nenhum dado pessoal, por tipo: Pediátrico (`C-001`), Preferencial (`P-001`) ou Normal (`N-001`), com sequência diária própria de cada tipo |
+| **Painel dos consultórios** | "Chamando agora" com a senha, a especialidade, a Sala e a tentativa (1ª, 2ª…), mais as 4 chamadas anteriores; destaque visual e aviso sonoro; filtro por especialidade no endereço |
+| **Painel da triagem** | Ticket chamado pela Recepção/Triagem e os 4 anteriores |
+| **Aviso de privacidade** | Página pública que explica quais dados são tratados e para quê |
+
+### 🩺 Recepção/Triagem
+
+- **Fila de pré-triagem:** "Chamar próximo" na ordem da regra (pediátrico, preferencial e normal em ciclo 2:1), repetir a chamada, registrar presença, ausência ou desistência. Nada acontece sozinho: cada passo é decidido pela pessoa responsável.
+- **Identificar o paciente:** busca pelo CPF e cadastro quando ele ainda não existe, sem duplicidade.
+- **Ficha de atendimento:** sintomas do catálogo (e sintomas livres), queixa, sinais vitais e glicemia; classificação automática com ajuste manual justificado.
+- **Direcionamento e senha:** especialidade sugerida pelos sintomas, senha `COR-ESP-NNN` e comprovante impresso de 80 mm sem dados pessoais.
+- **Fichas do dia:** reabrir uma ficha em triagem ou reavaliar uma ficha que já está na fila (o paciente piorou, um dado foi digitado errado), com renumeração da senha e reimpressão.
+- **Meu status:** Disponível, Pausa ou Ausente.
+
+### 👩‍⚕️ Médico
+
+- **Filas atribuídas** com a quantidade por especialidade, sem expor dados pessoais de quem está aguardando.
+- **Chamar próximo:** o sistema escolhe a ficha, com reserva atômica para que dois médicos nunca peguem a mesma.
+- **Chamada:** repetir após 30 s, até 3 tentativas por oportunidade e uma reentrada ao fim da fila; registrar comparecimento ou desistência.
+- **Plantão:** ficar disponível, pausar ou retomar novas atribuições; encerrar só com a fila atribuída zerada.
+- **Impressão da ficha** de triagem do paciente chamado.
+
+### ⚙️ Administrador
+
+- **Usuários e perfis:** criar, editar e desativar contas (o acesso cai na hora); não é possível deixar o sistema sem Administrador.
+- **Cadastros:** médicos (com especialidades N:N e Sala), Recepção/Triagem, especialidades, sintomas (com pontuação e especialidades), salas.
+- **Plantões:** disponibilidade por período, inclusive escala 12x36.
+- **Parâmetros:** 16 regras editáveis com limites (limiares de cor, faixas de sinais vitais, intervalos, ciclos, tentativas, janela do painel).
+- **Acompanhamento:** painel do plantão com indicadores do dia, equipe logada com status e fichas e tickets parados; fila geral com filtros; detalhe de cada ficha.
+- **Auditoria:** alterações, chamadas e entradas e saídas por período, tipo e usuário, com exportação em CSV.
+
+---
 
 ## Como funciona
 
 ```mermaid
 flowchart LR
-    A[Totem<br/>ticket Pediátrico, Preferencial<br/>ou Normal] --> B[Fila de<br/>Recepção/Triagem]
+    A[Totem<br/>ticket Pediátrico, Preferencial<br/>ou Normal] --> B[Fila de<br/>pré-triagem]
     B --> C[Triagem<br/>CPF · sintomas · sinais vitais]
     C --> D{Escore e<br/>direcionamento}
-    D --> E[Fila da especialidade<br/>indicada pelos sintomas]
+    D --> E[Fila da especialidade<br/>com senha COR-ESP-NNN]
     E --> F[Médico elegível<br/>chamada em sala]
-    E -.-> G[Painel público<br/>senha e sala]
+    B -.-> G[Painéis públicos<br/>senha e sala]
     F -.-> G
 ```
 
-### Regras de priorização
+Estados da ficha: `EM_TRIAGEM` → `AGUARDANDO` → `CHAMADO` → `ATENDIDO` ou `DESISTENCIA`. A responsabilidade do sistema termina quando o paciente comparece à chamada do médico ou desiste. Fichas e tickets parados por mais de 24 horas são dispensados pelo Administrador.
 
-1. **Fila pré-triagem:** o tipo do ticket define quem é triado primeiro. Pediátrico vem antes de Preferencial, e prioritários e normais alternam em ciclo configurável (2 : 1), para que ninguém espere indefinidamente. O tipo não altera a cor definida na triagem.
-2. **Pontuação de sintomas:** cada sintoma vale de 1 a 3 pontos e todos os sintomas selecionados entram na soma.
-3. **Escore clínico:** soma os pontos dos sintomas e dos sinais vitais (incluindo glicemia quando medida). Os limiares iniciais são 5 para Amarela e 10 para Vermelha (Azul de 0 a 4); um item clínico isolado com 3 pontos gera Vermelha.
-4. **Classificação:** baixo → Azul, moderado → Amarela e alto → Vermelha. Idosos, crianças e gestantes reordenam dentro da classificação e não somam pontos.
-5. **Direcionamento:** os sintomas determinam a especialidade da ficha. Os vínculos N:N do médico definem suas especialidades próprias e a preferência operacional; ele pode apoiar filas descobertas ou outras cobertas sem alterar a especialidade nem a senha da ficha.
-6. **Chamadas:** o médico respeita o intervalo configurável, inicialmente 30 segundos, entre chamadas da mesma senha, até 3 tentativas por oportunidade e uma única reentrada ao fim da mesma fila. A Recepção/Triagem usa os intervalos próprios da pré-triagem. Desistência explícita remove a senha da fila ativa.
-7. **Painel:** a chamada pública pode mostrar a senha e a sala, nunca nome completo ou CPF.
+**Fora do escopo** (decisão do PO): prontuário, diagnóstico, prescrição, exames, agendamento, faturamento e duração da consulta.
 
-Faixas e limiares clínicos são parametrizáveis. O fuso do projeto é `America/Sao_Paulo`.
+---
+
+## Telas
+
+<table>
+<tr>
+<td width="50%"><img src="docs/telas/01-login.png" alt="Tela Entrar"><br><sub><b>Entrar</b>: senha e código de 6 dígitos por e-mail (app)</sub></td>
+<td width="50%"><img src="docs/telas/02-totem.png" alt="Totem"><br><sub><b>Totem</b>: ticket Pediátrico, Preferencial ou Normal, sem dado pessoal (app)</sub></td>
+</tr>
+<tr>
+<td><img src="docs/telas/03-ficha-triagem.png" alt="Ficha de atendimento"><br><sub><b>Ficha de atendimento</b>: sintomas, sinais vitais e cor recalculada a cada alteração (Figma)</sub></td>
+<td><img src="docs/telas/04-medico-chamada.png" alt="Médico em chamada"><br><sub><b>Médico</b>: chamada em curso, tentativas e ficha da triagem (Figma)</sub></td>
+</tr>
+<tr>
+<td><img src="docs/telas/05-admin-fila-equipe.png" alt="Acompanhamento do Administrador"><br><sub><b>Administrador</b>: fila geral na ordem de chamada e equipe com status (Figma)</sub></td>
+<td><img src="docs/telas/06-painel-consultorios.png" alt="Painel dos consultórios"><br><sub><b>Painel dos consultórios</b>: senha, especialidade e Sala, sem nome nem CPF (app, fora do plantão)</sub></td>
+</tr>
+<tr>
+<td><img src="docs/telas/07-medico-fila-escuro.png" alt="Fila do médico em modo escuro"><br><sub><b>Modo escuro</b>: fila e status do médico (Figma)</sub></td>
+<td><img src="docs/telas/08-painel-triagem.png" alt="Painel da triagem"><br><sub><b>Painel da triagem</b>: ticket chamado pela Recepção/Triagem (app, fora do plantão)</sub></td>
+</tr>
+</table>
+
+As telas marcadas como "app" são capturas do sistema rodando; as marcadas como "Figma" vêm do protótipo, que segue o layout implementado. Todos os dados são fictícios.
+
+| Perfil | Telas |
+|---|---|
+| **Público** | `/totem` · `/painel/medico` · `/painel/triagem` · `/privacidade` |
+| **Acesso** | `/login` · `/login/codigo` · `/senha` (redefinição em 4 passos) · saída por inatividade |
+| **Recepção/Triagem** | `/recepcao` · `/recepcao/fila` · `/recepcao/pacientes` · `/recepcao/ficha/{id}` · `/recepcao/comprovante/{id}` · `/recepcao/fichas` |
+| **Médico** | `/medico` · `/medico/ficha/{id}/imprimir` |
+| **Administrador** | `/admin` · `/admin/fila-geral` · `/admin/fichas/{id}` · `/admin/auditoria` · `/admin/usuarios` · `/admin/medicos` · `/admin/recepcao` · `/admin/especialidades` · `/admin/sintomas` · `/admin/salas` · `/admin/disponibilidade` · `/admin/parametros` |
+
+Todas as telas foram desenhadas antes no [Figma](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1), com modo claro e escuro. Os fluxos, as regras e o modelo de dados estão no [FigJam](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI). O passo a passo de cada tela, para quem usa o sistema, está no [manual do usuário](docs/usuario/manual-do-usuario.md).
+
+---
 
 ## Arquitetura
 
 ```mermaid
 flowchart LR
-    U[Equipe e público] --> R[Reflex<br/>interface web em Python]
-    R -- API REST --> X[Xano<br/>regras de negócio, autorização e banco]
+    U([Equipe e público<br/>no navegador]) <-- WebSocket --> FE[Reflex<br/>estados em Python]
+    FE -- "HTTPS + token Bearer" --> BE[Xano<br/>71 endpoints · 5 grupos]
+    BE --> FN[52 funções<br/>regras de negócio]
+    FN --> DB[(23 tabelas<br/>PostgreSQL gerenciado)]
+    BE --> DB
+    FN -- "código de acesso por e-mail" --> BR[Brevo]
 ```
 
-| Camada | Tecnologia | Responsabilidade |
+- **O backend decide tudo:** regras de negócio, autorização por perfil, transações e auditoria ficam no Xano. O Reflex só apresenta e envia dados; esconder um botão nunca é controle de acesso.
+- **Autorização em todo endpoint** por `auth/verificar_acesso`: sessão válida, usuário ativo e perfil permitido, conferidos a cada requisição.
+- **Seleção atômica do próximo paciente:** a reserva da ficha acontece dentro de uma transação com trava de linha, para que dois médicos nunca chamem a mesma ficha.
+- **Regras puras separadas do banco** (`pontuar`, `proxima_ficha`, `formatar_senha`…), cobertas por 105 testes nativos do Xano.
+- **Backend como código:** tabelas, endpoints e funções são arquivos `.xs` versionados no Git e publicados pelo Xano CLI.
+- **Nada com histórico é excluído:** cadastros são desativados (`ativo = false`), preservando a auditoria e os vínculos.
+
+As 17 decisões de arquitetura, com motivo e custo de cada uma, estão na [documentação técnica](docs/tecnica/README.md#4-decisões-de-arquitetura).
+
+### Stack
+
+| Camada | Tecnologia | Uso |
 |---|---|---|
-| Frontend | [Reflex](https://reflex.dev) (Python) | Telas e interação. Nenhuma regra de negócio |
-| Backend e banco | [Xano](https://www.xano.com) (XanoScript) | Regras, autorização por perfil, persistência e auditoria |
-| Especificação | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | Requisitos e planejamento de cada funcionalidade |
-| Testes | pytest + httpx | Testes de API com valores-limite das regras |
+| Frontend | [Reflex](https://reflex.dev) 0.10 (Python 3.12) | Telas por perfil, estados com chamadas à API, tema claro e escuro |
+| Backend e banco | [Xano](https://www.xano.com) + XanoScript | API REST, banco relacional e regras, versionados em `backend/xano/` |
+| E-mail | [Brevo](https://www.brevo.com) | Código de login e de redefinição de senha |
+| Design | [Figma](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1) e [FigJam](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI) | Protótipo das telas, fluxogramas, regras e modelo de dados |
+| Especificação | [OpenSpec](https://github.com/Fission-AI/OpenSpec) | Explorar → Propor → Revisar → Aplicar → Arquivar |
+| Testes | pytest, httpx e Playwright | Estados das telas, contratos, funções do Xano, integração ao vivo e E2E |
+| CI e documentação | GitHub Actions + GitHub Pages | 6 jobs de evidência em todo push e PR; site da documentação |
+| Planejamento | Trello | Sprints semanais |
 
-**Decisões de destaque**
-- Autorização aplicada no backend a cada requisição. Desativar um usuário invalida o acesso na hora.
-- Seleção do próximo paciente **atômica**, para que dois médicos nunca chamem a mesma ficha.
-- Trilha de **auditoria** imutável para prioridade, sintomas, disponibilidade e chamadas.
-- **Privacidade:** o painel e o comprovante impresso não exibem dados pessoais.
-- **Totem:** desenvolvido pela equipe, emite tickets por tipo com código e sequência diária próprios.
-- **Redefinição de senha:** código de 6 dígitos por e-mail, válido por 10 minutos, sem revelar quais e-mails estão cadastrados.
-- **Plantão:** o Médico pode pausar ou retomar novas atribuições; só encerra o plantão quando sua fila atribuída estiver zerada.
+---
 
-## Design e documentação
+## Regras de negócio em destaque
 
-| Artefato | Link |
+O mapa completo, com exemplos e o arquivo de cada regra, está em [`docs/tecnica/referencia/regras-de-negocio.md`](docs/tecnica/referencia/regras-de-negocio.md).
+
+| Domínio | Regras |
 |---|---|
-| Protótipo de telas | [Figma — Protótipo de Fluxos](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1) |
-| Fluxogramas, regras e modelo de dados | [FigJam — Fluxo do Sistema](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI) |
-| **Site da documentação** (HTML, GitHub Pages) | [leonardo-sferreira.github.io/ps-fila-prioritaria/](https://leonardo-sferreira.github.io/ps-fila-prioritaria/) |
-| **Manual do usuário** (uso do sistema, regras e perguntas frequentes) | [docs/usuario/manual-do-usuario.md](docs/usuario/manual-do-usuario.md) |
-| **Documentação técnica** (arquitetura, decisões, operação e testes realizados) | [docs/tecnica/README.md](docs/tecnica/README.md) |
-| Visão geral do projeto | [docs/project-overview.md](docs/project-overview.md) |
-| Modelo de domínio | [docs/domain-model.md](docs/domain-model.md) |
-| Especificações (requisitos e cenários) | [openspec/specs/](openspec/specs) e [openspec/changes/archive/](openspec/changes/archive) |
+| **Pré-triagem** | Pediátrico antes de Preferencial; prioritários e normais em ciclo 2:1, para ninguém esperar indefinidamente; 30 s entre chamadas do mesmo ticket, até 3 chamadas e uma reentrada. O tipo do ticket não altera a cor |
+| **Classificação** | Escore = pontos dos sintomas (1 a 3 cada, todos somados) + pontos dos sinais vitais (0 a 3, incluindo glicemia). Azul de 0 a 4, Amarela de 5 a 9, Vermelha a partir de 10; um item isolado com 3 pontos já dá Vermelha. Ajuste manual exige justificativa |
+| **Condição prioritária** | Idosos (60+), crianças (até 11) e gestantes passam à frente dentro da mesma cor, sem somar pontos |
+| **Direcionamento** | Até 11 anos → Pediatria; senão o sintoma de maior pontuação, depois a maior soma, a menor fila e o menor ID; sem sintoma do catálogo → Clínica Geral |
+| **Senha** | `COR-ESP-NNN`, numerada por especialidade e por dia; mudar só a cor troca a letra e mantém o número |
+| **Fila do médico** | Vermelhas primeiro; ciclo de 2 Amarelas para 1 Azul; filas próprias antes, uma fila descoberta só passa à frente com cor mais grave; sem própria aguardando, o médico apoia outras filas sem mudar a senha da ficha |
+| **Chamadas** | Sempre manuais; 30 s entre chamadas da mesma senha, até 3 tentativas por oportunidade e uma reentrada ao fim da fila; desistência tira a senha da fila |
+| **Status da equipe** | Disponível, Pausa e Ausente manuais; Em atendimento automático ao confirmar o comparecimento; Pausa e Ausente impedem chamar |
+| **Painéis** | Só senha, especialidade e Sala, nunca nome, CPF ou dado clínico; chamadas ficam visíveis por uma janela configurável (2 h), pois o PS funciona 24 horas |
+
+Os valores acima são os iniciais: todos são parâmetros editáveis. O fuso do projeto é `America/Sao_Paulo`.
+
+---
+
+## Segurança e privacidade
+
+- **Autenticação:**
+  - login em duas etapas: senha e código de 6 dígitos por e-mail;
+  - tentativas limitadas e consumo do código protegido contra envio duplicado ao mesmo tempo;
+  - token de 12 horas e saída automática após 1 hora sem uso, pensada para os computadores compartilhados da recepção;
+  - redefinição de senha por código válido por 10 minutos, sem revelar quais e-mails estão cadastrados.
+- **Autorização:** perfil conferido no backend em todo endpoint; usuário desativado perde o acesso na hora.
+- **Auditoria:** prioridade, sintomas, cadastros, disponibilidade e chamadas gravam usuário, data, valor anterior e novo e justificativa, na mesma transação da escrita. A trilha é imutável.
+- **Privacidade por construção:**
+  - painéis e comprovante respondem campo a campo, e um teste recursivo procura chaves proibidas (nome, CPF, nascimento, sintomas, sinais vitais);
+  - CPF mascarado nas telas internas (`***.674.464-**`);
+  - Totem sem nenhum dado pessoal;
+  - [aviso de privacidade](docs/aviso-de-privacidade.md) público.
+- **Totem protegido:** a emissão exige uma chave de dispositivo que fica só no servidor do Reflex e no Xano, nunca no navegador.
+- **Repositório público sem segredos:** URLs do Xano, chaves e credenciais ficam em variáveis de ambiente.
+
+---
+
+## Qualidade e testes
+
+O pipeline de CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) roda em todo push e Pull Request e publica as evidências de cada suíte (JSON, JUnit XML e resumo em Markdown):
+
+| Suíte | O que verifica | Casos | Onde roda |
+|---|---|---|---|
+| `reflex` | Estados das telas, com a API simulada | 297 | CI e local |
+| `xano-static` | Contratos lidos dos arquivos `.xs`, sem rede | 13 | CI e local |
+| `xano-safe` | Funções puras executadas no Xano (testes nativos e Python), com valores-limite | 99 | CI |
+| `e2e` | Navegador (Playwright) nas telas públicas | 2 | CI |
+| `autotestes` | A própria infraestrutura de evidências | 42 | CI e local |
+| `controlled` | Integração ao vivo na `v1`, com cenário sintético removido no fim | 33 | Local, com autorização |
+| **Total catalogado** | | **486** | |
+
+Cada caso tem um **ID permanente** no [catálogo de testes](docs/tecnica/testes/catalogo-de-testes.md), com objetivo, resultado esperado e a spec que cobre; o CI recusa teste sem registro. Um job final consolida as evidências das cinco suítes.
+
+Além do pipeline:
+
+- **Testes ao vivo na `v1`:** dois médicos chamando ao mesmo tempo recebem fichas diferentes; o mesmo código de login enviado duas vezes abre uma única sessão; o painel não devolve nenhuma chave de dado pessoal.
+- **Roteiros da Sprint 5 executados no sistema integrado (20/11/2026):** Totem e pré-triagem, paciente e classificação (19 de 19), direcionamento e comprovante (11 de 11), fila do médico, privacidade em navegador real e Administrador.
+- **Validação do PO:** fluxo completo do Totem à chamada do médico, acompanhado nos painéis e na tela do Administrador.
+- **Defeito encontrado pelos roteiros e corrigido:** no direcionamento, um empate na maior pontuação ignorava a soma dos sintomas quando a especialidade tinha fila; a regra foi reescrita com dois testes nativos novos.
+
+Comandos seguros e como ler os resultados: [guia de QA](docs/testes-qualidade.md) e [estratégia de testes](docs/tecnica/testes/estrategia-de-testes.md).
+
+---
+
+## Como rodar
+
+> **Primeira vez no projeto?** Siga o [guia de contribuição](CONTRIBUTING.md) e o [guia de desenvolvimento](docs/tecnica/manutencao/guia-de-desenvolvimento.md): ferramentas, acesso ao Xano, fluxo de uma change e convenções.
+
+Requisitos: Python 3.12+, Node.js 20+ e acesso ao workspace do Xano (pedir ao PO).
+
+### Frontend
+
+```bash
+git clone https://github.com/leonardo-sferreira/ps-fila-prioritaria.git
+cd ps-fila-prioritaria/frontend
+python -m venv .venv
+.venv\Scripts\activate          # Linux/macOS: source .venv/bin/activate
+pip install -r requirements.txt pytest
+copy .env.example .env          # Linux/macOS: cp — preencha as URLs dos 5 grupos de API e a TOTEM_CHAVE
+reflex run                      # http://localhost:3000
+```
+
+### Backend (Xano)
+
+1. Instale as ferramentas e crie um perfil do CLI só para este projeto:
+
+   ```bash
+   npm install -g @fission-ai/openspec @xano/cli
+   xano auth -p ps-impacta
+   xano branch create <seu-nome> -s v1
+   ```
+
+2. Publique `backend/xano/` **sempre com `--dry-run` antes** e só os arquivos alterados. Mudança de tabela passa pelo PO.
+3. Configure as variáveis **no painel do Xano**, nunca no repositório:
+
+| Variável | Para quê |
+|---|---|
+| `TOKEN_TTL_SEGUNDOS`, `INATIVIDADE_SEGUNDOS` | Validade da sessão (12 h) e saída por inatividade (1 h) |
+| `CODIGO_TTL_SEGUNDOS`, `CODIGO_REENVIO_SEGUNDOS`, `CODIGO_TENTATIVAS` | Códigos de login e de redefinição de senha |
+| `BREVO_API_KEY`, `BREVO_REMETENTE` | Envio de e-mail |
+| `TOTEM_CHAVE` | Chave do dispositivo do Totem (o mesmo valor vai no `frontend/.env`) |
+
+**Primeiro Administrador:** não há cadastro aberto. Crie o registro na tabela `usuario` pelo painel do Xano (perfil `ADMINISTRADOR`, `ativo = true`, senha com 8+ caracteres) e entre em `/login`; os demais usuários são criados pelo Administrador.
+
+**Painéis numa TV:** abra `/painel/medico` ou `/painel/triagem`, coloque em tela cheia (F11) e toque uma vez em "Toque para ativar o som". Para mostrar só algumas especialidades: `/painel/medico?especialidades=CLI,ORT`.
+
+Detalhes de ambientes, publicação e rollback: [deploy e ambientes](docs/tecnica/sustentacao/deploy-e-ambientes.md).
+
+### Testes e documentação
+
+Na raiz do repositório:
+
+```bash
+python scripts/run_test_evidence.py --suite reflex      --output test-evidence/local-reflex --require-execution --require-complete
+python scripts/run_test_evidence.py --suite xano-static --output test-evidence/local-static --require-execution --require-complete
+python scripts/gerar_docs.py    # regera contratos de API, dicionário de dados, catálogo de testes e changelog
+```
+
+Não use descoberta ampla do pytest nos diretórios de teste: eles também contêm integrações que escrevem no Xano. A suíte `xano-safe` e os testes `controlled` exigem CLI autenticado e autorização, conforme o [guia de QA](docs/testes-qualidade.md).
+
+---
+
+## Documentação
+
+| Para quem | Documento |
+|---|---|
+| Quem usa o sistema | [Manual do usuário](docs/usuario/manual-do-usuario.md): o caminho do paciente, cada perfil, as regras explicadas e perguntas frequentes |
+| Quem mantém o sistema | [Documentação técnica](docs/tecnica/README.md): arquitetura, decisões, dados, API, operação, testes realizados e limitações |
+| Referência gerada do código | [Contratos de API](docs/tecnica/manutencao/contratos-api.md) · [dicionário de dados](docs/tecnica/manutencao/dicionario-de-dados.md) · [funções do Xano](docs/tecnica/manutencao/funcoes-xano.md) · [mapa tela → API](docs/tecnica/manutencao/mapa-telas-api.md) · [catálogo de testes](docs/tecnica/testes/catalogo-de-testes.md) |
+| Contexto do produto | [Visão geral](docs/project-overview.md) · [modelo de domínio](docs/domain-model.md) · [especificações](openspec/specs/) |
 | Referência formal | Confluence: RF01–RF50, RNF01–RNF10, RN01–RN35, UC01–UC12 e CA01–CA15 |
 
-As decisões consolidadas do PO estão nos documentos-base. O Confluence deve permanecer sincronizado; não invente o texto de requisitos ausentes nem reintroduza regras antigas já substituídas.
+As decisões consolidadas do PO estão nos documentos-base; o Confluence é mantido sincronizado com elas.
 
-## Metodologia
-
-O projeto segue o desenvolvimento **orientado a especificação** com [OpenSpec](https://github.com/Fission-AI/OpenSpec), com apoio de agentes de IA:
-
-1. **Contexto:** visão geral, modelo de domínio e regras para os agentes de IA ([AGENTS.md](AGENTS.md)).
-2. **Especificação:** cada funcionalidade vira uma *change*, com proposta, requisitos verificáveis (cenários QUANDO/ENTÃO), design técnico e tarefas.
-3. **Fatias verticais:** backend e frontend de uma mesma funcionalidade são entregues e testados juntos a cada sprint.
-4. **Rastreabilidade:** os requisitos citam os RF/RN/CA do documento formal de requisitos.
-
-## Roadmap
-
-- [x] Levantamento de requisitos, protótipo e modelo de dados
-- [x] Especificação de todas as funcionalidades no OpenSpec
-- [x] Banco de dados publicado no Xano (23 tabelas)
-- [x] Identificação e cadastro de pacientes por CPF — [v0.1.0](https://github.com/leonardo-sferreira/ps-fila-prioritaria/releases/tag/v0.1.0)
-- [x] Ficha de atendimento com sintomas e observação — [v0.1.0](https://github.com/leonardo-sferreira/ps-fila-prioritaria/releases/tag/v0.1.0)
-- [x] Autenticação, perfis, gestão de usuários e redefinição de senha
-- [x] Base compartilhada: auditoria, fuso e parâmetros
-- [x] Totem com tickets Pediátrico, Preferencial e Normal
-- [x] Cadastros do administrador
-- [x] Triagem: sinais vitais e classificação de risco
-- [x] Direcionamento, senha e comprovante
-- [x] Fila priorizada e chamada pelo médico
-- [x] Painel público
-- [x] Acompanhamento do administrador
-- [x] Manual do usuário e documentação técnica ([docs/](docs/README.md))
-
-O que foi entregue em cada sprint: [changelog](docs/tecnica/evolucao/changelog.md).
+---
 
 ## Estrutura do repositório
 
-```
-├── docs/                  manual do usuário (usuario/) e documentação técnica (tecnica/)
-├── openspec/
-│   ├── config.yaml        contexto e regras da metodologia
-│   ├── specs/             comportamento implementado, por capacidade
-│   └── changes/archive/   histórico de cada funcionalidade entregue
-├── backend/xano/
-│   ├── table/             schema do banco em XanoScript
-│   ├── api/               endpoints, por grupo (autenticacao, pacientes, triagem, fila, cadastros)
-│   └── function/          regras de negócio reutilizáveis, com testes nativos
-├── frontend/              app Reflex (paginas/, estados/) e testes de estado
-├── tests/                 testes ao vivo do Xano, E2E e catálogo de testes
-├── scripts/               execução das suítes, evidências e geração da documentação
-├── AGENTS.md              regras para agentes de IA
-└── CONTRIBUTING.md        guia de ambiente e fluxo de trabalho da equipe
-```
-
-## Executar localmente
-
-```bash
-cd frontend
-python -m venv .venv
-.venv\Scripts\activate          # Windows (Linux/macOS: source .venv/bin/activate)
-pip install -r requirements.txt pytest
-cp .env.example .env            # preencha as URLs da API do Xano
-reflex run                      # http://localhost:3000
-# Testes: usar os comandos com seleção explícita abaixo
+```text
+AGENTS.md              Instruções para agentes de IA (CLAUDE.md e GEMINI.md apontam para ele)
+CONTRIBUTING.md        Ambiente, acesso ao Xano e fluxo de trabalho da equipe
+frontend/
+  ps_fila_prioritaria/ App Reflex: paginas/ (telas), estados/ (dados e chamadas), api.py, componentes.py
+  assets/              Logo, favicon e tema
+  tests/               Testes dos estados das telas (API simulada)
+backend/xano/
+  table/               Esquema das 23 tabelas em XanoScript
+  api/                 Endpoints por grupo: autenticacao, pacientes, triagem, fila, cadastros
+  function/            Regras de negócio reutilizáveis, com testes nativos
+openspec/
+  specs/               Especificação consolidada (22 capacidades, 127 requisitos, 433 cenários)
+  changes/archive/     Histórico das 25 changes entregues
+docs/
+  usuario/             Manual do usuário (fonte do site)
+  tecnica/             Documentação técnica: manutencao/, sustentacao/, testes/, referencia/, evolucao/
+  telas/               Prints usados neste README (dados fictícios)
+  project-overview.md · domain-model.md · aviso-de-privacidade.md · testes-qualidade.md
+tests/                 Testes ao vivo do Xano (api/), E2E, roteiros e catálogo de testes
+scripts/               Execução das suítes, consolidação das evidências e geração da documentação
+site/                  Estilo e script do site da documentação
+.github/workflows/     CI de evidências e publicação no GitHub Pages
 ```
 
-Os comandos seguros de QA ficam no [guia comum](docs/testes-qualidade.md). Na raiz:
+---
 
-```bash
-.venv/bin/python scripts/run_test_evidence.py --suite reflex --output test-evidence/local-reflex --require-execution --require-complete
-.venv/bin/python scripts/run_test_evidence.py --suite xano-static --output test-evidence/local-static --require-execution --require-complete
-```
+## Histórico do projeto
 
-A suíte `reflex` usa testes locais/mocks; `xano-static` lê XanoScript sem rede. Para verificar funções puras publicadas, use `--suite xano-safe` em outro destino, somente com CLI/credencial válidos e guardião aprovado. Essa suíte é remota e não comprova persistência nem equivalência integral com o Git. Não use descoberta ampla dos diretórios de testes, pois também contêm integrações com escrita.
+Todo o trabalho foi especificado antes no OpenSpec. As **25 changes** estão entregues e arquivadas em [`openspec/changes/archive/`](openspec/changes/archive/), em **72 Pull Requests**. O detalhe de cada entrega está no [changelog](docs/tecnica/evolucao/changelog.md).
 
-### Fila e chamada do médico
-
-Configure `XANO_FILA_API_URL` no `frontend/.env` com a URL base do grupo **Fila**. Os endpoints exigem token de usuário e validam o perfil no Xano:
-
-| Método e caminho | Resultado |
+| Sprint | O que foi entregue |
 |---|---|
-| `GET /medico/filas` | Status do médico, filas com quantidades e ficha atribuída; fichas aguardando não expõem dados pessoais. |
-| `POST /medico/chamar-proximo` | Seleciona e reserva a próxima ficha, sem aceitar ID de ficha; retorna `fila_vazia` quando não há candidata. |
-| `POST /medico/fichas/{id}/acao` | Recebe `REPETIR`, `COMPARECEU` ou `DESISTENCIA` para a ficha atribuída. |
-| `GET /fichas/{id}/impressao` | Dados de triagem para o médico que chamou a ficha, enquanto ela está CHAMADO ou ATENDIDO. |
-| `GET /filas/{especialidade}/previsao` | Próximas senhas e cores, sem reservar ficha nem expor dados pessoais. |
+| **Setembro de 2026** | Levantamento de requisitos, protótipo no Figma, modelo de dados e as 23 tabelas no Xano |
+| **Sprint 1 — Base e identificação** | Saneamento dos documentos-base com as decisões do PO; identificação e cadastro do paciente por CPF |
+| **Sprint 2 — Ficha e triagem** | Ficha com sintomas e observação; segurança e auditoria nos endpoints de paciente |
+| **Sprint 3 — Classificação, direcionamento e senha** | Chamada dos tickets, classificação em três cores, direcionamento, senha e comprovante, identidade visual Prioriza, privacidade, Totem, chamada manual na pré-triagem e reavaliação de ficha na fila |
+| **Sprint 4 — Fila do médico e Administrador** | Fila e chamada do médico com seleção atômica, cadastros do Administrador, expiração em 24 h, fichas do dia, plantão 12x36, autenticação e perfis, base compartilhada (auditoria, fuso e parâmetros) e evidências de teste no CI |
+| **Sprint 5 — Painel, testes e apresentação** | Painéis públicos dos consultórios e da triagem, acompanhamento do Administrador, roteiros de teste executados no sistema integrado, manual do usuário e documentação técnica |
 
-Na seleção, Vermelhas próprias precedem as demais próprias; Amarelas e Azuis próprias seguem rodízio por médico, mantendo o ciclo de cada especialidade. Uma descoberta supera a próxima própria somente se tiver cor mais grave. Empate favorece a própria. Sem própria aguardando, o médico apoia uma descoberta e depois outra coberta. PAUSA e AUSENTE retiram cobertura; EM_ATENDIMENTO a mantém.
+### Versões
 
-A ordenação e a seleção entre filas são verificadas pela suíte remota pura `xano-safe`; a tela médica faz parte de `reflex`. Os cenários CLI de chamada com escrita permanecem bloqueados: esta infraestrutura não os habilita na branch `v1`. Integrações HTTP exigem autorização e ambiente descartável comprovado, conforme o [guia de QA](docs/testes-qualidade.md).
-
-### Acompanhamento do Administrador
-
-Telas só de leitura, no menu do Administrador (`XANO_CADASTROS_API_URL`):
-
-| Tela | O que mostra |
+| Versão | Marco |
 |---|---|
-| `/admin` | Painel do plantão, indicadores do dia, equipe logada com status e fichas paradas. Atualiza a cada 30 s. |
-| `/admin/fila-geral` | Fichas em triagem, aguardando (na ordem prevista de chamada) e chamadas, com filtros de especialidade, cor e status. Atualiza a cada 10 s. |
-| `/admin/fichas/{id}` | Detalhe da ficha: triagem, senhas, chamadas e histórico, sem botões de alteração. |
-| `/admin/auditoria` | Alterações, chamadas e entradas/saídas por período, tipo e usuário, com exportação em CSV. |
+| [v0.1.0](https://github.com/leonardo-sferreira/ps-fila-prioritaria/releases/tag/v0.1.0) | Identificação do paciente e ficha de atendimento |
 
-Roteiro manual:
+---
 
-1. Como Recepção/Triagem, em `/recepcao`, troque "Meu status" para Pausa e depois para Disponível.
-2. Como Médico, escolha "Ficar disponível", chame o próximo e confirme o comparecimento: o status passa a "Em atendimento"; ao chamar o próximo, volta a "Disponível". Em Pausa, "Chamar próximo" é recusado.
-3. Como Administrador, abra **Fila geral**: as fichas aparecem com cor, especialidade, espera e, para as chamadas, médico e tentativa. Filtre por cor Vermelha e confira que só ficam Vermelhas.
-4. Clique em **Detalhe** de uma ficha e confira que não há nenhum botão de alteração.
-5. Abra **Auditoria** e confira as entradas e saídas e a chamada feita no passo 2.
+## Limitações conhecidas
 
-### Primeiro administrador
+- **Plano gratuito do Xano:** 10 requisições a cada 20 segundos para o sistema inteiro. Cada painel aberto faz 4 nesse tempo, então deixe só uma aba de cada painel; com mais, a equipe pode receber erro de limite e o painel mostra "Reconectando…".
+- **Sem ambiente de produção:** o frontend roda numa máquina local apontando para o Xano `v1`, que também recebe os testes ao vivo (com dados sintéticos removidos no fim).
+- **Sala nos painéis:** é a Sala atual do médico, não a do momento da chamada.
+- **Sem monitoramento ou alertas** além do histórico de requisições do Xano.
 
-Não existe tela de cadastro aberta: o primeiro Administrador é criado à mão no painel do Xano.
+A lista completa, com o impacto e a recomendação de cada item, está na [documentação técnica](docs/tecnica/README.md#14-limitações-conhecidas-riscos-e-dívida-técnica).
 
-1. Abra a tabela **`usuario`** e use **Add record**.
-2. Preencha nome, e-mail, senha (mínimo de 8 caracteres), **perfil** `ADMINISTRADOR` e **ativo** `true`.
-3. Entre em `http://localhost:3000/login` com esse e-mail e senha. Os demais usuários são criados pelo Administrador.
+---
 
-As regras de tempo ficam em variáveis de ambiente do Xano (nunca no repositório): `TOKEN_TTL_SEGUNDOS` (validade da sessão, 12 h), `CODIGO_TTL_SEGUNDOS`, `CODIGO_REENVIO_SEGUNDOS` e `CODIGO_TENTATIVAS` (códigos por e-mail) e `INATIVIDADE_SEGUNDOS` (saída por inatividade, 1 h). O aviso de privacidade mostrado em `/privacidade` é o arquivo [docs/aviso-de-privacidade.md](docs/aviso-de-privacidade.md).
+## Como contribuir
 
-### Totem
+1. A `main` reflete sempre o estado estável e só recebe código por Pull Request com o CI verde.
+2. Uma branch por tarefa, no Git e no Xano (criada a partir da `v1`).
+3. Mudança funcional começa por uma change no OpenSpec (explorar → propor → revisar → aplicar → arquivar); tela começa pelo Figma.
+4. Backend e frontend de uma funcionalidade entram juntos, na mesma change (fatia vertical).
+5. Mudança de esquema do banco só com o PO; publicação no Xano sempre com `--dry-run` antes.
+6. Agentes de IA seguem o [`AGENTS.md`](AGENTS.md).
 
-O Totem fica em `http://localhost:3000/totem` e não pede login. Para emitir tickets, o servidor do Reflex usa uma chave de dispositivo:
+O passo a passo completo está no [guia de contribuição](CONTRIBUTING.md).
 
-1. No Xano, a variável de ambiente `TOTEM_CHAVE` guarda a chave (uma sequência aleatória longa).
-2. No `frontend/.env`, `TOTEM_CHAVE=` recebe o **mesmo** valor. A chave nunca vai ao navegador nem ao repositório.
-3. Para trocar a chave, altere os dois lugares e reinicie o `reflex run`.
-
-Roteiro manual: abra `/totem`, toque em cada tipo e confira o código na tela (`C-001`, `P-001`, `N-001` no primeiro do dia), depois toque em **Concluir**. Com a chave errada no `.env`, a tela mostra "Não foi possível emitir o ticket." e nenhum ticket é criado. Os tickets emitidos aparecem na fila da Recepção/Triagem (`/recepcao/fila`).
-
-### Painel público
-
-São duas telas públicas, sem login, uma para cada TV (decisão do PO), no padrão da tela 5 do Figma:
-
-- **Consultórios** (`http://localhost:3000/painel/medico`): cartão "Chamando agora" com a senha chamada pelo médico e "Dirija-se à {especialidade} · {Sala} · {n}ª chamada", e a tabela das 4 chamadas anteriores (senha, especialidade, Sala e horário).
-- **Triagem** (`http://localhost:3000/painel/triagem`): cartão "Chamando agora" com o ticket chamado pela Recepção/Triagem e a tabela dos 4 tickets chamados antes.
-
-`/painel` só mostra os dois endereços. Nenhuma tela mostra a previsão das próximas senhas, nome, CPF ou dado clínico. As telas atualizam sozinhas a cada 5 segundos. Chamadas e tickets ficam na tela por um tempo desde a chamada (parâmetro "Tempo que uma chamada fica no painel", padrão 2 horas), o que funciona com o PS aberto 24 horas. A Sala é a que está vinculada ao médico no cadastro.
-
-**Limite do Xano:** o plano gratuito aceita 10 requisições a cada 20 segundos para o sistema inteiro, e cada tela de painel aberta faz 4 nesse tempo. Deixe aberta só uma aba de cada painel; com mais, a equipe pode receber erro de limite e o painel mostra "Reconectando…".
-
-Para usar numa TV:
-
-1. Abra `/painel/medico` ou `/painel/triagem` no navegador da TV. No painel dos consultórios, para mostrar só algumas especialidades, use as siglas no endereço: `/painel/medico?especialidades=CLI,ORT`.
-2. Coloque em tela cheia (F11).
-3. Toque uma vez em **Toque para ativar o som**: o navegador só libera o aviso sonoro depois de um toque na página.
-
-Roteiro manual:
-
-1. Abra `/painel/medico` numa janela e chame um paciente em `/medico` em outra: em até 5 s a senha aparece em "Chamando agora", com destaque e aviso sonoro, e a anterior desce para "Últimas chamadas".
-2. Repita a chamada no médico: o cartão pisca de novo com "2ª chamada".
-3. Abra `/painel/triagem` e chame um ticket na fila da triagem (`/recepcao/fila`): o ticket aparece em "Chamando agora" (por exemplo, `C-004`); chamando outro, o anterior desce para "Últimos tickets chamados".
-4. Abra `/painel/medico?especialidades=CAR`: só chamadas de Cardiologia aparecem.
-5. Desligue a rede por uns 30 s: o painel continua com a última informação e mostra "Reconectando…"; ao voltar a rede, volta a atualizar sozinho.
-6. Em nenhum momento aparece nome, CPF, nascimento, sintomas ou sinais vitais.
-
-Para os testes de integração do login, coloque no `frontend/.env` (nunca no repositório) as credenciais `TEST_ADMIN_*`, `TEST_RECEPCAO_*` e `TEST_MEDICO_*` de usuários de teste de cada perfil. Sem elas, esses testes são ignorados.
-
-Detalhes do ambiente, do Xano e do fluxo de trabalho no [guia de contribuição](CONTRIBUTING.md).
+---
 
 ## Equipe
 
 | Integrante | Papel |
 |---|---|
-| Leonardo dos Santos Ferreira | Product Owner · requisitos e regras de negócio · protótipo · banco de dados |
+| Leonardo dos Santos Ferreira | Product Owner · requisitos e regras de negócio · protótipo · banco de dados · documentação |
+| Luisa Jeronimo de Lima | Backend e QA · infraestrutura de testes, evidências e CI |
 | Leonardo Machado | Backend |
-| Luisa | Backend |
 | Nicolas Rissato | Frontend |
 | Gustavo Garcia | Frontend |
 
----
-
-Quer rodar ou contribuir? Veja o [guia de contribuição](CONTRIBUTING.md).
-
-### Sprint 4 — status da Recepção/Triagem
-
-A área /recepcao possui consulta e seletor do próprio status: Disponível, Pausa e Ausente. Usa a autenticação existente e PATCH /me/status. O novo GET /me/status está preparado apenas localmente nesta entrega e precisa de publicação seletiva autorizada no grupo Autenticacao; copiar a branch ou abrir PR não publica recursos no Xano.
-
-Sem essa consulta, a tela informa indisponibilidade e mantém a alteração bloqueada, sem presumir Disponível. Nenhuma renderização altera status. Timeout não provoca repetição automática: atualize o status antes de uma nova tentativa.
-
-Roteiro manual pendente, após revisão e publicação autorizada: entrar como Recepção, abrir /recepcao, consultar o status, mudar entre as três opções e conferir a equipe em /admin. Como Médico, conferir Pausa bloqueando nova chamada e comparecimento da ficha já atribuída produzindo Em atendimento. Executar essas escritas reais somente com autorização e cenário de teste aprovado.
-
-Verificação local segura: suites reflex e xano-static de scripts/run_test_evidence.py; os novos casos de frontend/tests/test_status_equipe.py usam HTTP simulado ou inspeção estática. As verificações locais não comprovam a execução das transações no Xano.
+<div align="center">
+<sub>Prioriza · Trabalho acadêmico · Faculdade Impacta · <a href="https://leonardo-sferreira.github.io/ps-fila-prioritaria/">Documentação</a></sub>
+</div>

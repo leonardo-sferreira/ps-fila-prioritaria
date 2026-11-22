@@ -47,10 +47,10 @@ O Prioriza organiza a entrada e a chamada de pacientes num pronto-socorro pela *
 | Telas (rotas) | 33, em 4 perfis: público, Recepção/Triagem, Médico e Administrador |
 | Endpoints REST | 71, em 5 grupos de API |
 | Tabelas | 23 |
-| Funções de regra no backend | 52 (103 testes nativos nelas) |
-| Testes automatizados catalogados | 483 |
+| Funções de regra no backend | 52 (105 testes nativos nelas) |
+| Testes automatizados catalogados | 486 |
 | Especificações implementadas | 22 capacidades em `openspec/specs/` |
-| Funcionalidades entregues | 25 changes arquivadas, 66 PRs |
+| Funcionalidades entregues | 25 changes arquivadas, 72 PRs |
 | Stack | Reflex 0.10 (Python) + Xano (XanoScript, PostgreSQL gerenciado) + Brevo (e-mail) |
 
 **Estado:** todas as funcionalidades planejadas estão entregues e validadas pelo PO. Não há ambiente de produção publicado: o frontend roda em máquina local e aponta para o Xano (seção 11). As limitações conhecidas estão na seção 14.
@@ -131,7 +131,7 @@ Resumo das decisões que moldam o código (formato ADR: decisão, motivo e conse
 | 6 | **Auditoria imutável** (`historico_alteracao`) gravada na mesma transação da escrita | Rastreabilidade (RNF07); cargas automáticas aparecem como "Sistema" | Toda escrita relevante chama `registrar_alteracao` | `add-base-compartilhada` D1 |
 | 7 | **Nada com histórico é excluído:** desativação (`ativo = false`) | Preservar a auditoria e os vínculos | Listas filtram por `ativo` | `add-cadastros-administrador` |
 | 8 | **Seleção do próximo paciente no servidor, atômica**, com trava de linha por escrita real dentro da transação | O médico não escolhe (RN24); dois médicos nunca pegam a mesma ficha (RF38, RNF04) | Lógica concentrada em `fila/chamar_proximo`; uma escrita sem mudança real **não** trava no Xano (aprendido na correção do login concorrente) | `add-fila-chamada-medico` D4 |
-| 9 | **Funções puras separadas das que acessam o banco** (`pontuar`, `proxima_ficha`, `formatar_senha`…) | Testar regras sem banco, com testes nativos | Funções a mais, mas regras cobertas por 103 testes nativos | `add-classificacao-prioridade`, `add-fila-chamada-medico` |
+| 9 | **Funções puras separadas das que acessam o banco** (`pontuar`, `proxima_ficha`, `formatar_senha`…) | Testar regras sem banco, com testes nativos | Funções a mais, mas regras cobertas por 105 testes nativos | `add-classificacao-prioridade`, `add-fila-chamada-medico` |
 | 10 | **Chamadas sempre manuais**, sem repetição nem encerramento automáticos | Decisão do PO: uma pessoa é responsável por cada chamada | Prazos (30 s / 10 s) só liberam botões; nada acontece sozinho | `chamada-manual-pre-triagem` D1 |
 | 11 | **Polling em vez de WebSocket/SSE** para painéis e acompanhamento | Simplicidade; o Xano não oferece push neste plano | Custo de requisições; intervalos ajustados ao limite do plano (painéis em 5 s) | `add-painel-publico` D2 |
 | 12 | **Painéis públicos com resposta campo a campo** e teste recursivo de chaves proibidas | Privacidade por construção (RNF06, RN35) | Novos campos exigem inclusão explícita | `add-painel-publico` D1 |
@@ -235,11 +235,11 @@ flowchart LR
 |---|---|---|---|
 | `reflex` | Unitário dos estados das telas, API simulada | 297 | CI e local |
 | `xano-static` | Contratos lidos dos `.xs` | 13 | CI e local |
-| `xano-safe` | Funções puras executadas no Xano (testes nativos e Python) | 97 | CI |
+| `xano-safe` | Funções puras executadas no Xano (testes nativos e Python) | 99 | CI |
 | `controlled` | Integração ao vivo na `v1` com cenário sintético | 33 | Local, com autorização |
 | `e2e` | Navegador (Playwright) nas telas públicas | 2 | CI |
-| `autotestes` | Infraestrutura de evidências | 41 | CI e local |
-| **Total catalogado** | | **483** | |
+| `autotestes` | Infraestrutura de evidências | 42 | CI e local |
+| **Total catalogado** | | **486** | |
 
 Cada caso tem ID permanente, entrada e saída esperada: ⚙ [catálogo de testes](testes/catalogo-de-testes.md). Como são escritos, como rodar e como ler: [estratégia de testes](testes/estrategia-de-testes.md).
 
