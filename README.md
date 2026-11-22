@@ -123,24 +123,28 @@ Estados da ficha: `EM_TRIAGEM` → `AGUARDANDO` → `CHAMADO` → `ATENDIDO` ou 
 
 <table>
 <tr>
-<td width="50%"><img src="docs/telas/01-login.png" alt="Tela Entrar"><br><sub><b>Entrar</b>: senha e código de 6 dígitos por e-mail (app)</sub></td>
-<td width="50%"><img src="docs/telas/02-totem.png" alt="Totem"><br><sub><b>Totem</b>: ticket Pediátrico, Preferencial ou Normal, sem dado pessoal (app)</sub></td>
+<td width="50%"><img src="docs/telas/01-login.png" alt="Tela Entrar"><br><sub><b>Entrar</b>: senha e código de 6 dígitos por e-mail</sub></td>
+<td width="50%"><img src="docs/telas/02-totem.png" alt="Totem"><br><sub><b>Totem</b>: ticket Pediátrico, Preferencial ou Normal, sem dado pessoal</sub></td>
 </tr>
 <tr>
-<td><img src="docs/telas/03-ficha-triagem.png" alt="Ficha de atendimento"><br><sub><b>Ficha de atendimento</b>: sintomas, sinais vitais e cor recalculada a cada alteração (Figma)</sub></td>
-<td><img src="docs/telas/04-medico-chamada.png" alt="Médico em chamada"><br><sub><b>Médico</b>: chamada em curso, tentativas e ficha da triagem (Figma)</sub></td>
+<td><img src="docs/telas/03-fila-pre-triagem.png" alt="Fila de pré-triagem"><br><sub><b>Fila de pré-triagem</b>: chamada manual, tentativas e presença</sub></td>
+<td><img src="docs/telas/04-ficha-triagem.png" alt="Ficha de atendimento"><br><sub><b>Ficha de atendimento</b>: sinais vitais, sintomas, escore e cor</sub></td>
 </tr>
 <tr>
-<td><img src="docs/telas/05-admin-fila-equipe.png" alt="Acompanhamento do Administrador"><br><sub><b>Administrador</b>: fila geral na ordem de chamada e equipe com status (Figma)</sub></td>
-<td><img src="docs/telas/06-painel-consultorios.png" alt="Painel dos consultórios"><br><sub><b>Painel dos consultórios</b>: senha, especialidade e Sala, sem nome nem CPF (app, fora do plantão)</sub></td>
+<td><img src="docs/telas/05-medico.png" alt="Médico"><br><sub><b>Médico</b>: ficha chamada, status, plantões e filas</sub></td>
+<td><img src="docs/telas/06-admin-painel.png" alt="Painel do plantão"><br><sub><b>Administrador</b>: painel do plantão, indicadores e equipe</sub></td>
 </tr>
 <tr>
-<td><img src="docs/telas/07-medico-fila-escuro.png" alt="Fila do médico em modo escuro"><br><sub><b>Modo escuro</b>: fila e status do médico (Figma)</sub></td>
-<td><img src="docs/telas/08-painel-triagem.png" alt="Painel da triagem"><br><sub><b>Painel da triagem</b>: ticket chamado pela Recepção/Triagem (app, fora do plantão)</sub></td>
+<td><img src="docs/telas/07-admin-fila-geral.png" alt="Fila geral"><br><sub><b>Fila geral</b>: fichas na ordem prevista de chamada, com filtros</sub></td>
+<td><img src="docs/telas/10-admin-painel-escuro.png" alt="Modo escuro"><br><sub><b>Modo escuro</b>, alternado no cabeçalho</sub></td>
+</tr>
+<tr>
+<td><img src="docs/telas/08-painel-consultorios.png" alt="Painel dos consultórios"><br><sub><b>Painel dos consultórios</b>: senha, especialidade e Sala, sem nome nem CPF</sub></td>
+<td><img src="docs/telas/09-painel-triagem.png" alt="Painel da triagem"><br><sub><b>Painel da triagem</b>: ticket chamado pela Recepção/Triagem</sub></td>
 </tr>
 </table>
 
-As telas marcadas como "app" são capturas do sistema rodando; as marcadas como "Figma" vêm do protótipo, que segue o layout implementado. Todos os dados são fictícios.
+Capturas do sistema rodando (Reflex), com dados fictícios. As mesmas telas estão reconstruídas no [Figma](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1), na página "Telas implementadas — Reflex", com camadas editáveis e variáveis de tema claro e escuro.
 
 | Perfil | Telas |
 |---|---|
@@ -150,7 +154,7 @@ As telas marcadas como "app" são capturas do sistema rodando; as marcadas como 
 | **Médico** | `/medico` · `/medico/ficha/{id}/imprimir` |
 | **Administrador** | `/admin` · `/admin/fila-geral` · `/admin/fichas/{id}` · `/admin/auditoria` · `/admin/usuarios` · `/admin/medicos` · `/admin/recepcao` · `/admin/especialidades` · `/admin/sintomas` · `/admin/salas` · `/admin/disponibilidade` · `/admin/parametros` |
 
-Todas as telas foram desenhadas antes no [Figma](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1), com modo claro e escuro. Os fluxos, as regras e o modelo de dados estão no [FigJam](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI). O passo a passo de cada tela, para quem usa o sistema, está no [manual do usuário](docs/usuario/manual-do-usuario.md).
+As telas foram prototipadas no [Figma](https://www.figma.com/design/38ro8aKQfiGkUivIfCaOR1) antes do código, e a página "Telas implementadas — Reflex" registra como ficaram. Os fluxos, as regras e o modelo de dados estão no [FigJam](https://www.figma.com/board/qwAbdFLbo9lRuOym4vDSBI). O passo a passo de cada tela, para quem usa o sistema, está no [manual do usuário](docs/usuario/manual-do-usuario.md).
 
 ---
 
