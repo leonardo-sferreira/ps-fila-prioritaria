@@ -85,11 +85,11 @@ As evidências ficam em `test-evidence/<execução>/<suíte>/` (`resultados.json
 | Suíte | Casos |
 |---|---|
 | Reflex | 297 |
-| Xano funções puras | 97 |
+| Xano funções puras | 99 |
 | Integração ao vivo | 33 |
 | Xano estático | 13 |
 | E2E | 2 |
-| Autotestes | 41 |
-| **Total** | **483** |
+| Autotestes | 42 |
+| **Total** | **486** |
 
 Números do catálogo na data desta documentação; o [catálogo gerado](catalogo-de-testes.md) sempre traz os atuais. Os testes manuais da Sprint 5 e sua relação com os automatizados estão em [testes-roteiros-sprint5.md](../../testes-roteiros-sprint5.md).
